@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KenFolios — India’s Largest Business Community</title>
+  <meta name="description" content="KenFolios: telling India’s impactful stories since 2013 — and empowering people to create their own." />
+  <style>
+    :root{
+      --ken-red: #fd013a;
+      --ken-red-dark: #c8002d;
+      --white: #ffffff;
+      --ink: #111111;
+      --muted: #666666;
+      --ui: #e5e5e5;
+      --alt: #fafafa;
+      --container: 1200px;
+      --radius: 16px;
+      --space-1: .5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --space-4: 2rem;
+      --space-5: 3rem;
+      --space-6: 4rem;
+    }
+
+    html{box-sizing:border-box}
+    *,*:before,*:after{box-sizing:inherit}
+    body{
+      margin:0; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink); background: var(--white); line-height: 1.55; -webkit-font-smoothing: antialiased;
+    }
+    img{max-width:100%; height:auto; display:block}
+    a{color:inherit; text-decoration:none}
+    .container{max-width: var(--container); padding: 0 var(--space-2); margin: 0 auto}
+
+    .brand-block{ background: var(--ken-red); color: var(--white); }
+
+    header{ position: sticky; top: 0; z-index: 50; }
+    .header-inner{ display:flex; align-items:center; justify-content:space-between; padding: var(--space-2) 0; }
+    .logo{ display:flex; align-items:center; gap:.5rem; letter-spacing:1.5px; font-size: 1.75rem; }
+    .logo span{ font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 900; text-transform: uppercase; }
+    nav{ display:flex; gap: clamp(.5rem, 2vw, 1.25rem); }
+    nav a{ color: var(--white); opacity:.95; font-weight:600; }
+    nav a:hover, nav a:focus-visible{ opacity:1; text-decoration: underline; text-underline-offset: 4px; }
+
+    @media (max-width: 720px){ nav{ flex-wrap: wrap; } .header-inner{ gap: .75rem; } }
+
+    .hero{ padding: var(--space-5) 0 var(--space-6); position: relative; overflow:hidden; }
+    .hero-grid{ display:grid; grid-template-columns: 1fr; gap: var(--space-5); align-items:center; text-align: center; }
+    .hero h1{ font-size: clamp(28px, 5vw, 44px); line-height:1.15; margin:0 0 var(--space-2); color: var(--white); }
+    .hero p{ color: rgba(255,255,255,.92); font-size: clamp(16px, 2.5vw, 18px); margin: 0 0 var(--space-3); max-width: 60ch; margin-left: auto; margin-right: auto; }
+    .cta{ display:inline-block; background: var(--white); color: var(--ken-red); border:2px solid var(--white);
+      padding: .75rem 1.1rem; border-radius: 999px; font-weight: 700; }
+    .cta:hover, .cta:focus-visible{ background: transparent; color: var(--white); }
+
+    @media (max-width: 960px){
+      .hero{ padding: var(--space-5) 0 var(--space-5); }
+    }
+
+    .section{ padding: var(--space-5) 0; }
+    .section h2{ font-size: clamp(22px, 3.5vw, 30px); margin: 0 0 var(--space-2); }
+    .muted{ color: var(--muted); }
+
+    :focus-visible{ outline: 2px solid var(--white); outline-offset: 2px; }
+
+    @media (prefers-reduced-motion: no-preference){
+      .fade-in{ animation: fade .8s ease-out both; }
+      @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform: none } }
+    }
+  </style>
+</head>
+<body>
+  <div class="brand-block">
+    <header>
+      <div class="container header-inner" role="navigation" aria-label="Primary">
+        <a class="logo" href="/" aria-label="KenFolios Home">
+          <span>KENFOLIOS</span>
+        </a>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/community">Community</a>
+          <a href="/about">About</a>
+          <a href="/newsletter">Newsletter</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="fade-in">
+            <h1>
+              In 2013, we told their stories.<br/>
+              In 2025, we help them write their own.
+            </h1>
+            <p>
+              KenFolios began with impactful storytelling and grew into India’s largest business community — connecting dreamers, doers, and leaders nationwide.
+            </p>
+            <a class="cta" href="#explore">Explore Stories</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <section id="explore" class="section">
+    <div class="container">
+      <h2>About KenFolios</h2>
+      <p class="muted">Founded in January 2013 to tell impactful stories, KenFolios is now a nationwide community for India’s builders and leaders.</p>
+    </div>
+  </section>
+
+  <footer class="section" role="contentinfo" style="border-top:1px solid var(--ui)">
+    <div class="container" style="display:flex; gap:var(--space-3); flex-wrap:wrap; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:.5rem; color:var(--muted)">
+        <strong>KENFOLIOS</strong>
+        <span aria-hidden="true">•</span>
+        <span>© 2026</span>
+      </div>
+      <div style="display:flex; gap:1rem; color:var(--muted)">
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
