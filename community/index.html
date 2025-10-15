@@ -12,7 +12,7 @@
       --bg:#f8fafc;
       --text:#0f172a;
       --muted:#64748b;
-      --left-width:360px; /* widened left pane */
+      --left-width:360px;
     }
 
     *{box-sizing:border-box}
@@ -24,9 +24,10 @@
     /* ===== Left (members) ===== */
     .left{width:var(--left-width);flex:0 0 var(--left-width);border-right:1px solid var(--border);background:#fff;display:none}
     @media (min-width: 1024px){ .left{display:block} }
-    .shell:not(.profile-open) .left{display:block}
-    .left .head{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:700}
-    .left .body{height:calc(100% - 53px);overflow:auto;padding:.5rem}
+    .left .search-box{padding:.5rem 1rem;border-bottom:1px solid var(--border);}
+    .left input[type="text"]{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:8px;font-size:14px}
+    .left input::placeholder{color:var(--muted)}
+    .left .body{height:calc(100% - 57px);overflow:auto;padding:.5rem}
     .placeholder{padding:.5rem;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:14px}
 
     /* ===== Middle (chat) ===== */
@@ -77,9 +78,11 @@
 <body>
   <div id="shell" class="shell">
     <aside class="left" aria-label="List">
-      <div class="head">Members</div>
+      <div class="search-box">
+        <input type="text" placeholder="Join now to find members..." />
+      </div>
       <div class="body">
-        <div class="placeholder">Left shows on ≥1024px. Hidden on smaller screens.</div>
+        <div class="placeholder">Member list placeholder (visible on large screens)</div>
       </div>
     </aside>
 
