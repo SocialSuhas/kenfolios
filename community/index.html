@@ -6,26 +6,13 @@
   <title>KenFolios Business Community — Join</title>
   <meta name="theme-color" content="#E11D2E" />
   <style>
-    /* ===== Design tokens & breakpoints ===== */
+    /* ===== Design tokens ===== */
     :root{
       --kf-red:#E11D2E;
       --border:#e5e7eb;
       --bg:#f8fafc;
       --text:#0f172a;
       --muted:#64748b;
-
-      /* Tailwind-like breakpoints for clarity */
-      --bp-sm:640px;   /* small phones → small tablets */
-      --bp-md:768px;   /* tablets */
-      --bp-lg:1024px;  /* laptops */
-      --bp-xl:1280px;  /* desktops */
-      --bp-2xl:1536px; /* large / ultrawide */
-
-      /* Right pane max widths by screen size */
-      --right-sm:100vw;   /* < 1024px: full screen */
-      --right-lg:50vw;    /* 1024–1279px: half screen */
-      --right-xl:640px;   /* 1280–1535px: capped */
-      --right-2xl:720px;  /* ≥1536px: a bit wider cap */
     }
 
     *{box-sizing:border-box}
@@ -34,14 +21,14 @@
 
     .shell{max-width:1400px;height:100vh;margin:0 auto;display:flex;background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border)}
 
-    /* ===== Left (members) — visible by default on >= lg ===== */
+    /* ===== Left (members) — visible on >=1024px ===== */
     .left{width:300px;flex:0 0 300px;border-right:1px solid var(--border);background:#fff;display:none}
     @media (min-width: 1024px){ .left{display:block} }
     .left .head{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:700}
     .left .body{height:calc(100% - 53px);overflow:auto;padding:.5rem}
     .placeholder{padding:.5rem;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:14px}
 
-    /* ===== Middle (chat) — always primary ===== */
+    /* ===== Middle (chat) ===== */
     .mid{flex:1;min-width:0;display:flex;flex-direction:column}
     .chat-header{display:flex;align-items:center;gap:.75rem;padding:1rem;background:#fff;color:var(--text);border-bottom:1px solid var(--border)}
     .kf{width:44px;height:44px;border-radius:999px;background:var(--kf-red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
@@ -51,31 +38,29 @@
     .chat-area{flex:1;overflow:auto;background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 1px);background-size:18px 18px}
     .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
 
-    /* ===== Right (profile) — closed by default, opens on click ===== */
+    /* ===== Right (profile) — closed by default; opens on click ===== */
     .right{width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;overflow:hidden;transition:width .25s ease, border-left-width .25s ease}
 
-    /* Open state — small screens: take the whole screen and hide others */
-    @media (max-width: calc(var(--bp-lg) - 1px)){
-      .shell.profile-open .right{width:var(--right-sm);flex:0 0 var(--right-sm);border-left-width:1px}
+    /* --- OPEN STATE (use fixed px breakpoints; CSS vars don't work inside @media) --- */
+    /* Default for small screens (<1024px): Right takes full width, hide middle & left */
+    @media (max-width: 1023.98px){
+      .shell.profile-open .right{width:100%;flex:0 0 100%;border-left-width:1px}
       .shell.profile-open .mid{display:none}
       .shell.profile-open .left{display:none}
     }
-
-    /* Open state — laptops: split 50/50 with middle; left hides while open */
-    @media (min-width: var(--bp-lg)) and (max-width: calc(var(--bp-xl) - 1px)){
-      .shell.profile-open .right{width:var(--right-lg);flex:0 0 var(--right-lg);border-left-width:1px}
+    /* 1024px–1279px: split 50/50 with middle; left hides while open */
+    @media (min-width: 1024px) and (max-width: 1279.98px){
+      .shell.profile-open .right{width:50%;flex:0 0 50%;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-
-    /* Open state — desktops: cap right at 640px; middle gets the rest */
-    @media (min-width: var(--bp-xl)) and (max-width: calc(var(--bp-2xl) - 1px)){
-      .shell.profile-open .right{width:var(--right-xl);flex:0 0 var(--right-xl);border-left-width:1px}
+    /* 1280px–1535px: cap right at 640px; middle gets the rest */
+    @media (min-width: 1280px) and (max-width: 1535.98px){
+      .shell.profile-open .right{width:640px;flex:0 0 640px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-
-    /* Open state — ultrawide: cap a bit larger */
-    @media (min-width: var(--bp-2xl)){
-      .shell.profile-open .right{width:var(--right-2xl);flex:0 0 var(--right-2xl);border-left-width:1px}
+    /* ≥1536px: cap a bit larger (720px) */
+    @media (min-width: 1536px){
+      .shell.profile-open .right{width:720px;flex:0 0 720px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
 
@@ -91,6 +76,10 @@
     .icon-btn{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
     .icon-btn:hover{background:#f1f5f9}
     .i{width:20px;height:20px}
+      /* Ensure left is visible on ≥1024px when profile is CLOSED */
+    @media (min-width: 1024px){
+      .shell:not(.profile-open) .left{display:block}
+    }
   </style>
 </head>
 <body>
@@ -135,7 +124,7 @@
           <div class="card"><div class="num">2013</div><div class="lbl">Founded</div></div>
           <div class="card"><div class="num">Pan-India</div><div class="lbl">Chapters</div></div>
         </div>
-        <p class="lbl">Responsive behavior by width: full on phones, 50/50 on laptops, capped on desktops.</p>
+        <p class="lbl">Responsive behavior: full on phones, 50/50 on laptops, capped on desktops.</p>
       </div>
     </aside>
   </div>
