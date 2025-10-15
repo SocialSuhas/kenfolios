@@ -7,11 +7,10 @@
   <meta name="description" content="KenFolios community — messenger-style homepage." />
   <meta name="theme-color" content="#fd013a" />
   <style>
-    /* ===== Tokens (red variant baseline) ===== */
     :root{
       --ken-red: #fd013a;
-      --ken-red-2: #ff3a62;   /* lighter tint */
-      --ken-red-3: #ff6e8d;   /* lighter */
+      --ken-red-2: #ff3a62;
+      --ken-red-3: #ff6e8d;
       --ken-red-dark: #c8002d;
       --ink: #111;
       --muted: #666;
@@ -26,35 +25,33 @@
       --space-4: 2rem;
       --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
       --shadow-md: 0 8px 22px rgba(0,0,0,.12);
-      --sidebar-w: 360px; /* desktop expanded */
+      --sidebar-w: 360px;
       --footer-h: 36px;
       --topbar-h: 56px;
     }
 
-    /* ===== Base ===== */
     *,*:before,*:after{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:#fff;}
     a{color:inherit; text-decoration:none}
     img{max-width:100%; display:block}
-    .visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
 
-    /* ===== Page Layout ===== */
     .page{min-height:100%; display:flex; flex-direction:column}
     .main{flex:1; min-height:0; display:flex;}
 
-    /* Sidebar (left) */
+    /* Sidebar */
     .sidebar{
       width:var(--sidebar-w);
       border-right:1px solid var(--ui);
       background:var(--white);
-      display:flex; flex-direction:column; min-height:0;
+      display:flex; flex-direction:column; min-height:100vh;
+      position:sticky; top:0; left:0;
     }
     .sb-top{padding:.6rem var(--space-2); border-bottom:1px solid var(--ui); display:flex; align-items:center; gap:.6rem}
     .search{flex:1; display:flex; align-items:center; gap:.5rem; background:var(--alt); border:1px solid var(--ui); border-radius:999px; padding:.5rem .75rem}
     .search input{border:0; background:transparent; outline:none; width:100%}
 
-    .list{overflow:auto; padding:.25rem 0}
+    .list{overflow:auto; padding:.25rem 0; flex:1;}
     .item{display:flex; gap:.75rem; align-items:center; padding:.7rem var(--space-2); cursor:pointer}
     .item:hover{background:#f7f7f7}
     .avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;overflow:hidden}
@@ -63,40 +60,27 @@
     .meta .name{font-weight:700; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
     .meta .note{color:var(--muted); font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
-    /* Chat (right) */
+    /* Chat */
     .chat{
       flex:1; min-width:0; display:grid; grid-template-rows: var(--topbar-h) 1fr auto; position:relative;
       background:
         radial-gradient(1200px 600px at -10% -20%, rgba(255,255,255,.25) 0%, rgba(255,255,255,0) 50%),
         linear-gradient(135deg, var(--ken-red) 0%, var(--ken-red-2) 45%, var(--ken-red-3) 100%);
       color:#fff;
+      min-height:100vh;
     }
 
-    /* Subtle SVG pattern layer (Telegram/WhatsApp-like) */
     .chat::before{
       content:""; position:absolute; inset:0; pointer-events:none; opacity:.16;
-      background-image: url('data:image/svg+xml;utf8,\
-        <svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">\
-          <defs>\
-            <pattern id="p" width="80" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(20)">\
-              <circle cx="12" cy="12" r="2" fill="%23ffffff"/>\
-              <rect x="40" y="40" width="8" height="8" rx="2" ry="2" fill="%23ffffff" opacity="0.7"/>\
-              <path d="M70 10 l8 0 l0 8 l-8 0 z" fill="none" stroke="%23ffffff" stroke-width="1" opacity="0.5"/>\
-              <path d="M8 56 q8 -8 16 0" fill="none" stroke="%23ffffff" stroke-width="1" opacity="0.45"/>\
-            </pattern>\
-          </defs>\
-          <rect width="100%" height="100%" fill="url(%23p)"/>\
-        </svg>');
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><defs><pattern id="p" width="80" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(20)"><circle cx="12" cy="12" r="2" fill="%23ffffff"/><rect x="40" y="40" width="8" height="8" rx="2" ry="2" fill="%23ffffff" opacity="0.7"/><path d="M70 10 l8 0 l0 8 l-8 0 z" fill="none" stroke="%23ffffff" stroke-width="1" opacity="0.5"/><path d="M8 56 q8 -8 16 0" fill="none" stroke="%23ffffff" stroke-width="1" opacity="0.45"/></pattern></defs><rect width="100%" height="100%" fill="url(%23p)"/></svg>');
     }
 
-    /* Chat header */
-    .c-head{display:flex; align-items:center; gap:.75rem; padding:0 var(--space-2); border-bottom:1px solid rgba(255,255,255,.25); position:sticky; top:0; backdrop-filter:saturate(1.1)}
+    .c-head{display:flex; align-items:center; gap:.75rem; padding:0 var(--space-2); border-bottom:1px solid rgba(255,255,255,.25); position:sticky; top:0; backdrop-filter:saturate(1.1); z-index:10}
     .c-title{display:flex; flex-direction:column}
     .c-title .name{font-weight:800; letter-spacing:.3px}
     .c-title .sub{font-size:.9rem; opacity:.9}
     .menu-btn{display:none; background:transparent; border:0; color:#fff; font-weight:700; padding:.35rem .6rem; border-radius:10px; border:2px solid rgba(255,255,255,.55)}
 
-    /* Chat body */
     .c-body{position:relative; overflow:auto; padding: var(--space-3) var(--space-2) calc(var(--space-3) + 72px)}
 
     .bubble{max-width:70ch; background:rgba(255,255,255,.95); color:var(--ink); padding:.7rem .9rem; border-radius:18px; margin:.25rem 0; box-shadow:var(--shadow-sm)}
@@ -105,21 +89,16 @@
     .row.left{justify-content:flex-start}
     .row.right{justify-content:flex-end}
 
-    /* Input */
     .c-input{display:flex; align-items:center; gap:.6rem; padding:.5rem; background:rgba(255,255,255,.35); border-top:1px solid rgba(255,255,255,.25); position:sticky; bottom:0}
     .c-input .field{flex:1; display:flex; align-items:center; gap:.5rem; background:#fff; border-radius:999px; padding:.55rem .9rem; box-shadow:var(--shadow-sm)}
     .c-input input{border:0; outline:0; width:100%}
     .send{background:var(--ken-red-dark); color:#fff; border:0; padding:.6rem 1rem; border-radius:999px; font-weight:700; box-shadow:var(--shadow-sm)}
 
-    /* Footer */
     footer{height:var(--footer-h); display:flex; align-items:center; border-top:1px solid var(--ui); font-size:.9rem; background:#fff}
     .foot-wrap{width:100%; max-width:1400px; margin:0 auto; padding:0 var(--space-2); display:flex; gap:1rem; align-items:center; justify-content:space-between}
     .foot-links{display:flex; gap:1rem; color:var(--muted)}
 
-    /* Responsive */
-    @media (max-width: 980px){
-      :root{ --sidebar-w: 320px; }
-    }
+    @media (max-width: 980px){:root{ --sidebar-w: 320px; }}
     @media (max-width: 820px){
       .sidebar{position:fixed; inset:0 auto 0 0; transform:translateX(-100%); transition:transform .2s ease; z-index:30; max-width:92vw; box-shadow:var(--shadow-md)}
       .sidebar.open{transform:none}
@@ -132,7 +111,6 @@
 <body>
   <div class="page">
     <main class="main">
-      <!-- ===== Sidebar ===== -->
       <aside class="sidebar" id="sidebar" aria-label="Community activity">
         <div class="sb-top">
           <div class="search" role="search">
@@ -140,15 +118,11 @@
             <input type="search" placeholder="Search people & updates" aria-label="Search" />
           </div>
         </div>
-        <div class="list" id="activityList" role="list" aria-live="polite">
-          <!-- Items injected by JS -->
-        </div>
+        <div class="list" id="activityList" role="list" aria-live="polite"></div>
       </aside>
 
-      <!-- Mobile backdrop -->
       <div class="backdrop" id="backdrop" aria-hidden="true"></div>
 
-      <!-- ===== Chat ===== -->
       <section class="chat" aria-label="KenFolios chat">
         <header class="c-head">
           <button class="menu-btn" id="menuBtn" aria-controls="sidebar" aria-expanded="false">Menu</button>
@@ -186,7 +160,6 @@
       </section>
     </main>
 
-    <!-- ===== Footer ===== -->
     <footer role="contentinfo">
       <div class="foot-wrap">
         <div style="color:var(--muted);">KenFolios Media Private Limited</div>
@@ -202,41 +175,13 @@
   </div>
 
   <script>
-    // Dummy sidebar activity
     (function(){
-      const names = [
-        'Aarav Mehta','Isha Kapoor','Rohan Gupta','Neha Sharma','Kabir Iyer','Maya Rao','Arjun Patel','Zoya Khan','Vikram Das','Ananya Joshi',
-        'Devika Nair','Kunal Sethi','Priya Bansal','Ritvik Malhotra','Tanya Singh'
-      ];
+      const names = ['Aarav Mehta','Isha Kapoor','Rohan Gupta','Neha Sharma','Kabir Iyer','Maya Rao','Arjun Patel','Zoya Khan','Vikram Das','Ananya Joshi','Devika Nair','Kunal Sethi','Priya Bansal','Ritvik Malhotra','Tanya Singh'];
       const list = document.getElementById('activityList');
-      const makeAvatar = (initials) => `
-        <div class="avatar" style="background:#fff;border:1px solid var(--ui)">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--ken-red').trim()}"/>
-                <stop offset="100%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--ken-red-2').trim()}"/>
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="48" fill="url(#g)"/>
-            <text x="50" y="60" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="900" font-size="42" fill="#fff">${initials}</text>
-          </svg>
-        </div>`;
-      const items = names.map(n => {
-        const initials = n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-        return `
-          <div class="item" role="listitem">
-            ${makeAvatar(initials)}
-            <div class="meta">
-              <div class="name">${n}</div>
-              <div class="note">${n.split(' ')[0]} joined KenFolios</div>
-            </div>
-          </div>`;
-      }).join('');
-      list.innerHTML = items;
+      const makeAvatar = (initials) => `<div class=\"avatar\" style=\"background:#fff;border:1px solid var(--ui)\"><svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"${getComputedStyle(document.documentElement).getPropertyValue('--ken-red').trim()}\"/><stop offset=\"100%\" stop-color=\"${getComputedStyle(document.documentElement).getPropertyValue('--ken-red-2').trim()}\"/></linearGradient></defs><circle cx=\"50\" cy=\"50\" r=\"48\" fill=\"url(#g)\"/><text x=\"50\" y=\"60\" text-anchor=\"middle\" font-family=\"Helvetica Neue, Helvetica, Arial, sans-serif\" font-weight=\"900\" font-size=\"42\" fill=\"#fff\">${initials}</text></svg></div>`;
+      list.innerHTML = names.map(n => `<div class=\"item\" role=\"listitem\">${makeAvatar(n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase())}<div class=\"meta\"><div class=\"name\">${n}</div><div class=\"note\">${n.split(' ')[0]} joined KenFolios</div></div></div>`).join('');
     })();
 
-    // Mobile sidebar toggle
     (function(){
       const menuBtn = document.getElementById('menuBtn');
       const sidebar = document.getElementById('sidebar');
@@ -251,7 +196,6 @@
       backdrop.addEventListener('click', () => toggle(false));
     })();
 
-    // Demo chat send (local-only)
     (function(){
       const form = document.getElementById('chatForm');
       const body = document.getElementById('chatBody');
