@@ -6,13 +6,13 @@
   <title>KenFolios Business Community — Join</title>
   <meta name="theme-color" content="#E11D2E" />
   <style>
-    /* ===== Design tokens ===== */
     :root{
       --kf-red:#E11D2E;
       --border:#e5e7eb;
       --bg:#f8fafc;
       --text:#0f172a;
       --muted:#64748b;
+      --left-width:360px; /* widened left pane */
     }
 
     *{box-sizing:border-box}
@@ -21,9 +21,10 @@
 
     .shell{max-width:1400px;height:100vh;margin:0 auto;display:flex;background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border)}
 
-    /* ===== Left (members) — visible on >=1024px ===== */
-    .left{width:300px;flex:0 0 300px;border-right:1px solid var(--border);background:#fff;display:none}
+    /* ===== Left (members) ===== */
+    .left{width:var(--left-width);flex:0 0 var(--left-width);border-right:1px solid var(--border);background:#fff;display:none}
     @media (min-width: 1024px){ .left{display:block} }
+    .shell:not(.profile-open) .left{display:block}
     .left .head{padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:700}
     .left .body{height:calc(100% - 53px);overflow:auto;padding:.5rem}
     .placeholder{padding:.5rem;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:14px}
@@ -38,33 +39,28 @@
     .chat-area{flex:1;overflow:auto;background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 1px);background-size:18px 18px}
     .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
 
-    /* ===== Right (profile) — closed by default; opens on click ===== */
+    /* ===== Right (profile) ===== */
     .right{width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;overflow:hidden;transition:width .25s ease, border-left-width .25s ease}
 
-    /* --- OPEN STATE (use fixed px breakpoints; CSS vars don't work inside @media) --- */
-    /* Default for small screens (<1024px): Right takes full width, hide middle & left */
     @media (max-width: 1023.98px){
       .shell.profile-open .right{width:100%;flex:0 0 100%;border-left-width:1px}
       .shell.profile-open .mid{display:none}
       .shell.profile-open .left{display:none}
     }
-    /* 1024px–1279px: split 50/50 with middle; left hides while open */
     @media (min-width: 1024px) and (max-width: 1279.98px){
       .shell.profile-open .right{width:50%;flex:0 0 50%;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-    /* 1280px–1535px: cap right at 640px; middle gets the rest */
     @media (min-width: 1280px) and (max-width: 1535.98px){
       .shell.profile-open .right{width:640px;flex:0 0 640px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-    /* ≥1536px: cap a bit larger (720px) */
     @media (min-width: 1536px){
       .shell.profile-open .right{width:720px;flex:0 0 720px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
 
-    /* ===== Profile pane content ===== */
+    /* ===== Profile content ===== */
     .p-head{display:flex;align-items:center;justify-content:space-between;padding:1rem;border-bottom:1px solid var(--border)}
     .p-logo{width:44px;height:44px;border-radius:999px;background:var(--kf-red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900}
     .p-body{padding:1rem}
@@ -76,10 +72,6 @@
     .icon-btn{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
     .icon-btn:hover{background:#f1f5f9}
     .i{width:20px;height:20px}
-      /* Ensure left is visible on ≥1024px when profile is CLOSED */
-    @media (min-width: 1024px){
-      .shell:not(.profile-open) .left{display:block}
-    }
   </style>
 </head>
 <body>
@@ -130,7 +122,6 @@
   </div>
 
   <script>
-    // Open/close right pane on click of logo, title, or member count
     var shell = document.getElementById('shell');
     function openProfile(){ shell.classList.add('profile-open'); }
     function closeProfile(){ shell.classList.remove('profile-open'); }
