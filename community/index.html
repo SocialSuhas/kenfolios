@@ -127,17 +127,13 @@
       cursor:pointer;
       transition:background .2s ease;
     }
-    .cta-btn:hover{
-      background:#f8fafc;
-    }
+    .cta-btn:hover{ background:#f8fafc; }
     .cta-btn.primary{
       background:var(--kf-red);
       color:#fff;
       border-color:var(--kf-red);
     }
-    .cta-btn.primary:hover{
-      opacity:.9;
-    }
+    .cta-btn.primary:hover{ opacity:.9; }
 
     /* ===== Chat area ===== */
     .chat-area{
@@ -169,26 +165,26 @@
       color:hsl(210 60% 28%);
     }
 
-    .chat-msg .bubble {
-  background:#fff;
-  padding:.6rem .9rem;
-  border-radius:16px;
-  border:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  gap:.25rem;
-  max-width:600px;          /* ⬅ Limit width on desktop */
-  width:fit-content;
-  position:relative;
-  word-wrap:break-word;
-}
-
-@media (max-width: 639.98px) {
-  .chat-msg .bubble {
-    max-width:85%;          /* ⬅ Responsive width on mobile */
-  }
-
-}
+    /* Use grid so bottom row can be L/R and add bigger gap to breathe */
+    .chat-msg .bubble{
+      background:#fff;
+      padding:.6rem .9rem;
+      border-radius:16px;
+      border:1px solid var(--border);
+      display:grid;
+      grid-template-columns: 1fr auto;
+      row-gap:.65rem;          /* ⬅️ more space between text and meta row */
+      column-gap:.75rem;
+      max-width:600px;
+      width:fit-content;
+      position:relative;
+      overflow-wrap:break-word;
+      word-wrap:break-word;
+      word-break:break-word;
+    }
+    @media (max-width: 639.98px) {
+      .chat-msg .bubble { max-width:85%; row-gap:.5rem; }
+    }
 
     /* Tails */
     .chat-msg.admin .bubble::before{
@@ -196,8 +192,7 @@
       position:absolute;
       left:-8px;
       bottom:8px;
-      width:0;
-      height:0;
+      width:0;height:0;
       border:8px solid transparent;
       border-right-color:#fff;
     }
@@ -206,18 +201,61 @@
       position:absolute;
       right:-8px;
       bottom:8px;
-      width:0;
-      height:0;
+      width:0;height:0;
       border:8px solid transparent;
       border-left-color:#fff;
     }
 
+    /* Make name/text span full width */
+    .chat-msg .bubble .name,
+    .chat-msg .bubble .text{ grid-column: 1 / -1; }
     .chat-msg .name{ font-size:13px; font-weight:700; color:var(--muted); }
     .chat-msg .text{ font-size:14px; line-height:1.4; color:var(--text); }
-    .chat-msg .time{ font-size:11px; color:var(--muted); align-self:flex-end; }
 
-    @media (max-width: 639.98px){
-      .chat-msg{max-width:95%;}
+    /* ===== Bottom meta row ===== */
+    .bubble .reactions{
+      grid-column: 1 / 2;
+      justify-self: start;
+      align-self: end;
+      margin-top:0;            /* gap handled by grid row-gap */
+      font-size:11px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:.5rem;
+      line-height:1;
+      flex-wrap:wrap;
+      white-space:nowrap;
+    }
+    .bubble .pinned-label,
+    .bubble .time{
+      grid-column: 2 / 3;
+      justify-self: end;
+      align-self: end;
+      margin-top:0;            /* gap handled by grid row-gap */
+      font-size:11px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:.35rem;
+      line-height:1;
+      white-space:nowrap;
+      font-weight:600;
+    }
+
+    .bubble .reactions .r{
+      display:flex;
+      align-items:center;
+      gap:2px;
+    }
+    .bubble .reactions .icon{ font-size:13px; }
+    .bubble .reactions .count{ min-width:18px; text-align:right; }
+
+    @media (max-width:360px){
+      .bubble .reactions,
+      .bubble .pinned-label,
+      .bubble .time{ font-size:10px; }
+      .bubble .reactions .icon{ font-size:12px; }
     }
 
     /* ===== Composer ===== */
@@ -268,7 +306,6 @@
     .card{border:1px solid var(--border);border-radius:12px;padding:.75rem;text-align:center}
     .num{font-weight:800}
     .lbl{font-size:12px;color:var(--muted)}
-  
 
     /* ===== Mobile header actions below title ===== */
     @media (max-width: 639.98px){
@@ -332,188 +369,67 @@
       </header>
 
       <section class="chat-area" id="chatArea">
-        <!-- Welcome + intro -->
+        <!-- Welcome + intro (PINNED, no timestamp) -->
         <div class="chat-msg admin" id="welcomeMsg">
           <div class="avatar">KF</div>
           <div class="bubble">
             <div class="name">Community Admin</div>
             <div class="text">👋 Welcome to KenFolios Business Community! We’re thrilled to have you here. This space is built for meaningful connections, collaboration, and growth.</div>
-            <div class="time">Just now</div>
+            <div class="pinned-label">📌 Pinned</div>
           </div>
         </div>
 
+        <!-- Demo chat 1 -->
         <div class="chat-msg member">
           <div class="bubble">
             <div class="name">New Member</div>
             <div class="text">Thank you! Happy to be here. How does this community actually work?</div>
-            <div class="time">1 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">Great question! Once you join, you’ll get access to curated business discussions, direct networking, and founder-led initiatives. You can chat, collaborate, and share opportunities in real time.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <!-- More Q&A to force scroll and show value -->
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">What do people usually use this for — leads, learning, or partnerships?</div>
-            <div class="time">2 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">All three! Members share qualified leads, ask for expert help, and form partnerships. We also run spotlights and weekend huddles to help you learn fast.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">How do I get started after joining?</div>
-            <div class="time">3 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">Post a short intro (what you do + who you want to meet), browse ongoing threads, and DM people who align with your goals. Our team also nudges relevant intros.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">Are there any events or live sessions?</div>
-            <div class="time">4 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">Yes — monthly founder roundtables, deal rooms, and skill clinics. Recordings are shared for members who can’t join live.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">Is there a code of conduct?</div>
             <div class="time">5 min ago</div>
           </div>
           <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
         </div>
 
+        <!-- Demo chat 2 -->
         <div class="chat-msg admin">
           <div class="avatar">KF</div>
           <div class="bubble">
             <div class="name">Community Admin</div>
-            <div class="text">Simple: Be helpful, transparent, and respectful. No spam or cold pitching — share context and value first. Our moderators keep things high-signal.</div>
-            <div class="time">Just now</div>
+            <div class="text">Great question! Once you join, you’ll get access to curated business discussions, direct networking, and founder-led initiatives. You can chat, collaborate, and share opportunities in real time.</div>
+            <div class="time">4 min ago</div>
           </div>
         </div>
 
+        <!-- Demo chat 3 -->
         <div class="chat-msg member">
           <div class="bubble">
             <div class="name">New Member</div>
-            <div class="text">Can I get featured or tell my startup story?</div>
-            <div class="time">6 min ago</div>
+            <div class="text">What do people usually use this for — leads, learning, or partnerships?</div>
+            <div class="time">3 min ago</div>
           </div>
           <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
         </div>
 
+        <!-- Demo chat 4 -->
         <div class="chat-msg admin">
           <div class="avatar">KF</div>
           <div class="bubble">
             <div class="name">Community Admin</div>
-            <div class="text">Absolutely. Share traction and what others can learn. Our editorial picks stories weekly and features them across our channels.</div>
-            <div class="time">Just now</div>
+            <div class="text">All three! Members share qualified leads, ask for expert help, and form partnerships. We also run spotlights and weekend huddles to help you learn fast.</div>
+            <div class="time">2 min ago</div>
           </div>
         </div>
 
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">Do you have mentors or office hours?</div>
-            <div class="time">7 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">We run mentor AMAs and 1:1 office hours with operators in growth, brand, hiring, and fundraising. Slots are announced in advance.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">Is this only for metros or also tier-2/3 cities?</div>
-            <div class="time">8 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">Pan-India. We have chapters and meetups across metros and emerging hubs. Many collabs start online and turn into on-ground partnerships.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
-        <div class="chat-msg member">
-          <div class="bubble">
-            <div class="name">New Member</div>
-            <div class="text">What does a great first post look like?</div>
-            <div class="time">9 min ago</div>
-          </div>
-          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-        </div>
-
-        <div class="chat-msg admin">
-          <div class="avatar">KF</div>
-          <div class="bubble">
-            <div class="name">Community Admin</div>
-            <div class="text">Keep it crisp: one-liner about what you do, one problem you solve, one thing you need, and one way you can help others. Add a link if relevant.</div>
-            <div class="time">Just now</div>
-          </div>
-        </div>
-
+        <!-- Demo chat 5 -->
         <div class="chat-msg member">
           <div class="bubble">
             <div class="name">New Member</div>
             <div class="text">Sounds good. Where do I join?</div>
-            <div class="time">10 min ago</div>
+            <div class="time">1 min ago</div>
           </div>
           <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
         </div>
 
+        <!-- Demo chat 6 -->
         <div class="chat-msg admin">
           <div class="avatar">KF</div>
           <div class="bubble">
@@ -666,6 +582,7 @@
       }
     });
 
+    /* ===== Member list demo ===== */
     (function(){
       var listEl = document.getElementById('memberList');
       if(!listEl) return;
@@ -711,6 +628,162 @@
         if(bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 40){
           loadMore(30);
         }
+      });
+    })();
+
+    /* ===== Reactions + timestamp logic (👍 ❤️ 🎉) — reactions left, time/pinned right ===== */
+    (function(){
+      // Reaction types (enforced order: like ≥ love ≥ celebrate)
+      var reactionTypes = [
+        { key: 'like', icon: '👍' },
+        { key: 'love', icon: '❤️' },
+        { key: 'celebrate', icon: '🎉' }
+      ];
+
+      function compact(n){
+        if(n >= 1_000_000) return (n/1_000_000).toFixed(n % 1_000_000 ? 1 : 0)+'m';
+        if(n >= 1_000) return (n/1_000).toFixed(n % 1_000 ? 1 : 0)+'k';
+        return String(n);
+      }
+      function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+      function bubbleKey(idx){ return 'kf_react_v6_ord_'+idx; }
+
+      // Enforce like ≥ love ≥ celebrate while preserving total
+      function enforceOrder(counts){
+        var like = counts.like|0, love = counts.love|0, cel = counts.celebrate|0;
+        if(love < cel){ var d = cel-love; cel-=d; love+=d; }
+        if(like < love){ var d2 = love-like; love-=d2; like+=d2; }
+        like = Math.max(0, like);
+        love = Math.max(0, Math.min(love, like));
+        cel  = Math.max(0, Math.min(cel, love));
+        var total = (counts.like|0)+(counts.love|0)+(counts.celebrate|0);
+        var now = like+love+cel;
+        if(now !== total){ like += (total - now); if(like < love){ var d3 = love-like; love-=d3; like+=d3; } if(love < cel){ var d4 = cel-love; cel-=d4; love+=d4; } }
+        counts.like = like; counts.love = love; counts.celebrate = cel;
+        return counts;
+      }
+
+      function splitTotalOrdered(total){
+        if(total <= 0) return { like:0, love:0, celebrate:0 };
+        var celBase = Math.floor(total * (0.18 + Math.random()*0.08)); // 18–26%
+        var loveExtra = Math.floor(total * (0.00 + Math.random()*0.08)); // 0–8%
+        var loveBase = celBase + loveExtra;
+        var likeBase = total - (loveBase + celBase);
+        return enforceOrder({ like: likeBase, love: loveBase, celebrate: celBase });
+      }
+
+      function incrementOrdered(counts, n){
+        var pat2 = [
+          {like:2,love:0,celebrate:0},
+          {like:1,love:1,celebrate:0}
+        ];
+        var pat3 = [
+          {like:3,love:0,celebrate:0},
+          {like:2,love:1,celebrate:0},
+          {like:1,love:1,celebrate:1}
+        ];
+        if(n <= 0) return counts;
+        if(n === 1){ counts.like += 1; return counts; }
+        if(n === 2){ var p = pat2[randInt(0, pat2.length-1)]; counts.like+=p.like; counts.love+=p.love; counts.celebrate+=p.celebrate; return counts; }
+        if(n >= 3){ var p3 = pat3[randInt(0, pat3.length-1)]; counts.like+=p3.like; counts.love+=p3.love; counts.celebrate+=p3.celebrate; if(n>3) counts.like += (n-3); return counts; }
+        return counts;
+      }
+
+      var bubbles = Array.from(document.querySelectorAll('.chat-area .chat-msg .bubble'));
+      if(!bubbles.length) return;
+      var pinnedIndex = bubbles.findIndex(b => b.querySelector('.pinned-label'));
+
+      // Base seeding/ordering logic (pinned highest; admin > member; slight increase downwards)
+      var baseStart = 80, baseStep = 7, adminBonus = 45, memberBonus = 15, pinnedPeakBoost = 400;
+      var nonPinnedStartMinutes = 5;
+
+      var metas = bubbles.map(function(b, idx){
+        var msg = b.closest('.chat-msg');
+        var isAdmin = msg && msg.classList.contains('admin');
+        var isPinned = idx === pinnedIndex && pinnedIndex !== -1;
+        var orderBias = baseStart + (idx * baseStep);
+        var roleBias = isAdmin ? adminBonus : memberBonus;
+        var base = orderBias + roleBias;
+        return { idx, el: b, isAdmin, isPinned, base };
+      });
+
+      if(pinnedIndex !== -1){
+        var maxNonPinned = Math.max.apply(null, metas.filter(m => !m.isPinned).map(m => m.base));
+        metas[pinnedIndex].base = Math.max(metas[pinnedIndex].base, maxNonPinned + pinnedPeakBoost);
+      }
+
+      // Build reactions group for each bubble (left slot in grid)
+      metas.forEach(function(m){
+        var r = m.el.querySelector('.reactions');
+        if(!r){
+          r = document.createElement('div');
+          r.className = 'reactions';
+          reactionTypes.forEach(rt => {
+            var span = document.createElement('span');
+            span.className = 'r r-'+rt.key;
+            span.innerHTML = '<span class="icon">'+rt.icon+'</span><span class="count">0</span>';
+            r.appendChild(span);
+          });
+          // Insert before pinned/time; CSS grid places left/right properly
+          var pinOrTime = m.el.querySelector('.pinned-label, .time');
+          if(pinOrTime){ m.el.insertBefore(r, pinOrTime); }
+          else{ m.el.appendChild(r); }
+        }
+        m.reactEls = {};
+        reactionTypes.forEach(rt => {
+          m.reactEls[rt.key] = r.querySelector('.r-'+rt.key+' .count');
+        });
+      });
+
+      // Initialize / update reaction counts (persist + daily 2–3 ordered)
+      var todayStr = new Date().toISOString().slice(0,10);
+      metas.forEach(function(m){
+        var key = bubbleKey(m.idx);
+        var stored;
+        try{ stored = JSON.parse(localStorage.getItem(key) || 'null'); }catch(e){ stored = null; }
+
+        if(!stored){
+          var total = Math.max(1, Math.round(m.base + randInt(-5, 5)));
+          stored = { counts: splitTotalOrdered(total), lastDay: todayStr };
+          localStorage.setItem(key, JSON.stringify(stored));
+        }else{
+          var last = new Date(stored.lastDay);
+          var today = new Date(todayStr);
+          var diffDays = Math.floor((today - last)/(1000*60*60*24));
+          if(diffDays > 0){
+            for(var d=0; d<diffDays; d++){
+              var inc = randInt(2,3);
+              stored.counts = enforceOrder(incrementOrdered(stored.counts, inc));
+            }
+            stored.lastDay = todayStr;
+            localStorage.setItem(key, JSON.stringify(stored));
+          }else{
+            stored.counts = enforceOrder(stored.counts);
+            localStorage.setItem(key, JSON.stringify(stored));
+          }
+        }
+
+        // Render counts (left)
+        m.reactEls.like.textContent = compact(stored.counts.like);
+        m.reactEls.love.textContent = compact(stored.counts.love);
+        m.reactEls.celebrate.textContent = compact(stored.counts.celebrate);
+      });
+
+      // Timestamps on RIGHT: lower messages more recent (except pinned with none)
+      var minuteBudget = nonPinnedStartMinutes;
+      bubbles.forEach(function(b, idx){
+        if(idx === pinnedIndex) return;
+        var timeEl = b.querySelector('.time');
+        if(!timeEl) return;
+        var minutes = Math.max(0, minuteBudget);
+        if(minutes <= 0){
+          timeEl.textContent = 'Just now';
+        }else if(minutes === 1){
+          timeEl.textContent = '1 min ago';
+        }else{
+          timeEl.textContent = minutes + ' min ago';
+        }
+        minuteBudget = Math.max(0, minuteBudget - 1);
       });
     })();
   </script>
