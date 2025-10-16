@@ -110,21 +110,44 @@
     }
     .meta{font-size:12px;color:var(--muted);cursor:pointer}
 
+    /* ===== Header CTA buttons ===== */
+    .header-actions{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:.5rem;
+    }
+    .cta-btn{
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      padding:.4rem .9rem;
+      font-size:14px;
+      border-radius:999px;
+      cursor:pointer;
+      transition:background .2s ease;
+    }
+    .cta-btn:hover{
+      background:#f8fafc;
+    }
+    .cta-btn.primary{
+      background:var(--kf-red);
+      color:#fff;
+      border-color:var(--kf-red);
+    }
+    .cta-btn.primary:hover{
+      opacity:.9;
+    }
+
     /* ===== Chat area background with emoji wallpaper ===== */
-.chat-area{
-  flex:1;
-  overflow:auto;
-  background-color:hsl(356, 70%, 96%);
-
-  /* Dense, business-themed wallpaper — larger icons, minimal gaps */
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3C!-- Row 1 --%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3Cpath d='M6 2 v-3 h14 v3'/%3E%3Ctext x='30' y='16' font-size='16' fill='%2394a3b8' opacity='0.7'%3E%E2%82%B9%3C/text%3E%3Cpath d='M48 20 v-14'/%3E%3Cpath d='M52 20 v-18'/%3E%3Cpath d='M56 20 v-10'/%3E%3Cpath d='M44 20 h16'/%3E%3Cpath d='M64 20 l8 -8 l4 4 l4 -10'/%3E%3Cpath d='M80 4 h-6 v6'/%3E%3C!-- Row 2 --%3E%3Ccircle cx='10' cy='36' r='8'/%3E%3Cpath d='M10 36 v-8 a8 8 0 0 1 8 8 z'/%3E%3Ccircle cx='32' cy='36' r='10'/%3E%3Ccircle cx='32' cy='36' r='5'/%3E%3Cpath d='M32 26 v-3 M32 48 v3 M22 36 h-3 M42 36 h3'/%3E%3Cpath d='M52 30 h20 v6 a6 6 0 0 1 -6 6 h-8 a6 6 0 0 1 -6 -6 z'/%3E%3Cpath d='M56 42 v6 h12 v-6'/%3E%3Cpath d='M54 48 h16 v4 h-16 z'/%3E%3C!-- Row 3 --%3E%3Cpath d='M2 60 l6 -6 h8 l6 6'/%3E%3Cpath d='M2 60 l6 6 h8 l6 -6'/%3E%3Cpath d='M8 54 v12'/%3E%3Cpath d='M20 54 v12'/%3E%3Crect x='30' y='54' width='26' height='16' rx='3'/%3E%3Cpath d='M30 58 h26'/%3E%3Cpath d='M34 66 h10'/%3E%3Crect x='60' y='54' width='18' height='18' rx='2'/%3E%3Cpath d='M62 58 h14'/%3E%3Cpath d='M62 62 h12'/%3E%3Cpath d='M62 66 h10'/%3E%3C!-- Row 4 --%3E%3Cpath d='M2 78 l10 -10 l8 6 l14 -14'/%3E%3Cpath d='M36 58 h-8 v8'/%3E%3Ccircle cx='48' cy='66' r='2.5'/%3E%3Ccircle cx='66' cy='78' r='2.5'/%3E%3Cpath d='M50 78 l16 -16'/%3E%3Cpath d='M70 66 h10 v6 h-10 z'/%3E%3Cpath d='M70 66 l2 -4 h6 l2 4'/%3E%3Cpath d='M72 72 v8 M80 72 v8'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat:repeat;
-  background-size:70px 70px; /* tighter than tile size to remove empty space */
-}
-
-
-
-
+    .chat-area{
+      flex:1;
+      overflow:auto;
+      background-color:hsl(356, 70%, 96%);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3C!-- icons --%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat:repeat;
+      background-size:70px 70px;
+    }
     .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
 
     /* ===== Composer ===== */
@@ -175,6 +198,22 @@
     .card{border:1px solid var(--border);border-radius:12px;padding:.75rem;text-align:center}
     .num{font-weight:800}
     .lbl{font-size:12px;color:var(--muted)}
+  
+
+    /* ===== Mobile header actions below title ===== */
+    @media (max-width: 639.98px){
+      .chat-header{ flex-wrap: wrap; }
+      .header-actions{
+        order: 3;
+        width:100%;
+        margin-left:0;
+        margin-top:.5rem;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:.5rem;
+      }
+      .header-actions .cta-btn{ width:100%; }
+    }
   </style>
 </head>
 <body>
@@ -213,12 +252,20 @@
           <button id="openProfile2">KenFolios Business Community</button>
           <div class="meta" id="openProfile3">23,000 members</div>
         </div>
+
+        <!-- CTA Buttons -->
+        <div class="header-actions">
+          <button class="cta-btn" id="aboutBtn">About</button>
+          <button class="cta-btn" id="learnBtn">Learn More</button>
+          <button class="cta-btn primary" id="joinBtn">Join Now</button>
+        </div>
       </header>
+
       <section class="chat-area">
         <div class="chat-pad">Chat area placeholder</div>
       </section>
 
-      <!-- ===== Composer ===== -->
+      <!-- Composer -->
       <footer class="composer" role="group" aria-label="Message composer">
         <div class="lefty">
           <button class="action" id="emojiBtn" title="Emoji" aria-label="Emoji picker">
@@ -348,6 +395,12 @@
         openJoinProvision();
       });
       el.addEventListener('focus', function(){ openJoinProvision(); });
+    });
+
+    // Header CTAs open the profile (right pane)
+    ['aboutBtn','learnBtn','joinBtn'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('click', openProfile);
     });
 
     (function(){
