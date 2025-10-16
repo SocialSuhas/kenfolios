@@ -13,19 +13,55 @@
       --text:#0f172a;
       --muted:#64748b;
       --left-width:360px;
+      --backdrop:rgba(15,23,42,0.35);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;color:var(--text);background:var(--bg)}
 
-    .shell{max-width:1400px;height:100vh;margin:0 auto;display:flex;background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+    .shell{
+      max-width:1400px;height:100vh;margin:0 auto;display:flex;
+      background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border);
+      position:relative
+    }
 
-    /* ===== Left (members) ===== */
-    .left{width:var(--left-width);flex:0 0 var(--left-width);border-right:1px solid var(--border);background:#fff;display:none}
-    @media (min-width: 1024px){ .left{display:block} }
-    .left .search-box{padding:.5rem 1rem;border-bottom:1px solid var(--border);}
-    .left input[type="text"]{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:8px;font-size:14px}
+    /* ===== Backdrop ===== */
+    .backdrop{
+      position:fixed;inset:0;background:var(--backdrop);
+      opacity:0;pointer-events:none;transition:opacity .2s ease;
+    }
+    .shell.left-open .backdrop,
+    .shell.profile-open .backdrop{opacity:1;pointer-events:auto}
+    @media (min-width:1024px){ .backdrop{display:none} }
+
+    /* ===== Left pane ===== */
+    .left{
+      width:var(--left-width);flex:0 0 var(--left-width);
+      border-right:1px solid var(--border);background:#fff;display:none;
+    }
+    @media (min-width: 1024px){
+      .left{display:block;position:relative;transform:none!important;box-shadow:none!important}
+    }
+    /* Mobile drawer behavior */
+    @media (max-width:1023.98px){
+      .left{
+        position:fixed;top:0;left:0;height:100vh;display:block;
+        width:min(86vw, var(--left-width));
+        transform:translateX(-100%);transition:transform .25s ease;
+        z-index:30;box-shadow:0 10px 30px rgba(2,6,23,.25);
+      }
+      .shell.left-open .left{transform:translateX(0)}
+    }
+
+    .left .search-box{
+      padding:.5rem 1rem;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:.5rem
+    }
+    .left input[type="text"]{
+      width:100%;padding:.5rem .75rem;border:1px solid var(--border);
+      border-radius:8px;font-size:14px
+    }
     .left input::placeholder{color:var(--muted)}
     .left .body{height:calc(100% - 57px);overflow:auto;padding:.5rem;display:flex;flex-direction:column}
     .disclaimer{position:sticky;bottom:0;background:#f8fafc;font-size:11px;color:var(--muted);padding:.5rem 1rem;border-top:1px solid var(--border);text-align:center}
@@ -36,33 +72,73 @@
     .m-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .m-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+    /* ===== Buttons ===== */
+    .arrow-btn{
+      border:0;background:#fff;border:1px solid var(--border);
+      width:36px;height:36px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;cursor:pointer
+    }
+    .arrow-btn:hover{background:#f8fafc}
+    /* hide open button on large screens */
+    @media (min-width:1024px){ #openLeft{display:none!important} }
+    /* hide open button when left pane is open (mobile) */
+    .shell.left-open #openLeft{display:none!important}
+
+    .icon-btn{
+      border:0;background:transparent;width:36px;height:36px;
+      border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer
+    }
+    .icon-btn:hover{background:#f1f5f9}
+    .i{width:20px;height:20px}
+
+    /* Hide left close icon on large screens (since left pane is fixed there) */
+    @media (min-width:1024px){
+      #closeLeft{display:none!important}
+    }
+
     /* ===== Middle (chat) ===== */
     .mid{flex:1;min-width:0;display:flex;flex-direction:column}
-    .chat-header{display:flex;align-items:center;gap:.75rem;padding:1rem;background:#fff;color:var(--text);border-bottom:1px solid var(--border)}
-    .kf{width:44px;height:44px;border-radius:999px;background:var(--kf-red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
+    .chat-header{
+      display:flex;align-items:center;gap:.75rem;
+      padding:1rem;background:#fff;color:var(--text);border-bottom:1px solid var(--border)
+    }
+    .kf{
+      width:44px;height:44px;border-radius:999px;background:var(--kf-red);
+      color:#fff;display:flex;align-items:center;justify-content:center;
+      font-weight:900;cursor:pointer
+    }
     .title{min-width:0}
-    .title button{background:none;border:0;color:var(--text);font-weight:700;font-size:16px;padding:0;cursor:pointer;display:block;text-align:left}
+    .title button{
+      background:none;border:0;color:var(--text);font-weight:700;
+      font-size:16px;padding:0;cursor:pointer;display:block;text-align:left
+    }
     .meta{font-size:12px;color:var(--muted);cursor:pointer}
-    .chat-area{flex:1;overflow:auto;background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 1px);background-size:18px 18px}
+    .chat-area{
+      flex:1;overflow:auto;
+      background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 1px);
+      background-size:18px 18px
+    }
     .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
 
     /* ===== Right (profile) ===== */
-    .right{width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;overflow:hidden;transition:width .25s ease, border-left-width .25s ease}
-
-    @media (max-width: 1023.98px){
+    .right{
+      width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;
+      overflow:hidden;transition:width .25s ease, border-left-width .25s ease;z-index:20
+    }
+    @media (max-width:1023.98px){
       .shell.profile-open .right{width:100%;flex:0 0 100%;border-left-width:1px}
       .shell.profile-open .mid{display:none}
       .shell.profile-open .left{display:none}
     }
-    @media (min-width: 1024px) and (max-width: 1279.98px){
+    @media (min-width:1024px) and (max-width:1279.98px){
       .shell.profile-open .right{width:50%;flex:0 0 50%;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-    @media (min-width: 1280px) and (max-width: 1535.98px){
+    @media (min-width:1280px) and (max-width:1535.98px){
       .shell.profile-open .right{width:640px;flex:0 0 640px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
-    @media (min-width: 1536px){
+    @media (min-width:1536px){
       .shell.profile-open .right{width:720px;flex:0 0 720px;border-left-width:1px}
       .shell.profile-open .left{display:none}
     }
@@ -75,26 +151,41 @@
     .card{border:1px solid var(--border);border-radius:12px;padding:.75rem;text-align:center}
     .num{font-weight:800}
     .lbl{font-size:12px;color:var(--muted)}
-
-    .icon-btn{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
-    .icon-btn:hover{background:#f1f5f9}
-    .i{width:20px;height:20px}
   </style>
 </head>
 <body>
   <div id="shell" class="shell">
+    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+
+    <!-- Left -->
     <aside class="left" aria-label="List">
       <div class="search-box">
         <input type="text" placeholder="Join now to find members..." />
+        <!-- Mobile-only close icon (matches right pane style) -->
+        <button id="closeLeft" class="icon-btn" aria-label="Close members" title="Close">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
       </div>
       <div class="body">
         <div id="memberList" role="list"></div>
-        <div class="disclaimer">This member list is auto-generated for demonstration purposes. Actual community members may differ.</div>
+        <div class="disclaimer">
+          This member list is auto-generated for demonstration purposes. Actual community members may differ.
+        </div>
       </div>
     </aside>
 
+    <!-- Middle -->
     <main class="mid" role="main">
       <header class="chat-header">
+        <!-- Mobile-only open button -->
+        <button id="openLeft" class="arrow-btn" title="Open members" aria-label="Open members">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+
         <div class="kf" id="openProfile" title="Open profile">KF</div>
         <div class="title">
           <button id="openProfile2">KenFolios Business Community</button>
@@ -106,6 +197,7 @@
       </section>
     </main>
 
+    <!-- Right -->
     <aside id="profile" class="right" role="complementary" aria-label="Profile panel">
       <div class="p-head">
         <div style="display:flex;align-items:center;gap:.75rem">
@@ -116,7 +208,9 @@
           </div>
         </div>
         <button id="closeProfile" class="icon-btn" aria-label="Close profile" title="Close">
-          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
         </button>
       </div>
       <div class="p-body">
@@ -133,15 +227,68 @@
 
   <script>
     var shell = document.getElementById('shell');
-    function openProfile(){ shell.classList.add('profile-open'); }
-    function closeProfile(){ shell.classList.remove('profile-open'); }
+    var backdrop = document.getElementById('backdrop');
+    var openLeftBtn = document.getElementById('openLeft');
+    var closeLeftBtn = document.getElementById('closeLeft');
+
+    function openProfile(){
+      shell.classList.remove('left-open');
+      shell.classList.add('profile-open');
+    }
+    function closeProfile(){
+      shell.classList.remove('profile-open');
+    }
+
+    function openLeft(){
+      shell.classList.remove('profile-open');
+      shell.classList.add('left-open');
+      lockScroll(true);
+    }
+    function closeLeft(){
+      shell.classList.remove('left-open');
+      lockScroll(false);
+    }
+
+    function lockScroll(lock){
+      if (window.matchMedia('(max-width:1023.98px)').matches) {
+        document.documentElement.style.overflow = lock ? 'hidden' : '';
+        document.body.style.overflow = lock ? 'hidden' : '';
+      } else {
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Profile controls
     document.getElementById('openProfile').addEventListener('click', openProfile);
     document.getElementById('openProfile2').addEventListener('click', openProfile);
     document.getElementById('openProfile3').addEventListener('click', openProfile);
     document.getElementById('closeProfile').addEventListener('click', closeProfile);
-    window.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeProfile(); }});
 
-    // ===== Left pane: scrollable members with lazy-load =====
+    // Left drawer controls
+    openLeftBtn.addEventListener('click', openLeft);
+    closeLeftBtn.addEventListener('click', closeLeft);
+
+    // Backdrop closes whichever is open
+    backdrop.addEventListener('click', function(){
+      if (shell.classList.contains('left-open')) closeLeft();
+      if (shell.classList.contains('profile-open')) closeProfile();
+    });
+
+    // Esc closes overlays
+    window.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){
+        closeLeft();
+        closeProfile();
+      }
+    });
+
+    // Clear scroll lock on desktop
+    window.addEventListener('resize', function(){
+      if (window.matchMedia('(min-width:1024px)').matches) lockScroll(false);
+    });
+
+    // ===== Member list with lazy-load =====
     (function(){
       var listEl = document.getElementById('memberList');
       if(!listEl) return;
@@ -155,7 +302,6 @@
       function makeMember(idx){
         var f = FIRST[Math.floor(Math.random() * FIRST.length)];
         var l = LAST[Math.floor(Math.random() * LAST.length)];
-        var name = f + ' ' + l;
         var initials = (f[0]||'') + (l[0]||'');
         var minutesAgo = idx * 2 + 1;
         var ago = minutesAgo < 60 ? minutesAgo + ' min' : Math.floor(minutesAgo/60) + ' hr';
@@ -163,11 +309,12 @@
         var item = document.createElement('div');
         item.className = 'member';
         item.setAttribute('role','listitem');
-        item.innerHTML = '<div class="avatar" style="background:'+colors.bg+';color:'+colors.fg+'">'+initials+'</div>'+
-                         '<div style="min-width:0">'+
-                           '<div class="m-name">'+name+'</div>'+
-                           '<div class="m-sub">'+f+' joined KenFolios · '+ago+' ago</div>'+
-                         '</div>';
+        item.innerHTML =
+          '<div class="avatar" style="background:'+colors.bg+';color:'+colors.fg+'">'+initials+'</div>'+
+          '<div style="min-width:0">'+
+            '<div class="m-name">'+f+' '+l+'</div>'+
+            '<div class="m-sub">'+f+' joined KenFolios · '+ago+' ago</div>'+
+          '</div>';
         return item;
       }
 
@@ -176,13 +323,13 @@
         if(loading) return; loading = true;
         var frag = document.createDocumentFragment();
         for(var i=0;i<n;i++) frag.appendChild(makeMember(count++));
-        listEl.appendChild(frag);
+        document.getElementById('memberList').appendChild(frag);
         loading = false;
       }
 
       loadMore(40);
 
-      var bodyEl = listEl.parentElement;
+      var bodyEl = document.getElementById('memberList').parentElement;
       bodyEl.addEventListener('scroll', function(){
         if(bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 40){
           loadMore(30);
