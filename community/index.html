@@ -120,6 +120,24 @@
     }
     .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
 
+    /* ===== Composer ===== */
+    .composer{
+      display:flex;align-items:center;gap:.5rem;
+      padding:.75rem 1rem;background:#fff;border-top:1px solid var(--border);
+    }
+    .composer .pill{
+      display:flex;align-items:center;flex:1;gap:.5rem;
+      border:1px solid var(--border);border-radius:999px;padding:.5rem .75rem;
+      background:#fff
+    }
+    .composer input[type="text"]{
+      flex:1;border:0;outline:0;font-size:14px;min-width:0
+    }
+    .composer .lefty,.composer .righty{display:flex;align-items:center;gap:.25rem}
+    .composer .action{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+    .composer .action:hover{background:#f1f5f9}
+    .composer .send-guard{cursor:text}
+
     /* ===== Right (profile) ===== */
     .right{
       width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;
@@ -195,6 +213,38 @@
       <section class="chat-area">
         <div class="chat-pad">Chat area placeholder</div>
       </section>
+
+      <!-- ===== Composer ===== -->
+      <footer class="composer" role="group" aria-label="Message composer">
+        <div class="lefty">
+          <button class="action" id="emojiBtn" title="Emoji" aria-label="Emoji picker">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="9" cy="10" r="1"/>
+              <circle cx="15" cy="10" r="1"/>
+              <!-- real smile -->
+              <path d="M8 14c1.5 2 6.5 2 8 0"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pill send-guard" id="composerPill" title="Join to start interacting with members">
+          <input id="msgInput" type="text" placeholder="Join to start interacting with members" readonly />
+        </div>
+        <div class="righty">
+          <button class="action" id="attachBtn" title="Attach" aria-label="Attach a file">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15.5V8a5 5 0 0 0-10 0v8a3 3 0 0 0 6 0V9"/>
+            </svg>
+          </button>
+          <button class="action" id="voiceBtn" title="Voice message" aria-label="Record voice">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="2" width="6" height="12" rx="3"/>
+              <path d="M5 10v2a7 7 0 0 0 14 0v-2"/>
+              <path d="M12 19v3"/>
+            </svg>
+          </button>
+        </div>
+      </footer>
     </main>
 
     <!-- Right -->
@@ -286,6 +336,23 @@
     // Clear scroll lock on desktop
     window.addEventListener('resize', function(){
       if (window.matchMedia('(min-width:1024px)').matches) lockScroll(false);
+    });
+
+    // ===== Composer wiring (provisioned for join/payment) =====
+    function openJoinProvision(){
+      /* Placeholder: integrate join/payment modal here later */
+      console.log('Join flow placeholder');
+      // For now, nudge by opening the profile panel
+      openProfile();
+    }
+    ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('click', function(e){
+        e.preventDefault();
+        openJoinProvision();
+      });
+      el.addEventListener('focus', function(){ openJoinProvision(); });
     });
 
     // ===== Member list with lazy-load =====
