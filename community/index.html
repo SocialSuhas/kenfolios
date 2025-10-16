@@ -139,16 +139,76 @@
       opacity:.9;
     }
 
-    /* ===== Chat area background with emoji wallpaper ===== */
+    /* ===== Chat area ===== */
     .chat-area{
       flex:1;
       overflow:auto;
       background-color:hsl(356, 70%, 96%);
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3C!-- icons --%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
       background-repeat:repeat;
       background-size:70px 70px;
     }
-    .chat-pad{padding:1rem;color:var(--muted);font-size:14px}
+
+    /* ===== Chat bubbles ===== */
+    .chat-msg{
+      display:flex;
+      align-items:flex-end;
+      gap:.5rem;
+      margin:1rem;
+      max-width:80%;
+    }
+    .chat-msg.admin{ flex-direction:row; }
+    .chat-msg.member{ flex-direction:row-reverse; margin-left:auto; }
+
+    .chat-msg .avatar{
+      width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      font-weight:700;font-size:13px;background:var(--kf-red);color:#fff;flex-shrink:0;
+    }
+    .chat-msg.member .avatar{
+      background:hsl(210 70% 92%);
+      color:hsl(210 60% 28%);
+    }
+
+    .chat-msg .bubble{
+      background:#fff;
+      padding:.6rem .9rem;
+      border-radius:16px;
+      border:1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+      gap:.25rem;
+      max-width:100%;
+      position:relative;
+    }
+    /* Tails */
+    .chat-msg.admin .bubble::before{
+      content:"";
+      position:absolute;
+      left:-8px;
+      bottom:8px;
+      width:0;
+      height:0;
+      border:8px solid transparent;
+      border-right-color:#fff;
+    }
+    .chat-msg.member .bubble::before{
+      content:"";
+      position:absolute;
+      right:-8px;
+      bottom:8px;
+      width:0;
+      height:0;
+      border:8px solid transparent;
+      border-left-color:#fff;
+    }
+
+    .chat-msg .name{ font-size:13px; font-weight:700; color:var(--muted); }
+    .chat-msg .text{ font-size:14px; line-height:1.4; color:var(--text); }
+    .chat-msg .time{ font-size:11px; color:var(--muted); align-self:flex-end; }
+
+    @media (max-width: 639.98px){
+      .chat-msg{max-width:95%;}
+    }
 
     /* ===== Composer ===== */
     .composer{
@@ -261,8 +321,197 @@
         </div>
       </header>
 
-      <section class="chat-area">
-        <div class="chat-pad">Chat area placeholder</div>
+      <section class="chat-area" id="chatArea">
+        <!-- Welcome + intro -->
+        <div class="chat-msg admin" id="welcomeMsg">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">👋 Welcome to KenFolios Business Community! We’re thrilled to have you here. This space is built for meaningful connections, collaboration, and growth.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Thank you! Happy to be here. How does this community actually work?</div>
+            <div class="time">1 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Great question! Once you join, you’ll get access to curated business discussions, direct networking, and founder-led initiatives. You can chat, collaborate, and share opportunities in real time.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <!-- More Q&A to force scroll and show value -->
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">What do people usually use this for — leads, learning, or partnerships?</div>
+            <div class="time">2 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">All three! Members share qualified leads, ask for expert help, and form partnerships. We also run spotlights and weekend huddles to help you learn fast.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">How do I get started after joining?</div>
+            <div class="time">3 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Post a short intro (what you do + who you want to meet), browse ongoing threads, and DM people who align with your goals. Our team also nudges relevant intros.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Are there any events or live sessions?</div>
+            <div class="time">4 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Yes — monthly founder roundtables, deal rooms, and skill clinics. Recordings are shared for members who can’t join live.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Is there a code of conduct?</div>
+            <div class="time">5 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Simple: Be helpful, transparent, and respectful. No spam or cold pitching — share context and value first. Our moderators keep things high-signal.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Can I get featured or tell my startup story?</div>
+            <div class="time">6 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Absolutely. Share traction and what others can learn. Our editorial picks stories weekly and features them across our channels.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Do you have mentors or office hours?</div>
+            <div class="time">7 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">We run mentor AMAs and 1:1 office hours with operators in growth, brand, hiring, and fundraising. Slots are announced in advance.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Is this only for metros or also tier-2/3 cities?</div>
+            <div class="time">8 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Pan-India. We have chapters and meetups across metros and emerging hubs. Many collabs start online and turn into on-ground partnerships.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">What does a great first post look like?</div>
+            <div class="time">9 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Keep it crisp: one-liner about what you do, one problem you solve, one thing you need, and one way you can help others. Add a link if relevant.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
+
+        <div class="chat-msg member">
+          <div class="bubble">
+            <div class="name">New Member</div>
+            <div class="text">Sounds good. Where do I join?</div>
+            <div class="time">10 min ago</div>
+          </div>
+          <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
+        </div>
+
+        <div class="chat-msg admin">
+          <div class="avatar">KF</div>
+          <div class="bubble">
+            <div class="name">Community Admin</div>
+            <div class="text">Tap <strong>Join Now</strong> at the top — we’ll guide you through a quick onboarding so you can start meeting relevant founders today.</div>
+            <div class="time">Just now</div>
+          </div>
+        </div>
       </section>
 
       <!-- Composer -->
@@ -397,10 +646,14 @@
       el.addEventListener('focus', function(){ openJoinProvision(); });
     });
 
-    // Header CTAs open the profile (right pane)
-    ['aboutBtn','learnBtn','joinBtn'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(el) el.addEventListener('click', openProfile);
+    // Header CTAs
+    document.getElementById('aboutBtn').addEventListener('click', openProfile);
+    document.getElementById('joinBtn').addEventListener('click', openProfile);
+    document.getElementById('learnBtn').addEventListener('click', function(){
+      const target = document.getElementById('welcomeMsg');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
 
     (function(){
