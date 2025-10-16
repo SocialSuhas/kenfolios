@@ -169,17 +169,27 @@
       color:hsl(210 60% 28%);
     }
 
-    .chat-msg .bubble{
-      background:#fff;
-      padding:.6rem .9rem;
-      border-radius:16px;
-      border:1px solid var(--border);
-      display:flex;
-      flex-direction:column;
-      gap:.25rem;
-      max-width:100%;
-      position:relative;
-    }
+    .chat-msg .bubble {
+  background:#fff;
+  padding:.6rem .9rem;
+  border-radius:16px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:.25rem;
+  max-width:600px;          /* ⬅ Limit width on desktop */
+  width:fit-content;
+  position:relative;
+  word-wrap:break-word;
+}
+
+@media (max-width: 639.98px) {
+  .chat-msg .bubble {
+    max-width:85%;          /* ⬅ Responsive width on mobile */
+  }
+
+}
+
     /* Tails */
     .chat-msg.admin .bubble::before{
       content:"";
