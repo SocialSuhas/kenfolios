@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KenFolios Business Community — Join (v2)</title>
+  <title>KenFolios Business Community — Join</title>
   <meta name="theme-color" content="#E11D2E" />
   <style>
     :root{
@@ -26,8 +26,7 @@
     .left{width:var(--left-width);flex:0 0 var(--left-width);border-right:1px solid var(--border);background:#fff;display:none}
     @media (min-width: 1024px){ .left{display:block} #openDrawer{display:none} }
     .left .search-box{padding:.5rem 1rem;border-bottom:1px solid var(--border);} 
-
-    /* Desktop search — keep original compact size */
+    .left .search-box .search-icn{position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none;opacity:.9}
     .left .search-input{
       width:100%;
       padding:.5rem .75rem;
@@ -37,12 +36,20 @@
     }
     .left .search-input::placeholder{color:var(--muted)}
     .left .search-input:hover{box-shadow:0 3px 10px rgba(0,0,0,0.08)}
+    .left .search-input:focus{outline:none;border-color:var(--kf-red);box-shadow:0 0 0 4px rgba(225,29,46,0.15),0 4px 12px rgba(0,0,0,0.08);transform:translateY(-1px)}
+    .left .search-input::placeholder{color:var(--muted)}
+    .left .search-input:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+    .left .search-input:focus{outline:none;border-color:var(--kf-red);box-shadow:0 0 0 4px rgba(225,29,46,0.15),0 6px 16px rgba(0,0,0,0.1);transform:translateY(-1px)}
+    .left .search-input::placeholder{color:var(--muted)} 
+    .left .search-input:hover{box-shadow:0 3px 10px rgba(0,0,0,0.08)} 
+    .left .search-input:focus{outline:none;border-color:var(--kf-red);box-shadow:0 0 0 4px rgba(225,29,46,0.15),0 4px 12px rgba(0,0,0,0.08);transform:translateY(-1px)}
+    .left .search-input::placeholder{color:var(--muted)}
+    .left .search-input::placeholder{color:var(--muted)}
     .left .search-input:focus{
       outline:none;
       border-color:var(--kf-red);
       box-shadow:0 0 0 3px rgba(225,29,46,0.15);
     }
-
     .left .body{height:calc(100% - 57px);overflow:auto;padding:.5rem;display:block}
     .disclaimer{position:sticky;bottom:0;background:#f8fafc;font-size:11px;color:var(--muted);padding:.5rem 1rem;border-top:1px solid var(--border);text-align:center}
 
@@ -103,19 +110,6 @@
       .drawer{position:fixed;inset:0 30% 0 0;max-width:420px;background:#fff;box-shadow:var(--shadow);transform:translateX(-100%);transition:transform .25s ease}
       .drawer.open{transform:translateX(0)}
       .drawer-scrim.open{display:block}
-
-      /* Mobile search — make bigger */
-      .drawer .search-box{display:flex;align-items:center;gap:.5rem;padding:.75rem;border-bottom:1px solid var(--border)}
-      .drawer .search-input{
-        width:100%;
-        padding:.875rem 1rem; /* bigger */
-        font-size:16px;       /* bigger */
-        border:1px solid var(--border);
-        border-radius:12px;
-      }
-      .drawer .search-input::placeholder{color:var(--muted)}
-      .drawer .search-input:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
-      .drawer .search-input:focus{outline:none;border-color:var(--kf-red);box-shadow:0 0 0 4px rgba(225,29,46,0.15)}
     }
   </style>
 </head>
@@ -124,7 +118,7 @@
     <!-- Desktop left list -->
     <aside class="left" aria-label="Member list">
       <div class="search-box">
-        <!-- Removed magnifying glass / big icon by design -->
+        
         <input id="search" class="search-input" type="text" placeholder="Join now to find members..." aria-label="Search members">
       </div>
       <div class="body">
@@ -224,10 +218,6 @@
         'aishwarya rai','kareena kapoor','sonia gandhi','arvind kejriwal','amit shah'
       ]);
 
-      // Track last 300 names to prevent repeats within that window
-      var RECENT_SET = new Set();
-      var RECENT_QUEUE = [];
-
       var FIRST = ['Aarav','Abhay','Abhinav','Aditya','Advait','Aisha','Akanksha','Akshay','Amit','Amrita','Ananya','Aniket','Anil','Anisha','Anirudh','Ankita','Anmol','Ansh','Arjun','Arnav','Arvind','Asha','Ashish','Avni','Ayush','Bhavana','Chirag','Darshan','Dev','Dhruv','Divya','Gaurav','Harsh','Harsha','Ishaan','Jai','Jatin','Kajal','Kamal','Karan','Kartik','Kavya','Khushi','Kiran','Krishna','Lakshmi','Mahesh','Mansi','Manish','Meera','Megha','Mohit','Namrata','Navin','Neha','Nikita','Nilesh','Nirav','Nisha','Nitin','Pankaj','Parth','Payal','Pooja','Pranav','Prashant','Pratik','Preeti','Priya','Rachna','Rahul','Raj','Rajan','Rajesh','Rakesh','Rashi','Rishi','Ritika','Rohan','Rohit','Sakshi','Sameer','Sana','Sandeep','Sanjana','Sanjay','Sanket','Sarthak','Sarita','Seema','Shalini','Shambhavi','Shashank','Shekhar','Shivani','Shraddha','Shubham','Shweta','Sneha','Sonia','Soumya','Suhas','Sumit','Sunil','Suresh','Sushant','Tanay','Tanvi','Tarun','Trisha','Uday','Uma','Urvashi','Vaibhav','Varun','Vasu','Vedant','Vibha','Vidya','Vikram','Vimal','Vinay','Vinita','Viplav','Viraj','Vishal','Yash','Yuvraj','Kunal','Nishant','Ritu','Isha','Aparna','Komal','Sourabh'];
       var LAST = ['Agrawal','Ahluwalia','Anand','Babu','Bajaj','Balakrishnan','Banerjee','Bansal','Basu','Bhagat','Bhandari','Bharadwaj','Bhat','Bhatia','Bhatnagar','Bhattacharya','Bose','Chandra','Chaudhary','Chawla','Chopra','Das','Desai','Devi','Dixit','Dubey','Gandhi','Ganesh','Garg','Ghosh','Gill','Goel','Gopal','Gopinath','Gupta','Iyer','Jain','Jha','Joshi','Kadam','Kapoor','Kashyap','Kaur','Khanna','Khatri','Kohli','Kulkarni','Kumar','Mahajan','Malhotra','Mehta','Menon','Mishra','Modi','Mukherjee','Murthy','Nair','Naidu','Naik','Namboodiri','Nanda','Narayan','Natarajan','Navlakha','Pandey','Pandit','Parikh','Pillai','Prasad','Raghavan','Rai','Rajput','Raman','Ramaswamy','Rana','Rani','Rao','Reddy','Sachdeva','Saha','Sahu','Saini','Saksena','Salvi','Saran','Sarkar','Saxena','Sen','Sengupta','Sethi','Shah','Shankar','Sharma','Shetty','Shinde','Singh','Sinha','Srinivasan','Subramanian','Tandon','Trivedi','Tyagi','Upadhyay','Varma','Vashisht','Verma','Vyas','Yadav','Zaveri'];
 
@@ -235,22 +225,9 @@
       function pastel(seed){ var h=(seed*47)%360; return {bg: 'hsl('+h+' 70% 92%)', fg:'hsl('+h+' 60% 28%)'}; }
       function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
       function safeName(){
-        var f,l; var tries=0; var full;
-        do {
-          f = pick(FIRST); l = pick(LAST);
-          full = (f + ' ' + l).toLowerCase();
-          tries++;
-        } while (
-          (BLOCKED.has(f) || BLOCKED.has(l) || FAMOUS_FULL.has(full) || RECENT_SET.has(full))
-          && tries < 200
-        );
-        // Record this name into the recent window (size 300)
-        RECENT_SET.add(full);
-        RECENT_QUEUE.push(full);
-        if(RECENT_QUEUE.length > 300){
-          var old = RECENT_QUEUE.shift();
-          RECENT_SET.delete(old);
-        }
+        var f,l; var tries=0;
+        do { f = pick(FIRST); l = pick(LAST); tries++; }
+        while ((BLOCKED.has(f) || BLOCKED.has(l) || FAMOUS_FULL.has((f+' '+l).toLowerCase())) && tries < 60);
         return {f,l};
       }
 
@@ -282,29 +259,17 @@
         loading = false;
       }
 
-      if(listEl) loadMore(60, listEl);
-      if(mListEl) loadMore(60, mListEl);
+      if(listEl) loadMore(40, listEl);
+      if(mListEl) loadMore(40, mListEl);
 
       function setupInfiniteScroll(containerEl, listEl){
         if(!containerEl || !listEl) return;
-        // Add a visible loader/sentinel at the end
         var sentinel = document.createElement('div');
-        sentinel.className = 'loader';
         sentinel.setAttribute('aria-hidden','true');
-        sentinel.style.cssText = 'padding:12px;text-align:center;color:var(--muted);font-size:12px;';
-        sentinel.textContent = 'Loading more…';
         listEl.appendChild(sentinel);
-
-        var ticking = false;
         var io = new IntersectionObserver(function(entries){
-          entries.forEach(function(e){
-            if(e.isIntersecting && !ticking){
-              ticking = true;
-              // Slight delay to avoid thrashing when rendering many items
-              setTimeout(function(){ loadMore(40, listEl); ticking = false; }, 120);
-            }
-          });
-        },{root:containerEl, rootMargin:'0px 0px 800px 0px'});
+          entries.forEach(function(e){ if(e.isIntersecting){ loadMore(30, listEl); } });
+        },{root:containerEl, rootMargin:'0px 0px 200px 0px'});
         io.observe(sentinel);
       }
       if(listEl) setupInfiniteScroll(listEl.parentElement, listEl);
