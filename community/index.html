@@ -1316,91 +1316,79 @@
   }
 })();
 
-/* ===== Member count: configurable start + daily incremental (30–50) ===== */
+/* ===== Member count: random 1–2 increment every 1–60 minutes ===== */
 (function(){
-  var DEFAULT_START = 23338;
-  var MIN = 30, MAX = 50;
-  var KEY = 'kf_member_counter_v2';
+  const KEY = 'kf_member_counter_v3';
+  const START_COUNT = 23338;   // starting figure
+  const MIN_INC = 1;
+  const MAX_INC = 2;
 
-  var desiredStart = (typeof window.KF_MEMBER_START === 'number' && window.KF_MEMBER_START >= 0) ? Math.floor(window.KF_MEMBER_START) : DEFAULT_START;
-
+  // Format number with Indian commas
   function fmt(n){
     try { return new Intl.NumberFormat('en-IN').format(n); }
     catch(e){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   }
-  function isoDate(d){
-    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
-  }
-  function daysBetween(aStr, bStr){
-    var a = new Date(aStr+'T00:00:00Z');
-    var b = new Date(bStr+'T00:00:00Z');
-    return Math.floor((b - a) / 86400000);
+
+  // Load stored data or initialize
+  let data;
+  try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e){ data = {}; }
+  if (typeof data.count !== 'number') {
+    data = { count: START_COUNT };
   }
 
-  var todayISO = isoDate(new Date());
-  var data;
-  try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); }
-  catch(e){ data = {}; }
-
-  if(!data.count || !data.lastDate || typeof data.baseStart !== 'number'){
-    data = { count: desiredStart, baseStart: desiredStart, lastDate: todayISO };
-  } else {
-    if (data.baseStart !== desiredStart) {
-      var delta = desiredStart - data.baseStart;
-      data.count = Math.max(0, (data.count|0) + delta);
-      data.baseStart = desiredStart;
-    }
-    var diff = daysBetween(data.lastDate, todayISO);
-    if(diff > 0){
-      var incTotal = 0;
-      for(var i=0;i<diff;i++){
-        incTotal += Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
-      }
-      data.count += incTotal;
-      data.lastDate = todayISO;
-    }
-  }
-  localStorage.setItem(KEY, JSON.stringify(data));
-
+  // Render member count in header and profile panel
   function renderCount(n){
-    var text = fmt(n) + ' members';
-    var headerEl = document.getElementById('openProfile3'); // top header meta
-    if(headerEl) headerEl.textContent = text;
-    var profileEl = document.getElementById('profileMembers'); // new hero section target
-    if(profileEl) profileEl.textContent = text;
+    const text = fmt(n) + ' members';
+    const headerEl = document.getElementById('openProfile3');
+    const profileEl = document.getElementById('profileMembers');
+    if (headerEl) headerEl.textContent = text;
+    if (profileEl) profileEl.textContent = text;
   }
-  renderCount(data.count);
 
+  function save(){
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  // Increment count randomly by 1 or 2
+  function increment(){
+    const inc = Math.floor(Math.random() * (MAX_INC - MIN_INC + 1)) + MIN_INC;
+    data.count += inc;
+    save();
+    renderCount(data.count);
+    scheduleNext();
+  }
+
+  // Schedule next increment between 1 and 60 minutes
+  function scheduleNext(){
+    const delayMinutes = Math.floor(Math.random() * 60) + 1; 
+    const delayMs = delayMinutes * 60 * 1000;
+    setTimeout(increment, delayMs);
+  }
+
+  // Initial render and start loop
+  renderCount(data.count);
+  scheduleNext();
+
+  // Optional manual reset and set functions
   window.KF_setMemberStart = function(newStart){
-    var ns = Number(newStart);
+    const ns = Number(newStart);
     if (!isFinite(ns) || ns < 0) return false;
-    ns = Math.floor(ns);
-    try {
-      var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
-      if (typeof d.count !== 'number' || typeof d.baseStart !== 'number') {
-        d = { count: ns, baseStart: ns, lastDate: isoDate(new Date()) };
-      } else {
-        var delta = ns - d.baseStart;
-        d.count = Math.max(0, (d.count|0) + delta);
-        d.baseStart = ns;
-      }
-      localStorage.setItem(KEY, JSON.stringify(d));
-      renderCount(d.count);
-      return true;
-    } catch(e){
-      return false;
-    }
+    data.count = Math.floor(ns);
+    save();
+    renderCount(data.count);
+    return true;
   };
 
   window.KF_resetMemberCounter = function(startAt){
-    var ns = Number(startAt);
-    if (!isFinite(ns) || ns < 0) ns = desiredStart;
-    var fresh = { count: Math.floor(ns), baseStart: Math.floor(ns), lastDate: isoDate(new Date()) };
-    localStorage.setItem(KEY, JSON.stringify(fresh));
-    renderCount(fresh.count);
+    const ns = Number(startAt);
+    data.count = isFinite(ns) && ns >= 0 ? Math.floor(ns) : START_COUNT;
+    save();
+    renderCount(data.count);
     return true;
   };
 })();
+
+
 
 /* ===== Minimal profile interactions (social only) ===== */
 (function(){
