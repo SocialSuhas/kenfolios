@@ -300,6 +300,16 @@
     .composer .action:hover{background:#f1f5f9}
     .composer .send-guard{cursor:text}
 
+    /* ===== Global disclaimer (below composer) ===== */
+    .global-disclaimer{
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      padding:.5rem 1rem;
+      background:#fff;
+      border-top:1px solid var(--border);
+    }
+
     /* ===== Right (profile) ===== */
     .right{
       width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;
@@ -595,32 +605,12 @@
           </button>
         </div>
       </footer>
-      <!-- ✅ CSS: place this inside your <style> block below the composer styles -->
-<style>
-  .global-disclaimer {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: center;
-    padding: .5rem 1rem;
-    background: #fff;
-    border-top: 1px solid var(--border);
-  }
-</style>
 
-<!-- ✅ HTML: place this right below the composer footer -->
-<div class="global-disclaimer">
-  The UI and users shown here are for demonstration purposes and may differ in actual usage.
-  &copy; <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
-</div>
-
-<!-- ✅ JS: place this at the very end of your existing <script> -->
-<script>
-  (function(){
-    var y = document.getElementById('kfYear');
-    if (y) { y.textContent = new Date().getFullYear(); }
-  })();
-</script>
-
+      <!-- ✅ Global Disclaimer (appears just below the composer) -->
+      <div class="global-disclaimer" role="note" aria-label="Demo disclaimer">
+        The UI and users shown here are for demonstration purposes and may differ in actual usage.
+        &copy; <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
+      </div>
     </main>
 
     <!-- Right -->
@@ -955,6 +945,12 @@
         else timeEl.textContent = minutes + ' min ago';
         minuteBudget = Math.max(0, minuteBudget - 1);
       }
+    })();
+
+    /* ===== Dynamic year for disclaimer ===== */
+    (function(){
+      var y = document.getElementById('kfYear');
+      if (y) y.textContent = new Date().getFullYear();
     })();
   </script>
 </body>
