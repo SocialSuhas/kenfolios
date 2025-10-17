@@ -1,10 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/svg+xml"
-  href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KenFolios"><circle cx="32" cy="32" r="28" fill="%23E11D2E"/><g fill="%23fff"><text x="32" y="38" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial" font-size="28" font-weight="900" letter-spacing="1">KF</text></g></svg>'>
-<link rel="mask-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="%23000"/></svg>' color="#E11D2E">
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>KenFolios Business Community — Join</title>
@@ -540,8 +536,21 @@
   }
 }
 
+/* === Lightbox message body — slightly more upward === */
+#learnLightbox .bubble {
+  row-gap: 0.3rem;
+  padding-top: 0.65rem;        /* pulled up a bit more */
+  padding-bottom: 0.7rem;
+}
 
+#learnLightbox .bubble .text {
+  margin-top: -0.7rem;         /* slightly stronger upward shift */
+  line-height: 1.4;
+}
 
+#learnLightbox .bubble .reactions {
+  margin-top: 0.65rem;         /* maintain balanced spacing below */
+}
 
   </style>
 </head>
@@ -1101,6 +1110,27 @@
   window.KF_closeLearnLightbox = close;
 })();
 
+document.getElementById('learnBtn')?.addEventListener('click', function(){
+  const pinnedMsg = document.getElementById('welcomeMsg');
+  if (!pinnedMsg) return;
+
+  // === 1) Update the lightbox header text ===
+  // Assuming your lightbox is using the pinned message or a dedicated header element
+  const nameEl = pinnedMsg.querySelector('.name');
+  if (nameEl) nameEl.textContent = 'Message From Community Admin';
+
+  // === 2) Remove the name line from the message bubble ===
+  // This makes the body just show the welcome message itself
+  const bubbleName = pinnedMsg.querySelector('.bubble .name');
+  if (bubbleName) bubbleName.remove();
+
+  // === 3) Scroll into view or trigger your lightbox ===
+  pinnedMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // (Optional: add highlight effect or open your modal/lightbox)
+});
+
+
 /* ===== Names pool (shared) ===== */
 (function(){
   window.KF_FIRST = ["Aarav","Aaryan","Abhay","Abhinav","Aditya","Advait","Ahaan","Aisha","Akanksha","Akshay","Amit","Amrita","Ananya","Aniket","Anil","Anisha","Ankit","Ankita","Anmol","Ansh","Arjun","Arnav","Arvind","Asha","Ashish","Ayush","Bhavana","Chirag","Darshan","Dev","Dhruv","Divya","Faizan","Farhan","Gaurav","Harsh","Harsha","Ishaan","Jai","Jatin","Kajal","Kamal","Karan","Kartik","Kavya","Khushi","Kiran","Krishna","Lakshmi","Madhuri","Mahesh","Mansi","Manish","Meera","Megha","Mohit","Namrata","Navin","Neha","Nikita","Nilesh","Nirav","Nisha","Nitin","Pankaj","Parth","Payal","Pooja","Pranav","Prashant","Pratik","Preeti","Priya","Rachna","Rahul","Raj","Rajan","Rajesh","Rakesh","Rishi","Ritika","Rohan","Rohit","Sakshi","Salman","Sameer","Sana","Sandeep","Sanjana","Sanjay","Sanket","Sarthak","Sarita","Seema","Shalini","Shambhavi","Shashank","Shekhar","Shivani","Shraddha","Shubham","Shweta","Sneha","Sonia","Soumya","Suhas","Sumit","Sunil","Suresh","Sushant","Tanay","Tanvi","Tarun","Trisha","Uday","Uma","Urvashi","Vaibhav","Varun","Vasu","Vedant","Vibha","Vidya","Vikram","Vimal","Vinay","Vinita","Viplav","Viraj","Vishal","Yash","Yuvraj"];
@@ -1406,6 +1436,50 @@
 (function(){
   var y = document.getElementById('kfYear');
   if (y) y.textContent = new Date().getFullYear();
+})();
+
+/* Override: ensure lightbox shows custom title + no name in body */
+(function(){
+  function prepareLightboxBody(){
+    var lbTitle = document.getElementById('lbTitle');
+    if (lbTitle) lbTitle.textContent = 'Message From Community Admin';
+
+    var host = document.getElementById('lbBubbleHost');
+    var src  = document.querySelector('#welcomeMsg .bubble');
+    if (host){
+      host.innerHTML = '';
+      if (src){
+        var clone = src.cloneNode(true);
+        var n = clone.querySelector('.name'); if (n) n.remove(); // remove "Community Admin"
+        host.appendChild(clone);
+      }
+    }
+  }
+
+  // If an old KF_openLearnLightbox exists, wrap it; else, create a basic opener
+  var oldOpen = window.KF_openLearnLightbox;
+  window.KF_openLearnLightbox = function(){
+    prepareLightboxBody();
+    if (typeof oldOpen === 'function'){
+      oldOpen();                       // use existing open (backdrop/lock/etc.)
+    } else {
+      // minimal open if old one isn't defined
+      var shell = document.getElementById('shell');
+      var overlay = document.getElementById('learnLightbox');
+      if (shell) shell.classList.add('lightbox-open');
+      if (overlay) overlay.setAttribute('aria-hidden','false');
+    }
+  };
+
+  // Ensure the Learn button calls our overridden function
+  var learnBtn = document.getElementById('learnBtn');
+  if (learnBtn){
+    // Remove prior listeners by resetting onclick; then add ours
+    learnBtn.onclick = function(e){
+      e.preventDefault();
+      window.KF_openLearnLightbox();
+    };
+  }
 })();
 </script>
 
