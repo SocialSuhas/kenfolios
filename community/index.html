@@ -588,6 +588,46 @@
   .sk-ava::after, .sk-line::after{ animation:none }
   #chatArea.loading .chat-msg, #chatArea.loading .chat-notes{ transition:none }
 }
+/* === Left list loading skeleton + stagger reveal (scoped to .left .body) === */
+.left .body{ position:relative; }
+
+/* Hide the list while skeleton is active — search box stays visible */
+.left .body.skel-on #memberList{ opacity:0; pointer-events:none; }
+
+/* Skeleton panel */
+#leftSkeleton{
+  position:absolute; inset:0;
+  padding:.6rem .5rem 1rem .5rem;
+  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.92));
+  border-bottom:1px solid var(--border);
+  display:none; z-index:2;
+}
+.left .body.skel-on #leftSkeleton{ display:block; }
+
+/* Skeleton rows */
+.lk-row{ display:flex; align-items:center; gap:.6rem; margin:.5rem .25rem; }
+.lk-ava{ width:40px; height:40px; border-radius:999px; background:#e5e7eb; position:relative; overflow:hidden; }
+.lk-line{ height:11px; border-radius:6px; background:#e5e7eb; position:relative; overflow:hidden; }
+.lk-w1{ width:62% } .lk-w2{ width:46% } .lk-w3{ width:58% } .lk-w4{ width:52% } .lk-w5{ width:40% }
+
+/* Shimmer */
+.lk-ava::after, .lk-line::after{
+  content:""; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation:lkShimmer 1.15s infinite;
+}
+@keyframes lkShimmer{ 100% { transform:translateX(100%); } }
+
+/* Staggered reveal of real members */
+.member.stagger{ opacity:0; transform:translateY(4px); }
+.member.stagger.show{
+  opacity:1; transform:translateY(0);
+  transition:opacity .22s ease, transform .22s ease;
+  transition-delay: var(--d, 0ms);
+}
+
+/* Safety: when skeleton is off, list is visible */
+.left .body:not(.skel-on) #memberList{ opacity:1; pointer-events:auto; }
 
 
   </style>
@@ -607,6 +647,34 @@
         </button>
       </div>
       <div class="body">
+      <!-- Left list skeleton (only covers the list area, not the search box) -->
+<div id="leftSkeleton" aria-hidden="true">
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w2"></div>
+    </div>
+  </div>
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w3"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w4"></div>
+    </div>
+  </div>
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w5"></div>
+    </div>
+  </div>
+</div>
+<!-- Left list skeleton (only covers the list area, not the search box) -->
         <div id="memberList" role="list"></div>
         <!-- (hidden left disclaimer)
         <div class="disclaimer">
@@ -1565,6 +1633,96 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     });});
   });
 })();
+
+
+/* === Left pane loader + staggered reveal (scoped + desktop-safe) === */
+(function(){
+  var left      = document.querySelector('.left');
+  var leftBody  = left ? left.querySelector('.body') : null;
+  var list      = document.getElementById('memberList');
+  var skel      = document.getElementById('leftSkeleton');
+  if (!left || !leftBody || !list || !skel) return;
+
+  var started   = false;   // skeleton started
+  var revealed  = false;   // real list shown
+  var failSafeT = null;
+
+  function addStaggerTo(nodeList, baseDelay){
+    baseDelay = baseDelay || 0;
+    nodeList.forEach(function(el, i){
+      if (el.classList.contains('show')) return;
+      el.classList.add('stagger');
+      el.style.setProperty('--d', (baseDelay + i*45) + 'ms'); // tweak 45ms for speed
+      requestAnimationFrame(function(){ el.classList.add('show'); });
+    });
+  }
+
+  function revealNow(){
+    if (failSafeT) { clearTimeout(failSafeT); failSafeT = null; }
+
+    leftBody.classList.remove('skel-on');  // show the list area
+    revealed = true;
+
+    addStaggerTo([].slice.call(list.querySelectorAll('.member')), 0);
+
+    // Safety: ensure fully visible even if CSS got overridden
+    list.style.removeProperty('opacity');
+    list.style.removeProperty('pointer-events');
+
+    // Remove skeleton to avoid overlay glitches
+    if (skel.parentNode) skel.parentNode.removeChild(skel);
+  }
+
+  function runSkeletonIntro(){
+    if (revealed || started) return;
+    started = true;
+
+    // Activate skeleton only for the list area (search box remains visible)
+    leftBody.classList.add('skel-on');
+
+    // Fail-safe: never keep it hidden > 3s
+    failSafeT = setTimeout(revealNow, 3000);
+
+    // Realistic delay (adjust to taste)
+    var delay = 1200 + Math.floor(Math.random() * 1200); // 1.2s – 2.4s
+    setTimeout(revealNow, delay);
+  }
+
+  // Expose for optional external trigger
+  window.runLeftSkeletonIntro = runSkeletonIntro;
+
+  // --- DESKTOP: auto-start skeleton immediately (pane visible by default) ---
+  if (window.matchMedia('(min-width:1024px)').matches){
+    // Add the skeleton class early (no HTML change needed)
+    leftBody.classList.add('skel-on');
+    // Kick the intro next frame so users see skeleton before list
+    requestAnimationFrame(runSkeletonIntro);
+  }
+
+  // --- MOBILE: play skeleton on first drawer open ---
+  var openLeftBtn = document.getElementById('openLeft');
+  if (openLeftBtn){
+    openLeftBtn.addEventListener('click', function(){
+      if (!revealed && !started){
+        runSkeletonIntro();
+      }
+    });
+  }
+
+  // Observe newly appended members (infinite scroll) and fade them in
+  var obs = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if (n && n.classList && n.classList.contains('member')){
+          addStaggerTo([n], 0);
+        }
+      });
+    });
+  });
+  obs.observe(list, { childList:true });
+})();
+
+
 </script>
 
 </body>
