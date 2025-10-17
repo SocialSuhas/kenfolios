@@ -953,5 +953,104 @@
       if (y) y.textContent = new Date().getFullYear();
     })();
   </script>
+<script>
+/* ===== Member count: configurable start + daily incremental (30–50) ===== */
+(function(){
+  var DEFAULT_START = 23338;  // original starting figure
+  var MIN = 30, MAX = 50;     // daily increment range (inclusive)
+  var KEY = 'kf_member_counter_v2'; // bumped version to avoid old format issues
+
+  // Allow overriding start: set window.KF_MEMBER_START = <number> before this script
+  var desiredStart = (typeof window.KF_MEMBER_START === 'number' && window.KF_MEMBER_START >= 0)
+    ? Math.floor(window.KF_MEMBER_START)
+    : DEFAULT_START;
+
+  function fmt(n){
+    try { return new Intl.NumberFormat('en-IN').format(n); }
+    catch(e){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  }
+  function isoDate(d){
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+           .toISOString().slice(0,10);
+  }
+  function daysBetween(aStr, bStr){
+    var a = new Date(aStr+'T00:00:00Z');
+    var b = new Date(bStr+'T00:00:00Z');
+    return Math.floor((b - a) / 86400000);
+  }
+
+  var todayISO = isoDate(new Date());
+  var data;
+  try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); }
+  catch(e){ data = {}; }
+
+  // First-time seed
+  if(!data.count || !data.lastDate || typeof data.baseStart !== 'number'){
+    data = { count: desiredStart, baseStart: desiredStart, lastDate: todayISO };
+  } else {
+    // If the configured starting figure changed later, migrate by the delta
+    if (data.baseStart !== desiredStart) {
+      var delta = desiredStart - data.baseStart;
+      data.count = Math.max(0, (data.count|0) + delta);
+      data.baseStart = desiredStart;
+    }
+    // Catch up day-by-day increments
+    var diff = daysBetween(data.lastDate, todayISO);
+    if(diff > 0){
+      var incTotal = 0;
+      for(var i=0;i<diff;i++){
+        incTotal += Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+      }
+      data.count += incTotal;
+      data.lastDate = todayISO;
+    }
+  }
+
+  // Persist
+  localStorage.setItem(KEY, JSON.stringify(data));
+
+  // Render
+  function renderCount(n){
+    var text = fmt(n) + ' members';
+    var headerEl = document.getElementById('openProfile3');
+    if(headerEl) headerEl.textContent = text;
+    var profileEl = document.querySelector('#profile .p-head .lbl');
+    if(profileEl) profileEl.textContent = text;
+  }
+  renderCount(data.count);
+
+  // Expose helpers to change the start later (no reset needed)
+  window.KF_setMemberStart = function(newStart){
+    var ns = Number(newStart);
+    if (!isFinite(ns) || ns < 0) return false;
+    ns = Math.floor(ns);
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+      if (typeof d.count !== 'number' || typeof d.baseStart !== 'number') {
+        d = { count: ns, baseStart: ns, lastDate: isoDate(new Date()) };
+      } else {
+        var delta = ns - d.baseStart;
+        d.count = Math.max(0, (d.count|0) + delta);
+        d.baseStart = ns;
+      }
+      localStorage.setItem(KEY, JSON.stringify(d));
+      renderCount(d.count);
+      return true;
+    } catch(e){ return false; }
+  };
+
+  // Optional: full reset utility if you ever want to start fresh
+  window.KF_resetMemberCounter = function(startAt){
+    var ns = Number(startAt);
+    if (!isFinite(ns) || ns < 0) ns = desiredStart;
+    var fresh = { count: Math.floor(ns), baseStart: Math.floor(ns), lastDate: isoDate(new Date()) };
+    localStorage.setItem(KEY, JSON.stringify(fresh));
+    renderCount(fresh.count);
+    return true;
+  };
+})();
+</script>
+
+
 </body>
 </html>
