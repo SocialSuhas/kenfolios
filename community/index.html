@@ -399,6 +399,146 @@
   @media (prefers-reduced-motion: reduce){
     .lightbox-card{ animation:none }
   }
+  
+ /* === Ultra-small header layout with drawer + KF icon + 2-line title === */
+/* Expanded to 400px so 398–391px are covered */
+@media (max-width: 400px){
+  .chat-header{
+    display:grid;
+    grid-template-columns:auto auto 1fr; /* drawer | KF icon | title */
+    grid-template-rows:auto auto;        /* row1: header, row2: actions */
+    align-items:center;
+    column-gap:.4rem;
+    row-gap:.5rem;
+  }
+
+  /* Drawer icon (left) */
+  #openLeft{
+    grid-column:1;
+    grid-row:1;
+    width:36px; height:36px;
+    flex-shrink:0;
+  }
+
+  /* KF logo (center) */
+  .kf{
+    grid-column:2;
+    grid-row:1;
+    width:40px; height:40px;
+    flex:0 0 auto;
+  }
+
+  /* Title (right, 2-line clamp) */
+  .title{
+    grid-column:3;
+    grid-row:1;
+    min-width:0;
+  }
+  .title button{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    white-space:normal;
+    text-overflow:ellipsis;
+    line-height:1.15;
+    max-height:calc(1.15em * 2);
+  }
+  .title .meta{ display:none; }
+
+  /* Actions on row 2 */
+  .header-actions{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+  }
+}
+
+/* Optional extra-tightening below 360px */
+@media (max-width: 360px){
+  .title button{ font-size:15px; }
+  .kf{ width:38px; height:38px; }
+  #openLeft{ width:34px; height:34px; }
+}
+
+/* === Keep header buttons tidy on very small screens === */
+
+/* 1) Compress labels so "Learn More" doesn't wrap, keep equal heights */
+@media (max-width: 373px){
+  .header-actions{
+    display:grid;                /* already grid on small, make explicit */
+    grid-template-columns:repeat(3,1fr);
+    gap:.4rem;
+  }
+  .header-actions .cta-btn{
+    display:flex; align-items:center; justify-content:center;
+    padding:.35rem .5rem;        /* tighter */
+    font-size:14px;              /* slightly smaller */
+    line-height:1.05;
+    white-space:nowrap;          /* no wrapping */
+    min-height:36px;             /* equal heights */
+  }
+  /* Nudge "Learn More" to fit without wrap */
+  #learnBtn{ letter-spacing:-0.1px; }
+}
+
+/* 2) Ultra-narrow fallback: icon-only buttons so the row stays one line */
+@media (max-width: 340px){
+  .header-actions .cta-btn{
+    position:relative;
+    padding:.45rem;              /* square-ish */
+    min-height:36px;
+    font-size:0;                 /* hide text, show icon via ::before */
+  }
+  #aboutBtn::before,
+  #learnBtn::before,
+  #joinBtn::before{
+    font-size:16px;
+    line-height:1;
+  }
+  #aboutBtn::before{ content:"ℹ️"; }
+  #learnBtn::before{ content:"📖"; }
+  #joinBtn::before{ content:"➕"; }
+}
+/* === Notification truncation + small-font handling on screens ≤ 400px === */
+@media (max-width: 400px){
+  .chat-notes .note{
+    display:flex;
+    align-items:center;
+    gap:.35rem;
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:13px;        /* slightly smaller to help fit */
+    padding:.3rem .6rem;   /* tighter padding for compactness */
+  }
+
+  .chat-notes .note span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    max-width:140px;       /* truncation width — tweak as needed */
+    vertical-align:middle;
+  }
+}
+
+/* === Additional tightening for ultra-small screens (≤ 360px) === */
+@media (max-width: 360px){
+  .chat-notes .note{
+    font-size:12px;
+    padding:.25rem .5rem;
+  }
+
+  .chat-notes .note span{
+    max-width:120px;       /* slightly narrower truncation on very small screens */
+  }
+}
+
+
+
+
   </style>
 </head>
 <body>
