@@ -18,7 +18,13 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;color:var(--text);background:var(--bg)}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
+      color:var(--text);
+      background:var(--bg);
+      font-size:17px;
+    }
 
     .shell{
       max-width:1400px;height:100vh;margin:0 auto;display:flex;
@@ -59,17 +65,18 @@
     }
     .left input[type="text"]{
       width:100%;padding:.5rem .75rem;border:1px solid var(--border);
-      border-radius:8px;font-size:14px
+      border-radius:8px;font-size:15px
     }
     .left input::placeholder{color:var(--muted)}
     .left .body{height:calc(100% - 57px);overflow:auto;padding:.5rem;display:flex;flex-direction:column}
-    .disclaimer{position:sticky;bottom:0;background:#f8fafc;font-size:11px;color:var(--muted);padding:.5rem 1rem;border-top:1px solid var(--border);text-align:center}
+    /* (left disclaimer kept for reference but commented out in HTML) */
+    .disclaimer{position:sticky;bottom:0;background:#f8fafc;font-size:12px;color:var(--muted);padding:.5rem 1rem;border-top:1px solid var(--border);text-align:center}
 
     .member{display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:12px;cursor:default}
     .member:hover{background:#f8fafc}
-    .avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
-    .m-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .m-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+    .m-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .m-sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
     /* ===== Buttons ===== */
     .arrow-btn{
@@ -106,9 +113,9 @@
     .title{min-width:0}
     .title button{
       background:none;border:0;color:var(--text);font-weight:700;
-      font-size:16px;padding:0;cursor:pointer;display:block;text-align:left
+      font-size:17px;padding:0;cursor:pointer;display:block;text-align:left
     }
-    .meta{font-size:12px;color:var(--muted);cursor:pointer}
+    .meta{font-size:13px;color:var(--muted);cursor:pointer}
 
     /* ===== Header CTA buttons ===== */
     .header-actions{
@@ -122,7 +129,7 @@
       background:#fff;
       color:var(--text);
       padding:.4rem .9rem;
-      font-size:14px;
+      font-size:15px;
       border-radius:999px;
       cursor:pointer;
       transition:background .2s ease;
@@ -165,7 +172,6 @@
       color:hsl(210 60% 28%);
     }
 
-    /* Grid bubble so bottom row can be L/R with breathing room */
     .chat-msg .bubble{
       background:#fff;
       padding:.6rem .9rem;
@@ -179,14 +185,12 @@
       width:fit-content;
       position:relative;
       overflow-wrap:break-word;
-      word-wrap:break-word;
       word-break:break-word;
     }
     @media (max-width: 639.98px) {
       .chat-msg .bubble { max-width:85%; row-gap:.5rem; }
     }
 
-    /* Tails */
     .chat-msg.admin .bubble::before{
       content:"";
       position:absolute;
@@ -206,18 +210,16 @@
       border-left-color:#fff;
     }
 
-    /* Name/text full width */
     .chat-msg .bubble .name,
     .chat-msg .bubble .text{ grid-column: 1 / -1; }
-    .chat-msg .name{ font-size:13px; font-weight:700; color:var(--muted); }
-    .chat-msg .text{ font-size:14px; line-height:1.4; color:var(--text); }
+    .chat-msg .name{ font-size:14px; font-weight:700; color:var(--muted); }
+    .chat-msg .text{ font-size:15px; line-height:1.4; color:var(--text); }
 
-    /* Bottom meta row */
     .bubble .reactions{
       grid-column: 1 / 2;
       justify-self: start;
       align-self: end;
-      font-size:11px;
+      font-size:12px;
       color:var(--muted);
       display:flex;
       align-items:center;
@@ -231,7 +233,7 @@
       grid-column: 2 / 3;
       justify-self: end;
       align-self: end;
-      font-size:11px;
+      font-size:12px;
       color:var(--muted);
       display:flex;
       align-items:center;
@@ -241,18 +243,14 @@
       font-weight:600;
     }
 
-    .bubble .reactions .r{
-      display:flex;
-      align-items:center;
-      gap:2px;
-    }
+    .bubble .reactions .r{ display:flex; align-items:center; gap:2px; }
     .bubble .reactions .icon{ font-size:13px; }
     .bubble .reactions .count{ min-width:18px; text-align:right; }
 
     @media (max-width:360px){
       .bubble .reactions,
       .bubble .pinned-label,
-      .bubble .time{ font-size:10px; }
+      .bubble .time{ font-size:11px; }
       .bubble .reactions .icon{ font-size:12px; }
     }
 
@@ -274,7 +272,7 @@
       border:1px solid var(--border);
       border-radius:14px;
       padding:.35rem .75rem;
-      font-size:12px;
+      font-size:13px;
       color:var(--muted);
       display:inline-flex;
       align-items:center;
@@ -293,7 +291,7 @@
       background:#fff
     }
     .composer input[type="text"]{
-      flex:1;border:0;outline:0;font-size:14px;min-width:0
+      flex:1;border:0;outline:0;font-size:15px;min-width:0
     }
     .composer .lefty,.composer .righty{display:flex;align-items:center;gap:.25rem}
     .composer .action{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
@@ -313,7 +311,8 @@
     /* ===== Right (profile) ===== */
     .right{
       width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;
-      overflow:hidden;transition:width .25s ease, border-left-width .25s ease;z-index:20
+      overflow:auto; /* scrollable profile pane */
+      transition:width .25s ease, border-left-width .25s ease;z-index:20
     }
     @media (max-width:1023.98px){
       .shell.profile-open .right{width:100%;flex:0 0 100%;border-left-width:1px}
@@ -333,13 +332,68 @@
       .shell.profile-open .left{display:none}
     }
 
-    .p-head{display:flex;align-items:center;justify-content:space-between;padding:1rem;border-bottom:1px solid var(--border)}
-    .p-logo{width:44px;height:44px;border-radius:999px;background:var(--kf-red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900}
-    .p-body{padding:1rem}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:1rem 0}
-    .card{border:1px solid var(--border);border-radius:12px;padding:.75rem;text-align:center}
-    .num{font-weight:800}
-    .lbl{font-size:12px;color:var(--muted)}
+    /* ===== Messenger-style profile (right pane) ===== */
+    .p-body { padding:1rem; position:relative; }
+    /* Sticky close button INSIDE profile section, top-right */
+    .p-close{
+      position:sticky; top:0; z-index:10;
+      display:flex; justify-content:flex-end;
+      padding:.5rem .25rem; margin:-.5rem -.25rem .25rem 0;
+      background:linear-gradient(#fff,#fff);
+    }
+
+    .profile-hero{
+      display:flex; align-items:center; gap:1rem;
+      padding:1rem; border:1px solid var(--border); border-radius:14px; background:#fff;
+    }
+    .profile-ava{
+      width:72px; height:72px; border-radius:999px; background:var(--kf-red);
+      color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:26px;
+      flex-shrink:0;
+    }
+    .profile-main{ min-width:0; }
+    .profile-name{ font-weight:800; font-size:18px; line-height:1.2; }
+    .profile-username{ font-size:13px; color:var(--muted); }
+    .profile-meta{
+      display:flex; flex-wrap:wrap; gap:.5rem 1rem; align-items:center; margin-top:.25rem;
+      font-size:13px; color:var(--muted);
+    }
+    .profile-status{
+      display:inline-flex; align-items:center; gap:.4rem; font-size:12px; color:var(--muted);
+      background:#f8fafc; border:1px solid var(--border); padding:.25rem .5rem; border-radius:999px;
+    }
+
+    /* Social links grid */
+    .profile-actions{
+      display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; margin-top:.75rem;
+    }
+    .p-social{
+      border:1px solid var(--border); background:#fff; border-radius:12px; padding:.6rem .7rem;
+      display:flex; align-items:center; gap:.6rem; text-decoration:none; color:inherit;
+    }
+    .p-social:hover{ background:#f8fafc; }
+    .p-social .i{ width:18px; height:18px; }
+    .p-social .label{ font-size:14px; font-weight:600; }
+    .p-social .handle{ margin-left:auto; font-size:12px; color:var(--muted); }
+
+    .profile-sect{ margin-top:1rem; }
+    .profile-sect .h{
+      font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.5rem;
+    }
+    .kv{ border:1px solid var(--border); background:#fff; border-radius:12px; overflow:hidden; }
+    .kv .row{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem;
+      padding:.65rem .75rem; border-bottom:1px solid var(--border);
+    }
+    .kv .row:last-child{ border-bottom:0; }
+    .kv .l{ font-size:13px; color:var(--muted); min-width:120px; }
+    .kv .r{ font-size:14px; font-weight:600; }
+    .kv .r .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-weight:700; }
+
+    /* Mobile tweaks */
+    @media (max-width: 639.98px){
+      .profile-actions{ grid-template-columns:1fr; }
+    }
 
     /* ===== Mobile header actions below title ===== */
     @media (max-width: 639.98px){
@@ -373,12 +427,11 @@
       </div>
       <div class="body">
         <div id="memberList" role="list"></div>
-      <!--
-<div class="disclaimer">
-  This member list is auto-generated for demonstration purposes. Actual community members may differ.
-</div>
--->
-
+        <!-- (hidden left disclaimer)
+        <div class="disclaimer">
+          This member list is auto-generated for demonstration purposes. Actual community members may differ.
+        </div>
+        -->
       </div>
     </aside>
 
@@ -397,7 +450,6 @@
           <div class="meta" id="openProfile3">23,000 members</div>
         </div>
 
-        <!-- CTA Buttons -->
         <div class="header-actions">
           <button class="cta-btn" id="aboutBtn">About</button>
           <button class="cta-btn" id="learnBtn">Learn More</button>
@@ -406,10 +458,8 @@
       </header>
 
       <section class="chat-area" id="chatArea">
-        <!-- Notification ABOVE pinned (exactly 1) -->
         <div class="chat-note-slot" data-above-pinned="true"></div>
 
-        <!-- Welcome + intro (PINNED, no timestamp) -->
         <div class="chat-msg admin" id="welcomeMsg">
           <div class="avatar">KF</div>
           <div class="bubble">
@@ -419,10 +469,8 @@
           </div>
         </div>
 
-        <!-- Notification between chats (1–5 allowed) -->
         <div class="chat-note-slot"></div>
 
-        <!-- Demo chat set -->
         <div class="chat-msg member">
           <div class="bubble">
             <div class="name">New Member</div>
@@ -441,7 +489,6 @@
           </div>
         </div>
 
-        <!-- Notification between more chats -->
         <div class="chat-note-slot"></div>
 
         <div class="chat-msg member">
@@ -462,7 +509,6 @@
           </div>
         </div>
 
-        <!-- More chats -->
         <div class="chat-msg member">
           <div class="bubble">
             <div class="name">New Member</div>
@@ -609,7 +655,7 @@
         </div>
       </footer>
 
-      <!-- ✅ Global Disclaimer (appears just below the composer) -->
+      <!-- Global Disclaimer -->
       <div class="global-disclaimer" role="note" aria-label="Demo disclaimer">
         The UI and users shown here are for demonstration purposes and may differ in actual usage.
         &copy; <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
@@ -618,28 +664,91 @@
 
     <!-- Right -->
     <aside id="profile" class="right" role="complementary" aria-label="Profile panel">
-      <div class="p-head">
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <div class="p-logo">KF</div>
-          <div>
-            <div style="font-weight:700">KenFolios Business Community</div>
-            <div class="lbl">23,000 members</div>
+      <!-- Sticky close button INSIDE the profile section -->
+      <div class="p-body">
+        <div class="p-close">
+          <button id="closeProfile" class="icon-btn" aria-label="Close profile" title="Close">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Hero -->
+        <div class="profile-hero">
+          <div class="profile-ava">KF</div>
+          <div class="profile-main">
+            <div class="profile-name">KenFolios Business Community</div>
+            <div class="profile-username">@kenfolios</div>
+            <div class="profile-meta">
+              <span id="profileMembers">23,338 members</span>
+              <span class="profile-status">Members’ requests are typically approved within 24 hours.</span>
+            </div>
           </div>
         </div>
-        <button id="closeProfile" class="icon-btn" aria-label="Close profile" title="Close">
-          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
-      </div>
-      <div class="p-body">
-        <p>Since 2013, <strong>KenFolios</strong> has been telling India’s impactful stories — and building a vibrant business community across WhatsApp & Telegram.</p>
-        <div class="grid">
-          <div class="card"><div class="num">23k</div><div class="lbl">Members</div></div>
-          <div class="card"><div class="num">2013</div><div class="lbl">Founded</div></div>
-          <div class="card"><div class="num">Pan-India</div><div class="lbl">Chapters</div></div>
+
+        <!-- Social links -->
+        <div class="profile-actions" aria-label="Social profiles">
+          <a class="p-social" href="https://www.facebook.com/KenFolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            <span class="label">Facebook</span>
+            <span class="handle">KenFolios</span>
+          </a>
+          <a class="p-social" href="https://www.instagram.com/KenFoliosHQ" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/>
+            </svg>
+            <span class="label">Instagram</span>
+            <span class="handle">KenFoliosHQ</span>
+          </a>
+          <a class="p-social" href="https://www.linkedin.com/company/kenfolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+            </svg>
+            <span class="label">LinkedIn</span>
+            <span class="handle">KenFolios</span>
+          </a>
+          <a class="p-social" href="https://twitter.com/KenFolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 5.8c-.7.3-1.4.5-2.2.6.8-.5 1.3-1.1 1.6-2-.8.5-1.6.8-2.5 1-1.6-1.7-4.4-.8-5.1 1.5-.2.6-.2 1.2-.1 1.8-3.5-.2-6.7-1.8-8.8-4.6-1 1.7-.5 3.9 1.2 5-.6 0-1.2-.2-1.7-.5 0 1.9 1.4 3.6 3.3 4-.6.2-1.2.2-1.8.1.5 1.6 2 2.7 3.7 2.7-1.4 1.1-3.2 1.7-5 1.5 1.8 1.2 3.9 1.9 6.1 1.9 7.4 0 11.6-6.3 11.3-11.9.8-.5 1.4-1.1 1.9-1.8z"/>
+            </svg>
+            <span class="label">Twitter</span>
+            <span class="handle">@KenFolios</span>
+          </a>
         </div>
-        <p class="lbl">Responsive behavior: full on phones, 50/50 on laptops, capped on desktops.</p>
+
+        <!-- About / Company details -->
+        <div class="profile-sect">
+          <div class="h">About</div>
+          <div class="kv">
+            <div class="row">
+              <div class="l">Bio</div>
+              <div class="r">Demo bio — spotlighting Indian founders, operators, and meaningful business stories. (Placeholder)</div>
+            </div>
+            <div class="row">
+              <div class="l">Company</div>
+              <div class="r">KenFolios Media Private Limited</div>
+            </div>
+            <div class="row">
+              <div class="l">Email</div>
+              <div class="r"><a href="mailto:hello@kenfolios.com">hello@kenfolios.com</a></div>
+            </div>
+            <div class="row">
+              <div class="l">Address</div>
+              <div class="r">
+                Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030
+              </div>
+            </div>
+            <div class="row">
+              <div class="l">CIN</div>
+              <div class="r"><span class="mono">U72900DL2017PTC321788</span></div>
+            </div>
+            <div class="row">
+              <div class="l">GSTIN</div>
+              <div class="r"><span class="mono">07AAGCK7129K1Z7</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </aside>
   </div>
@@ -696,15 +805,15 @@
       });
 
       function openJoinProvision(){ console.log('Join flow placeholder'); openProfile(); }
-      ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn'].forEach(function(id){
+      ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn','joinBtn'].forEach(function(id){
         var el = document.getElementById(id); if(!el) return;
         el.addEventListener('click', function(e){ e.preventDefault(); openJoinProvision(); });
         el.addEventListener('focus', function(){ openJoinProvision(); });
       });
 
-      document.getElementById('aboutBtn').addEventListener('click', openProfile);
-      document.getElementById('joinBtn').addEventListener('click', openProfile);
-      document.getElementById('learnBtn').addEventListener('click', function(){
+      // Restore About / Learn actions
+      document.getElementById('aboutBtn')?.addEventListener('click', openProfile);
+      document.getElementById('learnBtn')?.addEventListener('click', function(){
         var target = document.getElementById('welcomeMsg');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
@@ -762,7 +871,7 @@
       });
     })();
 
-    /* ===== Centered notifications population (uniform ✅; 1 above pinned; 1–5 elsewhere) ===== */
+    /* ===== Centered notifications population ===== */
     (function(){
       function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
       function fullName(){ return rand(KF_FIRST) + ' ' + rand(KF_LAST); }
@@ -787,7 +896,7 @@
       }
     })();
 
-    /* ===== Reactions + timestamp logic (👍 ❤️ 🎉) — reactions left, time/pinned right ===== */
+    /* ===== Reactions + timestamp logic ===== */
     (function(){
       var reactionTypes = [
         { key: 'like', icon: '👍' },
@@ -883,7 +992,6 @@
         metas[pinnedIndex].base = Math.max(metas[pinnedIndex].base, maxNonPinned + pinnedPeakBoost);
       }
 
-      // Build reactions container and render counts
       var todayStr = new Date().toISOString().slice(0,10);
       for(var i=0;i<metas.length;i++){
         var meta = metas[i];
@@ -902,7 +1010,7 @@
           if(pinOrTime){ meta.el.insertBefore(r, pinOrTime); } else { meta.el.appendChild(r); }
         }
 
-        var key = bubbleKey(meta.idx);
+        var key = 'kf_react_v7_ord_'+i;
         var stored = null;
         try{ stored = JSON.parse(localStorage.getItem(key) || 'null'); }catch(e){ stored = null; }
 
@@ -927,16 +1035,11 @@
           }
         }
 
-        // Render counts
-        var likeEl = r.querySelector('.r-like .count');
-        var loveEl = r.querySelector('.r-love .count');
-        var celEl  = r.querySelector('.r-celebrate .count');
-        likeEl.textContent = compact(stored.counts.like);
-        loveEl.textContent = compact(stored.counts.love);
-        celEl.textContent  = compact(stored.counts.celebrate);
+        r.querySelector('.r-like .count').textContent = compact(stored.counts.like);
+        r.querySelector('.r-love .count').textContent = compact(stored.counts.love);
+        r.querySelector('.r-celebrate .count').textContent = compact(stored.counts.celebrate);
       }
 
-      // Timestamps: lower messages more recent (except pinned, which has none)
       var minuteBudget = nonPinnedStartMinutes;
       for(var b=0;b<bubbles.length;b++){
         if(b === pinnedIndex) continue;
@@ -950,110 +1053,105 @@
       }
     })();
 
+    /* ===== Member count: configurable start + daily incremental (30–50) ===== */
+    (function(){
+      var DEFAULT_START = 23338;  // starting figure
+      var MIN = 30, MAX = 50;     // daily increment range (inclusive)
+      var KEY = 'kf_member_counter_v2';
+
+      var desiredStart = (typeof window.KF_MEMBER_START === 'number' && window.KF_MEMBER_START >= 0)
+        ? Math.floor(window.KF_MEMBER_START)
+        : DEFAULT_START;
+
+      function fmt(n){
+        try { return new Intl.NumberFormat('en-IN').format(n); }
+        catch(e){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+      }
+      function isoDate(d){
+        return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+               .toISOString().slice(0,10);
+      }
+      function daysBetween(aStr, bStr){
+        var a = new Date(aStr+'T00:00:00Z');
+        var b = new Date(bStr+'T00:00:00Z');
+        return Math.floor((b - a) / 86400000);
+      }
+
+      var todayISO = isoDate(new Date());
+      var data;
+      try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); }
+      catch(e){ data = {}; }
+
+      if(!data.count || !data.lastDate || typeof data.baseStart !== 'number'){
+        data = { count: desiredStart, baseStart: desiredStart, lastDate: todayISO };
+      } else {
+        if (data.baseStart !== desiredStart) {
+          var delta = desiredStart - data.baseStart;
+          data.count = Math.max(0, (data.count|0) + delta);
+          data.baseStart = desiredStart;
+        }
+        var diff = daysBetween(data.lastDate, todayISO);
+        if(diff > 0){
+          var incTotal = 0;
+          for(var i=0;i<diff;i++){
+            incTotal += Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+          }
+          data.count += incTotal;
+          data.lastDate = todayISO;
+        }
+      }
+
+      localStorage.setItem(KEY, JSON.stringify(data));
+
+      function renderCount(n){
+        var text = fmt(n) + ' members';
+        var headerEl = document.getElementById('openProfile3'); // top header meta
+        if(headerEl) headerEl.textContent = text;
+        var profileEl = document.getElementById('profileMembers'); // new hero section target
+        if(profileEl) profileEl.textContent = text;
+      }
+      renderCount(data.count);
+
+      window.KF_setMemberStart = function(newStart){
+        var ns = Number(newStart);
+        if (!isFinite(ns) || ns < 0) return false;
+        ns = Math.floor(ns);
+        try {
+          var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+          if (typeof d.count !== 'number' || typeof d.baseStart !== 'number') {
+            d = { count: ns, baseStart: ns, lastDate: isoDate(new Date()) };
+          } else {
+            var delta = ns - d.baseStart;
+            d.count = Math.max(0, (d.count|0) + delta);
+            d.baseStart = ns;
+          }
+          localStorage.setItem(KEY, JSON.stringify(d));
+          renderCount(d.count);
+          return true;
+        } catch(e){ return false; }
+      };
+
+      window.KF_resetMemberCounter = function(startAt){
+        var ns = Number(startAt);
+        if (!isFinite(ns) || ns < 0) ns = desiredStart;
+        var fresh = { count: Math.floor(ns), baseStart: Math.floor(ns), lastDate: isoDate(new Date()) };
+        localStorage.setItem(KEY, JSON.stringify(fresh));
+        renderCount(fresh.count);
+        return true;
+      };
+    })();
+
+    /* ===== Minimal profile interactions (social only) ===== */
+    (function(){
+      var openProfile = function(){ document.getElementById('openProfile')?.click(); };
+      document.getElementById('openProfile2')?.addEventListener('click', openProfile);
+    })();
+
     /* ===== Dynamic year for disclaimer ===== */
     (function(){
       var y = document.getElementById('kfYear');
       if (y) y.textContent = new Date().getFullYear();
     })();
   </script>
-<script>
-/* ===== Member count: configurable start + daily incremental (30–50) ===== */
-(function(){
-  var DEFAULT_START = 23338;  // original starting figure
-  var MIN = 30, MAX = 50;     // daily increment range (inclusive)
-  var KEY = 'kf_member_counter_v2'; // bumped version to avoid old format issues
-
-  // Allow overriding start: set window.KF_MEMBER_START = <number> before this script
-  var desiredStart = (typeof window.KF_MEMBER_START === 'number' && window.KF_MEMBER_START >= 0)
-    ? Math.floor(window.KF_MEMBER_START)
-    : DEFAULT_START;
-
-  function fmt(n){
-    try { return new Intl.NumberFormat('en-IN').format(n); }
-    catch(e){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-  }
-  function isoDate(d){
-    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-           .toISOString().slice(0,10);
-  }
-  function daysBetween(aStr, bStr){
-    var a = new Date(aStr+'T00:00:00Z');
-    var b = new Date(bStr+'T00:00:00Z');
-    return Math.floor((b - a) / 86400000);
-  }
-
-  var todayISO = isoDate(new Date());
-  var data;
-  try { data = JSON.parse(localStorage.getItem(KEY) || '{}'); }
-  catch(e){ data = {}; }
-
-  // First-time seed
-  if(!data.count || !data.lastDate || typeof data.baseStart !== 'number'){
-    data = { count: desiredStart, baseStart: desiredStart, lastDate: todayISO };
-  } else {
-    // If the configured starting figure changed later, migrate by the delta
-    if (data.baseStart !== desiredStart) {
-      var delta = desiredStart - data.baseStart;
-      data.count = Math.max(0, (data.count|0) + delta);
-      data.baseStart = desiredStart;
-    }
-    // Catch up day-by-day increments
-    var diff = daysBetween(data.lastDate, todayISO);
-    if(diff > 0){
-      var incTotal = 0;
-      for(var i=0;i<diff;i++){
-        incTotal += Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
-      }
-      data.count += incTotal;
-      data.lastDate = todayISO;
-    }
-  }
-
-  // Persist
-  localStorage.setItem(KEY, JSON.stringify(data));
-
-  // Render
-  function renderCount(n){
-    var text = fmt(n) + ' members';
-    var headerEl = document.getElementById('openProfile3');
-    if(headerEl) headerEl.textContent = text;
-    var profileEl = document.querySelector('#profile .p-head .lbl');
-    if(profileEl) profileEl.textContent = text;
-  }
-  renderCount(data.count);
-
-  // Expose helpers to change the start later (no reset needed)
-  window.KF_setMemberStart = function(newStart){
-    var ns = Number(newStart);
-    if (!isFinite(ns) || ns < 0) return false;
-    ns = Math.floor(ns);
-    try {
-      var d = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
-      if (typeof d.count !== 'number' || typeof d.baseStart !== 'number') {
-        d = { count: ns, baseStart: ns, lastDate: isoDate(new Date()) };
-      } else {
-        var delta = ns - d.baseStart;
-        d.count = Math.max(0, (d.count|0) + delta);
-        d.baseStart = ns;
-      }
-      localStorage.setItem(KEY, JSON.stringify(d));
-      renderCount(d.count);
-      return true;
-    } catch(e){ return false; }
-  };
-
-  // Optional: full reset utility if you ever want to start fresh
-  window.KF_resetMemberCounter = function(startAt){
-    var ns = Number(startAt);
-    if (!isFinite(ns) || ns < 0) ns = desiredStart;
-    var fresh = { count: Math.floor(ns), baseStart: Math.floor(ns), lastDate: isoDate(new Date()) };
-    localStorage.setItem(KEY, JSON.stringify(fresh));
-    renderCount(fresh.count);
-    return true;
-  };
-})();
-</script>
-
-
 </body>
 </html>
