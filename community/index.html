@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -588,46 +589,85 @@
   .sk-ava::after, .sk-line::after{ animation:none }
   #chatArea.loading .chat-msg, #chatArea.loading .chat-notes{ transition:none }
 }
-/* === Left list loading skeleton + stagger reveal (scoped to .left .body) === */
-.left .body{ position:relative; }
+/* === Left list loading skeleton + on-scroll load (scoped to .left .body) === */
+.left .body { position: relative; }
 
 /* Hide the list while skeleton is active — search box stays visible */
-.left .body.skel-on #memberList{ opacity:0; pointer-events:none; }
+.left .body.skel-on #memberList { opacity: 0; pointer-events: none; }
 
-/* Skeleton panel */
+/* Top skeleton (initial load) */
 #leftSkeleton{
-  position:absolute; inset:0;
-  padding:.6rem .5rem 1rem .5rem;
-  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.92));
-  border-bottom:1px solid var(--border);
-  display:none; z-index:2;
+  position: absolute; inset: 0;
+  padding: .6rem .5rem 1rem .5rem;
+  background: linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.92));
+  border-bottom: 1px solid var(--border);
+  display: none; z-index: 2;
 }
-.left .body.skel-on #leftSkeleton{ display:block; }
+.left .body.skel-on #leftSkeleton { display: block; }
 
-/* Skeleton rows */
-.lk-row{ display:flex; align-items:center; gap:.6rem; margin:.5rem .25rem; }
-.lk-ava{ width:40px; height:40px; border-radius:999px; background:#e5e7eb; position:relative; overflow:hidden; }
-.lk-line{ height:11px; border-radius:6px; background:#e5e7eb; position:relative; overflow:hidden; }
-.lk-w1{ width:62% } .lk-w2{ width:46% } .lk-w3{ width:58% } .lk-w4{ width:52% } .lk-w5{ width:40% }
-
-/* Shimmer */
-.lk-ava::after, .lk-line::after{
-  content:""; position:absolute; inset:0; transform:translateX(-100%);
-  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
-  animation:lkShimmer 1.15s infinite;
+/* Bottom skeleton (loading more on scroll) */
+#leftBottomSkeleton{
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: none;
+  padding: .5rem .5rem .7rem .5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(248,250,252,.96));
+  border-top: 1px solid var(--border);
+  z-index: 2;
 }
-@keyframes lkShimmer{ 100% { transform:translateX(100%); } }
+.left .body.loading-more #leftBottomSkeleton { display: block; }
+
+/* Skeleton row parts (top & bottom) */
+.lk-row, .lkb-row { display: flex; align-items: center; gap: .6rem; }
+.lk-row { margin: .5rem .25rem; }
+.lkb-row { margin: .35rem .25rem; }
+
+.lk-ava, .lkb-ava {
+  width: 40px; height: 40px; border-radius: 999px;
+  background: #e5e7eb; position: relative; overflow: hidden;
+}
+.lkb-ava { width: 36px; height: 36px; }
+
+.lk-line, .lkb-line {
+  height: 11px; border-radius: 6px; background: #e5e7eb;
+  position: relative; overflow: hidden;
+}
+.lkb-line { height: 10px; }
+
+.lk-w1 { width: 62%; } .lk-w2 { width: 46%; } .lk-w3 { width: 58%; } .lk-w4 { width: 52%; } .lk-w5 { width: 40%; }
+.lkb-w1 { width: 58%; } .lkb-w2 { width: 42%; } .lkb-w3 { width: 50%; }
+
+/* Shimmer animation */
+.lk-ava::after, .lk-line::after, .lkb-ava::after, .lkb-line::after{
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation: lkShimmer 1.15s infinite;
+}
+@keyframes lkShimmer { 100% { transform: translateX(100%); } }
 
 /* Staggered reveal of real members */
-.member.stagger{ opacity:0; transform:translateY(4px); }
-.member.stagger.show{
-  opacity:1; transform:translateY(0);
-  transition:opacity .22s ease, transform .22s ease;
+.member.stagger { opacity: 0; transform: translateY(4px); }
+.member.stagger.show {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .22s ease, transform .22s ease;
   transition-delay: var(--d, 0ms);
 }
 
-/* Safety: when skeleton is off, list is visible */
-.left .body:not(.skel-on) #memberList{ opacity:1; pointer-events:auto; }
+/* Newly appended members held invisible during 'loading-more' */
+.member.await { opacity: 0; transform: translateY(2px); }
+.member.await.show {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .22s ease, transform .22s ease;
+  transition-delay: var(--d, 0ms);
+}
+
+/* Safety: when skeletons are off, list is visible */
+.left .body:not(.skel-on) #memberList { opacity: 1; pointer-events: auto; }
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce){
+  .lk-ava::after, .lk-line::after, .lkb-ava::after, .lkb-line::after { animation: none; }
+  .member.stagger.show, .member.await.show { transition: none; }
+}
 
 
   </style>
@@ -647,7 +687,7 @@
         </button>
       </div>
       <div class="body">
-      <!-- Left list skeleton (only covers the list area, not the search box) -->
+      <!-- Top skeleton (initial load) -->
 <div id="leftSkeleton" aria-hidden="true">
   <div class="lk-row">
     <div class="lk-ava"></div>
@@ -674,7 +714,7 @@
     </div>
   </div>
 </div>
-<!-- Left list skeleton (only covers the list area, not the search box) -->
+ <!-- Top skeleton (initial load) -->
         <div id="memberList" role="list"></div>
         <!-- (hidden left disclaimer)
         <div class="disclaimer">
@@ -682,6 +722,25 @@
         </div>
         -->
       </div>
+      <!-- Bottom skeleton (loading more on scroll) -->
+<div id="leftBottomSkeleton" aria-hidden="true">
+  <div class="lkb-row">
+    <div class="lkb-ava"></div>
+    <div style="flex:1">
+      <div class="lkb-line lkb-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lkb-line lkb-w2"></div>
+    </div>
+  </div>
+  <div class="lkb-row">
+    <div class="lkb-ava"></div>
+    <div style="flex:1">
+      <div class="lkb-line lkb-w3"></div>
+      <div style="height:6px"></div>
+      <div class="lkb-line lkb-w2"></div>
+    </div>
+  </div> <!-- Bottom skeleton (loading more on scroll) -->
+</div>
     </aside>
 
     <!-- Middle -->
@@ -1635,42 +1694,49 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 })();
 
 
-/* === Left pane loader + staggered reveal (scoped + desktop-safe) === */
-(function(){
-  var left      = document.querySelector('.left');
-  var leftBody  = left ? left.querySelector('.body') : null;
-  var list      = document.getElementById('memberList');
-  var skel      = document.getElementById('leftSkeleton');
-  if (!left || !leftBody || !list || !skel) return;
 
-  var started   = false;   // skeleton started
-  var revealed  = false;   // real list shown
-  var failSafeT = null;
+/* === Left pane skeletons: initial + on-scroll loading (safe & scoped) === */
+(function(){
+  var left     = document.querySelector('.left');
+  var leftBody = left ? left.querySelector('.body') : null;
+  var list     = document.getElementById('memberList');
+  var skelTop  = document.getElementById('leftSkeleton');       // initial skeleton (top)
+  var skelBot  = document.getElementById('leftBottomSkeleton');  // bottom skeleton (load more)
+  if (!left || !leftBody || !list || !skelTop || !skelBot) return;
+
+  var started     = false;   // initial skeleton started
+  var revealed    = false;   // initial list revealed
+  var failSafeT   = null;
+  var moreTimer   = null;    // timer for 'loading-more' window
+  var loadingMore = false;   // state for bottom skeleton
 
   function addStaggerTo(nodeList, baseDelay){
     baseDelay = baseDelay || 0;
     nodeList.forEach(function(el, i){
       if (el.classList.contains('show')) return;
-      el.classList.add('stagger');
-      el.style.setProperty('--d', (baseDelay + i*45) + 'ms'); // tweak 45ms for speed
+      el.classList.add('stagger');                     // ensure transition props exist
+      el.style.setProperty('--d', (baseDelay + i*45) + 'ms'); // stagger per item
       requestAnimationFrame(function(){ el.classList.add('show'); });
     });
   }
 
+  /* ===== Initial reveal (desktop & first mobile open) ===== */
   function revealNow(){
-    if (failSafeT) { clearTimeout(failSafeT); failSafeT = null; }
+    if (failSafeT){ clearTimeout(failSafeT); failSafeT = null; }
 
-    leftBody.classList.remove('skel-on');  // show the list area
+    leftBody.classList.remove('skel-on');
     revealed = true;
 
-    addStaggerTo([].slice.call(list.querySelectorAll('.member')), 0);
+    // mark & reveal all current members
+    var items = [].slice.call(list.querySelectorAll('.member'));
+    addStaggerTo(items, 0);
 
     // Safety: ensure fully visible even if CSS got overridden
     list.style.removeProperty('opacity');
     list.style.removeProperty('pointer-events');
 
-    // Remove skeleton to avoid overlay glitches
-    if (skel.parentNode) skel.parentNode.removeChild(skel);
+    // remove top skeleton from DOM
+    if (skelTop.parentNode) skelTop.parentNode.removeChild(skelTop);
   }
 
   function runSkeletonIntro(){
@@ -1688,14 +1754,9 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     setTimeout(revealNow, delay);
   }
 
-  // Expose for optional external trigger
-  window.runLeftSkeletonIntro = runSkeletonIntro;
-
   // --- DESKTOP: auto-start skeleton immediately (pane visible by default) ---
   if (window.matchMedia('(min-width:1024px)').matches){
-    // Add the skeleton class early (no HTML change needed)
     leftBody.classList.add('skel-on');
-    // Kick the intro next frame so users see skeleton before list
     requestAnimationFrame(runSkeletonIntro);
   }
 
@@ -1703,23 +1764,75 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   var openLeftBtn = document.getElementById('openLeft');
   if (openLeftBtn){
     openLeftBtn.addEventListener('click', function(){
-      if (!revealed && !started){
-        runSkeletonIntro();
-      }
+      if (!revealed && !started) runSkeletonIntro();
     });
   }
 
-  // Observe newly appended members (infinite scroll) and fade them in
+  /* ===== On-scroll "load more" skeleton =====
+     - When near bottom, enter 'loading-more' for ~0.6–1.0s (or until new items arrive).
+     - Newly appended members are held as .await then revealed with a quick stagger.
+  */
+  function startLoadingMore(){
+    if (loadingMore) return;
+    loadingMore = true;
+    leftBody.classList.add('loading-more');
+
+    // Auto-stop after a short, realistic window (600–1000ms)
+    var windowMs = 600 + Math.floor(Math.random()*400);
+    moreTimer = setTimeout(stopLoadingMore, windowMs);
+  }
+
+  function stopLoadingMore(){
+    if (!loadingMore) return;
+    loadingMore = false;
+    leftBody.classList.remove('loading-more');
+
+    // Any items marked 'await' are now revealed with a fast stagger
+    var awaiting = [].slice.call(list.querySelectorAll('.member.await'));
+    awaiting.forEach(function(el, i){
+      el.classList.add('stagger');
+      el.style.setProperty('--d', (i*35)+'ms');
+      requestAnimationFrame(function(){
+        el.classList.add('show');
+        el.classList.remove('await');
+      });
+    });
+  }
+
+  function nearBottom(el){
+    return el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  }
+
+  function onScroll(){
+    if (!revealed) return;             // only after first reveal
+    if (nearBottom(leftBody)) startLoadingMore();
+  }
+  leftBody.addEventListener('scroll', onScroll);
+
+  // Observe newly appended members (by your existing loader) and integrate with our effect
   var obs = new MutationObserver(function(muts){
     muts.forEach(function(m){
       m.addedNodes.forEach(function(n){
-        if (n && n.classList && n.classList.contains('member')){
-          addStaggerTo([n], 0);
+        if (!(n && n.classList && n.classList.contains('member'))) return;
+
+        if (loadingMore){
+          // Hold invisible until stopLoadingMore()
+          n.classList.add('await');
+          // If the loader appends immediately, reveal shortly after to sync with skeleton
+          setTimeout(stopLoadingMore, 50);
+        } else {
+          // Immediate fade-in (no bottom skeleton active)
+          n.classList.add('stagger');
+          n.style.setProperty('--d', '0ms');
+          requestAnimationFrame(function(){ n.classList.add('show'); });
         }
       });
     });
   });
   obs.observe(list, { childList:true });
+
+  // Expose (optional manual trigger for debugging)
+  window.runLeftSkeletonIntro = runSkeletonIntro;
 })();
 
 
