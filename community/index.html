@@ -552,6 +552,44 @@
   margin-top: 0.65rem;         /* maintain balanced spacing below */
 }
 
+/* === Chat-only loading skeleton === */
+#chatArea.loading{ position:relative; }
+#chatArea.loading .chat-msg,
+#chatArea.loading .chat-notes{ opacity:0; pointer-events:none; transition:opacity .22s ease; }
+#chatArea.chats-ready .chat-msg,
+#chatArea.chats-ready .chat-notes{ opacity:1; }
+
+/* Skeleton block */
+.chat-skeleton{
+  position:absolute; inset:0 0 auto 0;
+  padding:1rem .75rem 1.25rem .75rem;
+  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
+  border-bottom:1px solid var(--border);
+  z-index:1;
+}
+
+/* Skeleton rows: avatar + two lines */
+.sk-row{ display:flex; align-items:center; gap:.6rem; margin:.6rem .25rem; }
+.sk-ava{ width:36px; height:36px; border-radius:999px; background:#e5e7eb; position:relative; overflow:hidden; }
+.sk-line{ height:10px; border-radius:6px; background:#e5e7eb; position:relative; overflow:hidden; }
+.sk-w1{ width:55% } .sk-w2{ width:40% } .sk-w3{ width:70% } .sk-w4{ width:48% }
+
+/* Shimmer */
+.sk-ava::after, .sk-line::after{
+  content:""; position:absolute; inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation:skShimmer 1.2s infinite;
+}
+@keyframes skShimmer{ 100% { transform:translateX(100%); } }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .sk-ava::after, .sk-line::after{ animation:none }
+  #chatArea.loading .chat-msg, #chatArea.loading .chat-notes{ transition:none }
+}
+
+
   </style>
 </head>
 <body>
@@ -602,6 +640,26 @@
       </header>
 
       <section class="chat-area" id="chatArea">
+      <!-- Chat skeleton placeholder (shown only while loading) -->
+<div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
+  <div class="sk-row">
+    <div class="sk-ava"></div>
+    <div style="flex:1">
+      <div class="sk-line sk-w1"></div>
+      <div style="height:6px"></div>
+      <div class="sk-line sk-w2"></div>
+    </div>
+  </div>
+  <div class="sk-row">
+    <div class="sk-ava"></div>
+    <div style="flex:1">
+      <div class="sk-line sk-w3"></div>
+      <div style="height:6px"></div>
+      <div class="sk-line sk-w4"></div>
+    </div>
+  </div>
+</div>
+<!-- Chat skeleton placeholder (shown only while loading) -->
         <div class="chat-note-slot" data-above-pinned="true"></div>
 
         <div class="chat-msg admin" id="welcomeMsg">
@@ -1480,6 +1538,32 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
       window.KF_openLearnLightbox();
     };
   }
+})();
+
+/* Chat-only loader: delays chat render without touching other UI */
+(function(){
+  var chat = document.getElementById('chatArea');
+  if(!chat) return;
+
+  // Mark chat as loading immediately
+  chat.classList.add('loading');
+
+  function revealChats(){
+    chat.classList.remove('loading');
+    chat.classList.add('chats-ready');
+    var sk = document.getElementById('chatSkeleton');
+    if (sk) sk.remove();
+  }
+
+  // Reveal after page load + small random delay (400–1000ms)
+  window.addEventListener('load', function(){
+  // Delay between 1200 ms and 2200 ms (1.2s – 2.2s)
+var delay = 1200 + Math.floor(Math.random()*1000);
+    // two RAFs ensure initial paint before hiding skeleton
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      setTimeout(revealChats, delay);
+    });});
+  });
 })();
 </script>
 
