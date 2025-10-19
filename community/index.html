@@ -669,6 +669,85 @@
   .member.stagger.show, .member.await.show { transition: none; }
 }
 
+/* =========================================================
+   JOIN FORM (scoped to #finalJoinInfo) + LIGHTBOX FIX
+   ========================================================= */
+
+/* --- Lightbox visibility: only show the active one --- */
+.shell.lightbox-open .lightbox-overlay{ display:none !important; }
+.shell.lightbox-open #learnLightbox[aria-hidden="false"]{ display:flex !important; }
+.shell.lightbox-open #legalLightbox[aria-hidden="false"]{ display:flex !important; }
+
+/* --- Final Join Form bubble (scoped; won’t affect other bubbles) --- */
+#finalJoinInfo{
+  display:flex; align-items:flex-start; gap:.5rem; margin:1rem; max-width:90%;
+}
+#finalJoinInfo .avatar{
+  width:36px;height:36px;border-radius:999px;background:var(--kf-red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;
+}
+#finalJoinInfo .bubble{
+  background:#fff;border:1px solid var(--border);border-radius:18px;
+  padding:1.2rem 1.4rem; box-shadow:0 3px 12px rgba(2,6,23,.06);
+  width:100%; max-width:640px;
+}
+#finalJoinInfo .name{ font-weight:700;color:var(--muted);margin-bottom:.4rem; }
+
+/* Keep grid even if kf-rowgap is on form */
+#finalJoinInfo .kf-form{ display:grid !important; gap:.75rem; width:100%; max-width:640px; }
+#finalJoinInfo .kf-form .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+@media (max-width:479.98px){ #finalJoinInfo .kf-form .grid2{ grid-template-columns:1fr; } }
+
+#finalJoinInfo .kf-field{ display:flex; flex-direction:column; gap:.3rem; }
+#finalJoinInfo .kf-label{ font-size:13px; font-weight:700; color:var(--muted); }
+#finalJoinInfo .kf-input, #finalJoinInfo .kf-select, #finalJoinInfo .kf-date{
+  border:1px solid var(--border); border-radius:10px; padding:.55rem .7rem; font-size:15px; background:#fff; color:var(--text);
+}
+
+/* Expectations checklist */
+#finalJoinInfo .kf-checklist{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:.45rem .8rem; margin-top:.25rem;
+}
+@media (max-width:639.98px){ #finalJoinInfo .kf-checklist{ grid-template-columns:1fr; } }
+#finalJoinInfo .kf-check{ display:flex; align-items:flex-start; gap:.5rem; font-size:14px; }
+#finalJoinInfo .kf-check input{ margin-top:.2rem; accent-color:var(--kf-red); }
+
+/* Legal row + links */
+#finalJoinInfo .kf-legal{ display:flex; align-items:flex-start; gap:.5rem; font-size:13px; color:var(--muted); }
+#finalJoinInfo .kf-legal a{ color:var(--text); text-decoration:underline; }
+
+/* Confidential note */
+#finalJoinInfo .kf-note{
+  font-size:12.5px; color:var(--muted); margin-top:.25rem;
+  background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:.5rem .6rem;
+}
+
+/* Center the submit row */
+#finalJoinInfo .kf-form .kf-rowgap{ display:flex; justify-content:center; }
+
+/* Submit button */
+#finalJoinInfo .kf-submit{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:48px; min-width:220px; padding:0 1.25rem;
+  border-radius:11px; border:1px solid var(--kf-red);
+  background:var(--kf-red); color:#fff; font-weight:800; font-size:15px; cursor:pointer;
+  transition:opacity .2s ease; margin-bottom:22px;
+}
+#finalJoinInfo .kf-submit:hover{ opacity:.92; }
+
+/* Extra breathing space below form in the bubble */
+#finalJoinInfo .bubble form{ margin-bottom:1.5rem; }
+
+/* === Extra spacing above and below the join form === */
+#finalJoinInfo .kf-form {
+  margin-top: 1.75rem;        /* space between intro text and form fields */
+}
+
+#finalJoinInfo .kf-legal {
+  margin-bottom: 1.75rem;     /* space between terms row and the note / button */
+}
+
+
 
   </style>
 </head>
@@ -1012,6 +1091,97 @@
     <div class="time">Just now</div>
   </div>
 </div>
+<!-- === FINAL ADMIN INFO + JOIN FORM (last bubble) === -->
+<div class="chat-msg admin" id="finalJoinInfo">
+  <div class="avatar">KF</div>
+  <div class="bubble">
+    <div class="name">Community Admin</div>
+    <div class="text">
+      Before you proceed, share a few details so we can fast-track your access. Submitting this will continue your join flow.
+      <form id="kfJoinInfoForm" class="kf-form kf-rowgap" novalidate>
+        <div class="grid2">
+          <div class="kf-field">
+            <label class="kf-label" for="fi_name">Full Name*</label>
+            <input class="kf-input" id="fi_name" name="name" type="text" required />
+          </div>
+          <div class="kf-field">
+            <label class="kf-label" for="fi_dob">Date of Birth*</label>
+            <input class="kf-date" id="fi_dob" name="dob" type="date" required />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="kf-field">
+            <label class="kf-label" for="fi_gender">Gender*</label>
+            <select class="kf-select" id="fi_gender" name="gender" required>
+              <option value="" disabled selected>Select</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Non-binary</option>
+              <option>Prefer not to say</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="kf-field">
+            <label class="kf-label" for="fi_city">City*</label>
+            <input class="kf-input" id="fi_city" name="city" type="text" required />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="kf-field">
+            <label class="kf-label" for="fi_email">Email*</label>
+            <input class="kf-input" id="fi_email" name="email" type="email" required />
+          </div>
+          <div class="kf-field">
+            <label class="kf-label" for="fi_phone">Phone*</label>
+            <input class="kf-input" id="fi_phone" name="phone" type="tel" inputmode="tel" required />
+          </div>
+        </div>
+
+        <div class="kf-field">
+          <label class="kf-label">What are your expectations from the community?*</label>
+          <div class="kf-checklist" role="group" aria-label="Expectations">
+            <label class="kf-check"><input type="checkbox" name="expectations" value="WhatsApp Groups"> WhatsApp Groups</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Business Leads"> Business Leads</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Brand Building"> Brand Building</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Starting a business"> Starting a business</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Growing a business"> Growing a business</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Mentorship"> Mentorship</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Funding"> Funding</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Learning & Skill Development"> Learning & Skill Development</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Events & Meetups"> Events & Meetups</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Meeting Professional Singles"> Meeting Professional Singles</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Investment Opportunities"> Investment Opportunities</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Hiring & Team Building"> Hiring & Team Building</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Internship Openings"> Internship Openings</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Job Openings"> Job Openings</label>
+            <label class="kf-check"><input type="checkbox" name="expectations" value="Other"> Other</label>
+          </div>
+        </div>
+
+        <div class="kf-legal">
+          <label style="display:flex; gap:.5rem; align-items:flex-start;">
+            <input id="fi_accept" type="checkbox" required checked />
+            <span>
+              I accept all the <a href="#" data-legal="terms">Terms</a> and
+              <a href="#" data-legal="privacy">Privacy Policy</a> of KenFolios Business Community.
+            </span>
+          </label>
+        </div>
+
+        <div class="kf-note">
+          The information shared here is <strong>strictly confidential</strong> and used only for community onboarding and verification.
+        </div>
+
+        <div class="kf-rowgap">
+          <button type="submit" class="kf-submit">Submit Details & Continue</button>
+        </div>
+      </form>
+    </div>
+    <div class="time">Just now</div>
+  </div>
+</div>
 
       </section>
 
@@ -1204,6 +1374,48 @@
       </div>
     </div>
     <!-- /Learn More Lightbox -->
+    <!-- === LEGAL LIGHTBOX (Terms & Privacy) === -->
+<div id="legalLightbox" class="lightbox-overlay" aria-hidden="true">
+  <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="lightbox-head">
+      <div class="lightbox-title" id="legalTitle">Terms & Privacy</div>
+      <button id="legalClose" class="lightbox-close" aria-label="Close">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="lightbox-body" id="legalBody" style="display:grid; gap:.8rem;">
+      <section id="legalTerms" aria-label="Terms" style="display:none">
+        <div class="bubble">
+          <div class="name">KenFolios — Terms of Membership</div>
+          <div class="text" style="font-size:14px">
+            • Paid, real-identity members only; respectful, value-first conduct required.<br/>
+            • No spam, scraping, or unsolicited prospecting; share context and get consent.<br/>
+            • Keep confidential information private; do not redistribute internal content.<br/>
+            • Moderators may remove posts/members breaching rules; fees are non-refundable in cases of breach.<br/>
+            • You agree to follow applicable laws and represent that shared info is accurate.<br/>
+            • KenFolios may update these terms; continued use implies acceptance.
+          </div>
+        </div>
+      </section>
+      <section id="legalPrivacy" aria-label="Privacy" style="display:none">
+        <div class="bubble">
+          <div class="name">KenFolios — Privacy Policy (Summary)</div>
+          <div class="text" style="font-size:14px">
+            • We collect onboarding details to verify members and deliver services.<br/>
+            • Data is stored securely and not sold. Limited sharing with processors (payment, email, analytics) under contracts.<br/>
+            • You can request access, correction, or deletion where applicable.<br/>
+            • Security best-effort measures are applied; no method is 100% secure.<br/>
+            • For queries: <a href="mailto:hello@kenfolios.com">hello@kenfolios.com</a>.
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="lightbox-foot">Use the back button or close to return to the form.</div>
+  </div>
+</div>
+
   </div>
 
   <!-- Part 3 (Scripts) will be provided next and should be pasted here, just before the closing tags. -->
@@ -1945,7 +2157,177 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   // Expose (optional manual trigger for debugging)
   window.runLeftSkeletonIntro = runSkeletonIntro;
 })();
+/* =========================================================
+   LIGHTBOX CONTROL — ensure only ONE overlay is visible
+   ========================================================= */
+(function(){
+  var shell = document.getElementById('shell');
+  var learn = document.getElementById('learnLightbox');
+  var legal = document.getElementById('legalLightbox');
+  if (!shell) return;
 
+  function hideAll(){
+    if (learn) learn.setAttribute('aria-hidden','true');
+    if (legal) legal.setAttribute('aria-hidden','true');
+  }
+  function openOverlay(overlay){
+    hideAll();
+    if (!overlay) return;
+    overlay.setAttribute('aria-hidden','false');
+    shell.classList.add('lightbox-open');
+  }
+  function closeAll(){
+    hideAll();
+    shell.classList.remove('lightbox-open');
+  }
+
+  // Wrap Learn open
+  var oldLearn = window.KF_openLearnLightbox;
+  window.KF_openLearnLightbox = function(){
+    openOverlay(learn);
+    if (typeof oldLearn === 'function'){ try{ oldLearn(); }catch(e){} }
+  };
+
+  // Legal open helpers
+  window.KF_openTerms   = function(){ openOverlay(legal); showLegal('terms'); };
+  window.KF_openPrivacy = function(){ openOverlay(legal); showLegal('privacy'); };
+
+  // Toggle Terms vs Privacy inside legal overlay
+  function showLegal(which){
+    var t = document.getElementById('legalTerms');
+    var p = document.getElementById('legalPrivacy');
+    var ttl = document.getElementById('legalTitle');
+    if (t && p){
+      t.style.display = (which==='terms') ? '' : 'none';
+      p.style.display = (which==='privacy') ? '' : 'none';
+    }
+    if (ttl){ ttl.textContent = (which==='terms') ? 'Terms of Membership' : 'Privacy Policy'; }
+  }
+
+  // Close interactions
+  var legalOverlay = document.getElementById('legalLightbox');
+  var legalClose = document.getElementById('legalClose');
+  if (legalOverlay){
+    legalOverlay.addEventListener('click', function(e){ if (e.target === legalOverlay) closeAll(); });
+  }
+  if (legalClose){ legalClose.addEventListener('click', function(e){ e.preventDefault(); closeAll(); }); }
+  window.addEventListener('keydown', function(e){ if (e.key === 'Escape' && shell.classList.contains('lightbox-open')) closeAll(); });
+
+  // Inline links in the form (Terms/Privacy)
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-legal]');
+    if (!a) return;
+    e.preventDefault();
+    var which = a.getAttribute('data-legal') === 'privacy' ? 'privacy' : 'terms';
+    openOverlay(legal); showLegal(which);
+  });
+})();
+
+/* =========================================================
+   JOIN NOW ROUTING — without touching HTML
+   • Intercepts header Join and any “Join Now” button by text
+   • Scrolls to final form and focuses first field
+   • Keeps visuals intact
+   ========================================================= */
+(function(){
+  var shell       = document.getElementById('shell');
+  var headerJoin  = document.getElementById('joinBtn');
+  var formSection = document.getElementById('finalJoinInfo');
+  var firstInput  = document.getElementById('fi_name');
+  if (!shell || !headerJoin || !formSection) return;
+
+  function showForm(){
+    shell.classList.remove('profile-open');
+    shell.classList.remove('left-open');
+    try{ formSection.scrollIntoView({ behavior:'smooth', block:'start' }); }
+    catch(_){ window.scrollTo(0, formSection.getBoundingClientRect().top + window.pageYOffset - 16); }
+    if (firstInput) setTimeout(function(){ try{ firstInput.focus(); }catch(_){ } }, 500);
+  }
+
+  // Capture-phase intercept: header Join
+  headerJoin.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    showForm();
+  }, true);
+
+  // Global capture for any element that looks like “Join Now”
+  document.addEventListener('click', function(e){
+    var el = e.target && (e.target.closest && e.target.closest('a,button'));
+    if (!el) return;
+    var txt = (el.textContent || '').trim();
+    if (/\bjoin now\b/i.test(txt)){
+      e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      showForm();
+    }
+  }, true);
+
+  // If code elsewhere calls joinBtn.click(), redirect that too
+  if (typeof headerJoin.click === 'function'){
+    var origClick = headerJoin.click.bind(headerJoin);
+    headerJoin.click = function(){ showForm(); };
+  }
+})();
+
+/* =========================================================
+   FORM SUBMIT — validate, optional Google Sheets sync,
+   then continue join flow (open profile pane as current UX)
+   ========================================================= */
+(function(){
+  var form = document.getElementById('kfJoinInfoForm');
+  var shell= document.getElementById('shell');
+  if (!form) return;
+
+  // Set this when your Apps Script Web App is ready
+  var SHEETS_ENDPOINT = ""; // e.g. https://script.google.com/macros/s/....../exec
+
+  function getExpectations(){
+    return Array.from(form.querySelectorAll('input[name="expectations"]:checked')).map(function(cb){ return cb.value; });
+  }
+  function valid(){
+    var requiredOk = form.name.value && form.dob.value && form.gender.value && form.email.value && form.phone.value && form.city.value;
+    var acceptOk = document.getElementById('fi_accept')?.checked;
+    var expOk = getExpectations().length > 0;
+    return !!(requiredOk && acceptOk && expOk);
+  }
+  function toPayload(){
+    return {
+      name: form.name.value.trim(),
+      dob: form.dob.value,
+      gender: form.gender.value,
+      email: form.email.value.trim(),
+      phone: form.phone.value.trim(),
+      city: form.city.value.trim(),
+      expectations: getExpectations(),
+      ts: new Date().toISOString()
+    };
+  }
+  function continueJoinFlow(){
+    // Current UX: open the right pane (profile panel) as a continuation
+    if (shell){
+      shell.classList.add('profile-open');
+      shell.classList.remove('left-open');
+    }
+    // If later you wire Razorpay, trigger it here instead.
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!valid()){
+      alert('Please complete all required fields, select at least one expectation, and accept the Terms & Privacy.');
+      return;
+    }
+    var data = toPayload();
+
+    if (SHEETS_ENDPOINT){
+      fetch(SHEETS_ENDPOINT, {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(data)
+      }).catch(function(err){ console.warn('[Sheets] POST failed:', err); })
+        .finally(continueJoinFlow);
+    } else {
+      continueJoinFlow();
+    }
+  });
+})();
 
 </script>
 
