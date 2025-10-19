@@ -2328,6 +2328,64 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   });
 })();
+/* =========================================================
+   JOIN NOW → Soft override (non-breaking, post-run redirect)
+   ---------------------------------------------------------
+   • Lets existing handlers run (right pane open, etc.)
+   • Then closes panes and scrolls to #finalJoinInfo
+   • Works for header button and chat CTAs
+   • No HTML changes, no capture-phase interception
+   ========================================================= */
+(function(){
+  var shell       = document.getElementById('shell');
+  var headerJoin  = document.getElementById('joinBtn');
+  var formSection = document.getElementById('finalJoinInfo');
+  var firstInput  = document.getElementById('fi_name');
+
+  if (!shell || !formSection) return;
+
+  function goToFinalForm(){
+    // Close panes opened by earlier handlers, then scroll
+    shell.classList.remove('profile-open');
+    shell.classList.remove('left-open');
+    try { formSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    catch(_) { window.scrollTo(0, formSection.getBoundingClientRect().top + window.pageYOffset - 16); }
+    if (firstInput) setTimeout(function(){ try{ firstInput.focus(); }catch(_){} }, 400);
+  }
+
+  // Run after existing click handler on the header button
+  if (headerJoin){
+    headerJoin.addEventListener('click', function(){
+      // Defer so prior listeners (that open right pane) complete first
+      setTimeout(goToFinalForm, 0);
+    }, false);
+
+    // Keyboard/tab focus can also trigger earlier behavior — follow it
+    headerJoin.addEventListener('focus', function(){
+      setTimeout(goToFinalForm, 0);
+    }, false);
+
+    // If any code calls joinBtn.click(), keep original behavior then route to form
+    if (typeof headerJoin.click === 'function'){
+      var originalClick = headerJoin.click.bind(headerJoin);
+      headerJoin.click = function(){
+        originalClick();           // keep current behavior
+        setTimeout(goToFinalForm, 0); // then route to form
+      };
+    }
+  }
+
+  // Chat-area “Join Now” buttons/links by text — also post-run
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest && e.target.closest('a,button');
+    if (!el) return;
+    var txt = (el.textContent || '').trim();
+    if (/\bjoin now\b/i.test(txt)){
+      // Let existing handlers fire first; then route
+      setTimeout(goToFinalForm, 0);
+    }
+  }, false);
+})();
 
 </script>
 
