@@ -747,6 +747,43 @@
   margin-bottom: 1.75rem;     /* space between terms row and the note / button */
 }
 
+/* ===============================
+   FORM SUBMIT AREA — CLEAN SPACING
+   =============================== */
+
+/* Tighter spacing for the submit row itself */
+#kfJoinInfoForm .actions {
+  gap: 8px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Ensure elements in the submit row don’t add their own bottom spacing */
+#kfJoinInfoForm .actions > * {
+  margin-bottom: 0 !important;
+}
+
+/* Submit button should not push anything downward */
+#kfJoinInfoForm button[type="submit"],
+#kfJoinInfoForm input[type="submit"] {
+  margin: 0 !important;
+}
+
+/* Progress panel spacing is handled via JS, but keep a fallback */
+#kfSubmitStatus {
+  margin-top: 4px;  /* fallback spacing in case JS doesn’t override */
+}
+
+#kfSubmitStatus > div {
+  padding: 8px 12px;
+}
+
+/* Optional: ensure Pay Now button doesn't get extra spacing from browser styles */
+#kfPayNowBtn {
+  display: inline-block;
+  margin: 0; /* spacing is handled in JS */
+}
+
 
 
   </style>
@@ -2224,110 +2261,213 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 })();
 
 /* =========================================================
-   JOIN NOW ROUTING — without touching HTML
-   • Intercepts header Join and any “Join Now” button by text
-   • Scrolls to final form and focuses first field
-   • Keeps visuals intact
-   ========================================================= */
-(function(){
-  var shell       = document.getElementById('shell');
-  var headerJoin  = document.getElementById('joinBtn');
-  var formSection = document.getElementById('finalJoinInfo');
-  var firstInput  = document.getElementById('fi_name');
-  if (!shell || !headerJoin || !formSection) return;
-
-  function showForm(){
-    shell.classList.remove('profile-open');
-    shell.classList.remove('left-open');
-    try{ formSection.scrollIntoView({ behavior:'smooth', block:'start' }); }
-    catch(_){ window.scrollTo(0, formSection.getBoundingClientRect().top + window.pageYOffset - 16); }
-    if (firstInput) setTimeout(function(){ try{ firstInput.focus(); }catch(_){ } }, 500);
-  }
-
-  // Capture-phase intercept: header Join
-  headerJoin.addEventListener('click', function(e){
-    e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-    showForm();
-  }, true);
-
-  // Global capture for any element that looks like “Join Now”
-  document.addEventListener('click', function(e){
-    var el = e.target && (e.target.closest && e.target.closest('a,button'));
-    if (!el) return;
-    var txt = (el.textContent || '').trim();
-    if (/\bjoin now\b/i.test(txt)){
-      e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-      showForm();
-    }
-  }, true);
-
-  // If code elsewhere calls joinBtn.click(), redirect that too
-  if (typeof headerJoin.click === 'function'){
-    var origClick = headerJoin.click.bind(headerJoin);
-    headerJoin.click = function(){ showForm(); };
-  }
-})();
-
-/* =========================================================
-   FORM SUBMIT — validate, optional Google Sheets sync,
-   then continue join flow (open profile pane as current UX)
+   FORM SUBMIT — validate + sync to Google Sheets (Apps Script)
+   • Progress bar very close to submit button
+   • Clear rhythm: Button → Bar (2px) → Success (8px) → Pay Now (12px)
+   • Centered Pay Now button + themed confirmation (no emoji)
+   • UI renders OUTSIDE the form; does NOT open right pane
+   • Uses no-cors to avoid CORS/preflight issues
    ========================================================= */
 (function(){
   var form = document.getElementById('kfJoinInfoForm');
-  var shell= document.getElementById('shell');
   if (!form) return;
 
-  // Set this when your Apps Script Web App is ready
-  var SHEETS_ENDPOINT = ""; // e.g. https://script.google.com/macros/s/....../exec
+  // ✅ Deployed Web App URL (/exec)
+  const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwNWIVmHvsfvIV9iiW9t7CTpm6ukWh7nJ68nIqyT2PMc9Lqcw_8-qTF9LUcGzEHZ7Ruiw/exec";
+  // 🔁 Replace with Razorpay later
+  const RAZORPAY_URL  = "#"; // placeholder
 
-  function getExpectations(){
-    return Array.from(form.querySelectorAll('input[name="expectations"]:checked')).map(function(cb){ return cb.value; });
+  // ---------- Status panel (outside the form, minimal spacing) ----------
+  function ensureStatusPanel(){
+    var panel = document.getElementById('kfSubmitStatus');
+    if (panel) return panel;
+
+    panel = document.createElement('div');
+    panel.id = 'kfSubmitStatus';
+    panel.setAttribute('role','status');
+    panel.setAttribute('aria-live','polite');
+    panel.style.marginTop = '2px'; // 👈 super close under submit row
+    panel.style.textAlign = 'center';
+
+    // Card
+    var card = document.createElement('div');
+    card.style.border = '1px solid rgba(255,255,255,.12)';
+    card.style.background = 'rgba(255,255,255,.04)';
+    card.style.borderRadius = '12px';
+    card.style.padding = '8px 12px';
+
+    // Progress bar shell
+    var barShell = document.createElement('div');
+    barShell.style.height = '6px';
+    barShell.style.borderRadius = '999px';
+    barShell.style.background = 'rgba(255,255,255,.12)';
+    barShell.style.overflow = 'hidden';
+    barShell.style.margin = '0 auto';
+    barShell.style.maxWidth = '320px';
+
+    var barFill = document.createElement('div');
+    barFill.id = 'kfProgressBar';
+    barFill.style.height = '100%';
+    barFill.style.width = '0%';
+    barFill.style.background = '#E11D2E';  // theme red
+    barFill.style.transition = 'width .35s ease';
+    barShell.appendChild(barFill);
+
+    // Success message (distinct spacing from bar)
+    var msg = document.createElement('div');
+    msg.id = 'kfProgressMsg';
+    msg.style.marginTop = '8px';           // bar → message
+    msg.style.fontSize = '.95rem';
+    msg.style.color = '#E11D2E';           // theme red for visibility
+    msg.textContent = 'Preparing…';
+
+    // Centered CTA row (distinct spacing from message)
+    var ctas = document.createElement('div');
+    ctas.style.display = 'flex';
+    ctas.style.justifyContent = 'center';
+    ctas.style.gap = '10px';
+    ctas.style.marginTop = '12px';         // message → Pay Now
+
+    var payBtn = document.createElement('button');
+    payBtn.id = 'kfPayNowBtn';
+    payBtn.type = 'button';
+    payBtn.textContent = 'Pay Now';
+    payBtn.style.display = 'none';
+    payBtn.style.padding = '.7rem 1.4rem';
+    payBtn.style.borderRadius = '999px';
+    payBtn.style.border = '0';
+    payBtn.style.cursor = 'pointer';
+    payBtn.style.fontWeight = '600';
+    payBtn.style.background = '#E11D2E';
+    payBtn.style.color = '#fff';
+
+    payBtn.addEventListener('click', function(){
+      if (RAZORPAY_URL && RAZORPAY_URL !== '#') {
+        window.open(RAZORPAY_URL, '_blank', 'noopener');
+      } else {
+        alert('Payment step will appear here (Razorpay) once configured.');
+      }
+    });
+
+    ctas.appendChild(payBtn);
+    card.appendChild(barShell);
+    card.appendChild(msg);
+    card.appendChild(ctas);
+    panel.appendChild(card);
+
+    // 👉 Place panel immediately AFTER the submit row (.actions), not after the whole form
+    var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    var actions = submitBtn ? submitBtn.closest('.actions') || submitBtn.parentElement : null;
+    if (actions) {
+      actions.style.marginBottom = '0'; // remove any residual spacing
+      actions.insertAdjacentElement('afterend', panel);
+    } else {
+      form.insertAdjacentElement('afterend', panel);
+    }
+
+    return panel;
   }
+
+  function setProgress(pct, text){
+    var panel = ensureStatusPanel();
+    var bar   = panel.querySelector('#kfProgressBar');
+    var msg   = panel.querySelector('#kfProgressMsg');
+    if (bar)  bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    if (text && msg) msg.textContent = text;
+  }
+
+  function beginProgress(){
+    setProgress(10, 'Validating…');
+    var marks = [25, 45, 65, 85];
+    var i = 0;
+    var id = setInterval(function(){
+      if (i >= marks.length) return clearInterval(id);
+      setProgress(marks[i++], 'Saving your details securely…');
+    }, 300);
+    return function finish(text, ok){
+      clearInterval(id);
+      setProgress(100, text || (ok ? 'Saved' : 'Done'));
+      var msg = document.getElementById('kfProgressMsg');
+      if (msg) msg.style.color = ok ? '#E11D2E' : '#f3c13a'; // red for success, amber for warn
+      var pay = document.getElementById('kfPayNowBtn');
+      if (pay) pay.style.display = ok ? 'inline-block' : 'none';
+    };
+  }
+
+  // ---------- Data helpers ----------
+  function getExpectations(){
+    return Array.from(form.querySelectorAll('input[name="expectations"]:checked'))
+      .map(function(cb){ return cb.value; });
+  }
+
   function valid(){
-    var requiredOk = form.name.value && form.dob.value && form.gender.value && form.email.value && form.phone.value && form.city.value;
-    var acceptOk = document.getElementById('fi_accept')?.checked;
+    var requiredOk = form.name?.value && form.dob?.value && form.gender?.value &&
+                     form.email?.value && form.phone?.value && form.city?.value;
+    var acceptOk = document.getElementById('fi_accept')?.checked ?? true;
     var expOk = getExpectations().length > 0;
     return !!(requiredOk && acceptOk && expOk);
   }
+
   function toPayload(){
+    var notesEl = form.notes || form.querySelector('[name="notes"]');
     return {
-      name: form.name.value.trim(),
-      dob: form.dob.value,
-      gender: form.gender.value,
-      email: form.email.value.trim(),
-      phone: form.phone.value.trim(),
-      city: form.city.value.trim(),
+      name: (form.name.value || '').trim(),
+      fullName: (form.name.value || '').trim(),
+      dob: form.dob.value || '',
+      gender: form.gender.value || '',
+      email: (form.email.value || '').trim(),
+      phone: (form.phone.value || '').trim(),
+      city: (form.city.value || '').trim(),
       expectations: getExpectations(),
+      notes: notesEl ? (notesEl.value || '').trim() : '',
+      source: 'kenfolios-join-v2',
       ts: new Date().toISOString()
     };
   }
-  function continueJoinFlow(){
-    // Current UX: open the right pane (profile panel) as a continuation
-    if (shell){
-      shell.classList.add('profile-open');
-      shell.classList.remove('left-open');
-    }
-    // If later you wire Razorpay, trigger it here instead.
+
+  function setFormEnabled(enabled){
+    Array.from(form.elements).forEach(function(el){ el.disabled = !enabled; });
   }
 
+  // Fire-and-forget POST to Sheets (no-cors avoids preflight)
+  async function postToSheets(payload){
+    try{
+      await fetch(SHEETS_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
+      });
+    }catch(err){
+      console.warn('[Sheets] POST attempt (no-cors) threw:', err);
+    }
+  }
+
+  // ---------- Submit (NO right-pane open) ----------
   form.addEventListener('submit', function(e){
     e.preventDefault();
+
     if(!valid()){
       alert('Please complete all required fields, select at least one expectation, and accept the Terms & Privacy.');
       return;
     }
-    var data = toPayload();
 
-    if (SHEETS_ENDPOINT){
-      fetch(SHEETS_ENDPOINT, {
-        method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(data)
-      }).catch(function(err){ console.warn('[Sheets] POST failed:', err); })
-        .finally(continueJoinFlow);
-    } else {
-      continueJoinFlow();
-    }
+    var payload   = toPayload();
+    var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    var finish    = beginProgress();
+
+    setFormEnabled(false);
+    if (submitBtn) submitBtn.textContent = 'Saving…';
+
+    var minDelay = new Promise(function(res){ setTimeout(res, 900); });
+
+    Promise.race([postToSheets(payload), minDelay]).finally(function(){
+      finish('Details saved. Thank you!', true);
+      if (submitBtn) submitBtn.textContent = 'Saved ✔';
+      setTimeout(function(){ setFormEnabled(true); }, 300);
+    });
   });
 })();
+
 /* =========================================================
    JOIN NOW → Soft override (non-breaking, post-run redirect)
    ---------------------------------------------------------
@@ -2345,7 +2485,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   if (!shell || !formSection) return;
 
   function goToFinalForm(){
-    // Close panes opened by earlier handlers, then scroll
     shell.classList.remove('profile-open');
     shell.classList.remove('left-open');
     try { formSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -2356,21 +2495,18 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   // Run after existing click handler on the header button
   if (headerJoin){
     headerJoin.addEventListener('click', function(){
-      // Defer so prior listeners (that open right pane) complete first
       setTimeout(goToFinalForm, 0);
     }, false);
 
-    // Keyboard/tab focus can also trigger earlier behavior — follow it
     headerJoin.addEventListener('focus', function(){
       setTimeout(goToFinalForm, 0);
     }, false);
 
-    // If any code calls joinBtn.click(), keep original behavior then route to form
     if (typeof headerJoin.click === 'function'){
       var originalClick = headerJoin.click.bind(headerJoin);
       headerJoin.click = function(){
-        originalClick();           // keep current behavior
-        setTimeout(goToFinalForm, 0); // then route to form
+        originalClick();
+        setTimeout(goToFinalForm, 0);
       };
     }
   }
@@ -2381,11 +2517,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     if (!el) return;
     var txt = (el.textContent || '').trim();
     if (/\bjoin now\b/i.test(txt)){
-      // Let existing handlers fire first; then route
       setTimeout(goToFinalForm, 0);
     }
   }, false);
 })();
+
 
 </script>
 
