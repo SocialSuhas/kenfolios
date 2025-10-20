@@ -2261,43 +2261,37 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 })();
 
 /* =========================================================
-   FORM SUBMIT — validate + sync to Google Sheets (Apps Script)
-   • Progress bar very close to submit button
-   • Clear rhythm: Button → Bar (2px) → Success (8px) → Pay Now (12px)
-   • Centered Pay Now button + themed confirmation (no emoji)
-   • UI renders OUTSIDE the form; does NOT open right pane
-   • Uses no-cors to avoid CORS/preflight issues
+   FORM SUBMIT — Final Replacement (fixed endpoint)
+   ---------------------------------------------------------
+   • Posts as application/x-www-form-urlencoded (no JSON)
+   • no-cors to avoid CORS noise; server still receives it
+   • Visuals unchanged; adds sendBeacon fallback
    ========================================================= */
 (function(){
-  var form = document.getElementById('kfJoinInfoForm');
+  const form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
 
-  // ✅ Deployed Web App URL (/exec)
-  const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwNWIVmHvsfvIV9iiW9t7CTpm6ukWh7nJ68nIqyT2PMc9Lqcw_8-qTF9LUcGzEHZ7Ruiw/exec";
-  // 🔁 Replace with Razorpay later
-  const RAZORPAY_URL  = "#"; // placeholder
+  // ✅ USE THE NEW, WORKING DEPLOYMENT URL
+  const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec";
+  const RAZORPAY_URL    = "#"; // placeholder
 
-  // ---------- Status panel (outside the form, minimal spacing) ----------
+  // ---------- UI Status Panel ----------
   function ensureStatusPanel(){
-    var panel = document.getElementById('kfSubmitStatus');
+    let panel = document.getElementById('kfSubmitStatus');
     if (panel) return panel;
 
     panel = document.createElement('div');
     panel.id = 'kfSubmitStatus';
-    panel.setAttribute('role','status');
-    panel.setAttribute('aria-live','polite');
-    panel.style.marginTop = '2px'; // 👈 super close under submit row
+    panel.style.marginTop = '2px';
     panel.style.textAlign = 'center';
 
-    // Card
-    var card = document.createElement('div');
+    const card = document.createElement('div');
     card.style.border = '1px solid rgba(255,255,255,.12)';
     card.style.background = 'rgba(255,255,255,.04)';
     card.style.borderRadius = '12px';
     card.style.padding = '8px 12px';
 
-    // Progress bar shell
-    var barShell = document.createElement('div');
+    const barShell = document.createElement('div');
     barShell.style.height = '6px';
     barShell.style.borderRadius = '999px';
     barShell.style.background = 'rgba(255,255,255,.12)';
@@ -2305,30 +2299,28 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     barShell.style.margin = '0 auto';
     barShell.style.maxWidth = '320px';
 
-    var barFill = document.createElement('div');
+    const barFill = document.createElement('div');
     barFill.id = 'kfProgressBar';
     barFill.style.height = '100%';
     barFill.style.width = '0%';
-    barFill.style.background = '#E11D2E';  // theme red
+    barFill.style.background = '#E11D2E';
     barFill.style.transition = 'width .35s ease';
     barShell.appendChild(barFill);
 
-    // Success message (distinct spacing from bar)
-    var msg = document.createElement('div');
+    const msg = document.createElement('div');
     msg.id = 'kfProgressMsg';
-    msg.style.marginTop = '8px';           // bar → message
+    msg.style.marginTop = '8px';
     msg.style.fontSize = '.95rem';
-    msg.style.color = '#E11D2E';           // theme red for visibility
+    msg.style.color = '#E11D2E';
     msg.textContent = 'Preparing…';
 
-    // Centered CTA row (distinct spacing from message)
-    var ctas = document.createElement('div');
+    const ctas = document.createElement('div');
     ctas.style.display = 'flex';
     ctas.style.justifyContent = 'center';
     ctas.style.gap = '10px';
-    ctas.style.marginTop = '12px';         // message → Pay Now
+    ctas.style.marginTop = '12px';
 
-    var payBtn = document.createElement('button');
+    const payBtn = document.createElement('button');
     payBtn.id = 'kfPayNowBtn';
     payBtn.type = 'button';
     payBtn.textContent = 'Pay Now';
@@ -2340,7 +2332,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     payBtn.style.fontWeight = '600';
     payBtn.style.background = '#E11D2E';
     payBtn.style.color = '#fff';
-
     payBtn.addEventListener('click', function(){
       if (RAZORPAY_URL && RAZORPAY_URL !== '#') {
         window.open(RAZORPAY_URL, '_blank', 'noopener');
@@ -2355,11 +2346,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     card.appendChild(ctas);
     panel.appendChild(card);
 
-    // 👉 Place panel immediately AFTER the submit row (.actions), not after the whole form
-    var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    var actions = submitBtn ? submitBtn.closest('.actions') || submitBtn.parentElement : null;
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    const actions = submitBtn ? submitBtn.closest('.actions') || submitBtn.parentElement : null;
     if (actions) {
-      actions.style.marginBottom = '0'; // remove any residual spacing
+      actions.style.marginBottom = '0';
       actions.insertAdjacentElement('afterend', panel);
     } else {
       form.insertAdjacentElement('afterend', panel);
@@ -2369,160 +2359,112 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   function setProgress(pct, text){
-    var panel = ensureStatusPanel();
-    var bar   = panel.querySelector('#kfProgressBar');
-    var msg   = panel.querySelector('#kfProgressMsg');
-    if (bar)  bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    const panel = ensureStatusPanel();
+    const bar = panel.querySelector('#kfProgressBar');
+    const msg = panel.querySelector('#kfProgressMsg');
+    if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
     if (text && msg) msg.textContent = text;
   }
 
   function beginProgress(){
     setProgress(10, 'Validating…');
-    var marks = [25, 45, 65, 85];
-    var i = 0;
-    var id = setInterval(function(){
+    const marks = [25, 45, 65, 85];
+    let i = 0;
+    const id = setInterval(() => {
       if (i >= marks.length) return clearInterval(id);
       setProgress(marks[i++], 'Saving your details securely…');
     }, 300);
     return function finish(text, ok){
       clearInterval(id);
       setProgress(100, text || (ok ? 'Saved' : 'Done'));
-      var msg = document.getElementById('kfProgressMsg');
-      if (msg) msg.style.color = ok ? '#E11D2E' : '#f3c13a'; // red for success, amber for warn
-      var pay = document.getElementById('kfPayNowBtn');
+      const msg = document.getElementById('kfProgressMsg');
+      if (msg) msg.style.color = ok ? '#E11D2E' : '#f3c13a';
+      const pay = document.getElementById('kfPayNowBtn');
       if (pay) pay.style.display = ok ? 'inline-block' : 'none';
     };
   }
 
-  // ---------- Data helpers ----------
-  function getExpectations(){
-    return Array.from(form.querySelectorAll('input[name="expectations"]:checked'))
-      .map(function(cb){ return cb.value; });
-  }
+  // ---------- Helpers ----------
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  const checkedValues = name =>
+    Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(cb => cb.value);
+  const setFormEnabled = enabled => Array.from(form.elements).forEach(el => el.disabled = !enabled);
 
   function valid(){
-    var requiredOk = form.name?.value && form.dob?.value && form.gender?.value &&
-                     form.email?.value && form.phone?.value && form.city?.value;
-    var acceptOk = document.getElementById('fi_accept')?.checked ?? true;
-    var expOk = getExpectations().length > 0;
-    return !!(requiredOk && acceptOk && expOk);
+    const requiredOk = val('fi_name') && val('fi_dob') && val('fi_gender') &&
+                       val('fi_email') && val('fi_phone') && val('fi_city');
+    const acceptOk = !!document.getElementById('fi_accept')?.checked;
+    const expOk = checkedValues('expectations').length > 0;
+    return requiredOk && acceptOk && expOk;
   }
 
-  function toPayload(){
-    var notesEl = form.notes || form.querySelector('[name="notes"]');
-    return {
-      name: (form.name.value || '').trim(),
-      fullName: (form.name.value || '').trim(),
-      dob: form.dob.value || '',
-      gender: form.gender.value || '',
-      email: (form.email.value || '').trim(),
-      phone: (form.phone.value || '').trim(),
-      city: (form.city.value || '').trim(),
-      expectations: getExpectations(),
-      notes: notesEl ? (notesEl.value || '').trim() : '',
-      source: 'kenfolios-join-v2',
-      ts: new Date().toISOString()
-    };
+  // Build x-www-form-urlencoded payload (best mapping to e.parameter)
+  function toUrlEncoded(){
+    const usp = new URLSearchParams();
+    usp.append('fullName', val('fi_name'));
+    usp.append('name', val('fi_name'));
+    usp.append('dob', val('fi_dob'));
+    usp.append('gender', val('fi_gender'));
+    usp.append('email', val('fi_email'));
+    usp.append('phone', val('fi_phone'));
+    usp.append('city', val('fi_city'));
+    checkedValues('expectations').forEach(v => usp.append('expectations', v));
+    usp.append('source', 'kenfolios-join-v2');
+    return usp.toString();
   }
 
-  function setFormEnabled(enabled){
-    Array.from(form.elements).forEach(function(el){ el.disabled = !enabled; });
-  }
-
-  // Fire-and-forget POST to Sheets (no-cors avoids preflight)
-  async function postToSheets(payload){
-    try{
-      await fetch(SHEETS_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        mode: 'no-cors'
-      });
-    }catch(err){
-      console.warn('[Sheets] POST attempt (no-cors) threw:', err);
-    }
-  }
-
-  // ---------- Submit (NO right-pane open) ----------
+  // ---------- Submit ----------
   form.addEventListener('submit', function(e){
     e.preventDefault();
-
-    if(!valid()){
+    if (!valid()) {
       alert('Please complete all required fields, select at least one expectation, and accept the Terms & Privacy.');
       return;
     }
 
-    var payload   = toPayload();
-    var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    var finish    = beginProgress();
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    const finish = beginProgress();
+
+    const body = toUrlEncoded();
 
     setFormEnabled(false);
     if (submitBtn) submitBtn.textContent = 'Saving…';
 
-    var minDelay = new Promise(function(res){ setTimeout(res, 900); });
-
-    Promise.race([postToSheets(payload), minDelay]).finally(function(){
+    // Post as application/x-www-form-urlencoded
+    fetch(SHEETS_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors', // we don't need to read response
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body
+    })
+    .then(() => {
       finish('Details saved. Thank you!', true);
       if (submitBtn) submitBtn.textContent = 'Saved ✔';
-      setTimeout(function(){ setFormEnabled(true); }, 300);
+      form.reset();
+    })
+    .catch(err => {
+      console.warn('[Sheets] fetch failed, trying sendBeacon', err);
+      // Fallback: sendBeacon (fire-and-forget)
+      try {
+        const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
+        const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
+        if (ok) {
+          finish('Details saved. Thank you!', true);
+          if (submitBtn) submitBtn.textContent = 'Saved ✔';
+          form.reset();
+        } else {
+          throw new Error('sendBeacon returned false');
+        }
+      } catch (err2) {
+        console.error('[Sheets] POST error:', err2);
+        finish('Could not save right now. Please try again.', false);
+        if (submitBtn) submitBtn.textContent = 'Submit Details & Continue';
+      }
+    })
+    .finally(() => {
+      setTimeout(() => setFormEnabled(true), 300);
     });
   });
 })();
-
-/* =========================================================
-   JOIN NOW → Soft override (non-breaking, post-run redirect)
-   ---------------------------------------------------------
-   • Lets existing handlers run (right pane open, etc.)
-   • Then closes panes and scrolls to #finalJoinInfo
-   • Works for header button and chat CTAs
-   • No HTML changes, no capture-phase interception
-   ========================================================= */
-(function(){
-  var shell       = document.getElementById('shell');
-  var headerJoin  = document.getElementById('joinBtn');
-  var formSection = document.getElementById('finalJoinInfo');
-  var firstInput  = document.getElementById('fi_name');
-
-  if (!shell || !formSection) return;
-
-  function goToFinalForm(){
-    shell.classList.remove('profile-open');
-    shell.classList.remove('left-open');
-    try { formSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-    catch(_) { window.scrollTo(0, formSection.getBoundingClientRect().top + window.pageYOffset - 16); }
-    if (firstInput) setTimeout(function(){ try{ firstInput.focus(); }catch(_){} }, 400);
-  }
-
-  // Run after existing click handler on the header button
-  if (headerJoin){
-    headerJoin.addEventListener('click', function(){
-      setTimeout(goToFinalForm, 0);
-    }, false);
-
-    headerJoin.addEventListener('focus', function(){
-      setTimeout(goToFinalForm, 0);
-    }, false);
-
-    if (typeof headerJoin.click === 'function'){
-      var originalClick = headerJoin.click.bind(headerJoin);
-      headerJoin.click = function(){
-        originalClick();
-        setTimeout(goToFinalForm, 0);
-      };
-    }
-  }
-
-  // Chat-area “Join Now” buttons/links by text — also post-run
-  document.addEventListener('click', function(e){
-    var el = e.target && e.target.closest && e.target.closest('a,button');
-    if (!el) return;
-    var txt = (el.textContent || '').trim();
-    if (/\bjoin now\b/i.test(txt)){
-      setTimeout(goToFinalForm, 0);
-    }
-  }, false);
-})();
-
-
 </script>
 
 </body>
