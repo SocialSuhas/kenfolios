@@ -783,6 +783,48 @@
   display: inline-block;
   margin: 0; /* spacing is handled in JS */
 }
+
+/* =========================================================
+   SUBMIT BUTTON — SUCCESS STATE (Tick on LEFT)
+   ---------------------------------------------------------
+   • Places the animated tick just before the "Saved" text.
+   • Keeps the whole label centered.
+   • No layout jump or floating icon on the right.
+   ========================================================= */
+
+#kfJoinInfoForm .kf-submit.success,
+#kfJoinInfoForm button[type="submit"].success,
+#kfJoinInfoForm input[type="submit"].success {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+  cursor: default;
+  pointer-events: none;
+  position: relative;
+  display: inline-flex;          /* so text and tick align neatly */
+  align-items: center;
+  justify-content: center;      /* keeps content centered */
+  gap: 0.4rem;                  /* space between tick and text */
+  transition: background .3s ease;
+}
+
+#kfJoinInfoForm .kf-submit.success::before,
+#kfJoinInfoForm button[type="submit"].success::before,
+#kfJoinInfoForm input[type="submit"].success::before {
+  content: '✔';
+  font-size: 1.2em;
+  opacity: 0;
+  transform: scale(0.6);
+  animation: tick-appear .3s forwards ease-in;
+}
+
+@keyframes tick-appear {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* =========================================================
    PROFILE CTA SECTION — Adaptive Width
    ---------------------------------------------------------
@@ -2518,7 +2560,20 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     })
     .then(() => {
       finish('Details saved. Thank you!', true);
-      if (submitBtn) submitBtn.textContent = 'Saved ✔';
+      // ✅ Convert the submit button into a Saved state
+  const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = 'Saved';
+    submitBtn.classList.add('success');
+    submitBtn.setAttribute('aria-disabled', 'true');
+    submitBtn.disabled = true;
+  }
+
+  // ✅ Keep Pay Now CTA visible
+  const pay = document.getElementById('kfPayNowBtn');
+  if (pay) pay.style.display = 'inline-block';
+
+      if (submitBtn) submitBtn.textContent = 'Saved';
       form.reset();
     })
     .catch(err => {
@@ -2529,7 +2584,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
         if (ok) {
           finish('Details saved. Thank you!', true);
-          if (submitBtn) submitBtn.textContent = 'Saved ✔';
+          if (submitBtn) submitBtn.textContent = 'Saved';
           form.reset();
         } else {
           throw new Error('sendBeacon returned false');
