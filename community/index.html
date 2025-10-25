@@ -783,6 +783,36 @@
   display: inline-block;
   margin: 0; /* spacing is handled in JS */
 }
+/* =========================================================
+   PROFILE CTA SECTION — Adaptive Width
+   ---------------------------------------------------------
+   • This styles the "Join Now" button inside the profile pane.
+   • Unlike header/chat buttons, this one adapts to screen width:
+       - On small screens: full width for tap friendliness.
+       - On larger screens: wider, centered, but max capped.
+   • Uses flexbox container (.profile-cta) for clean centering.
+   ========================================================= */
+.profile-cta {
+  margin: .8rem 0 .4rem 0;     /* Comfortable spacing */
+  display: flex;
+  justify-content: center;     /* Centers the button horizontally */
+  padding: 0 1rem;             /* Prevents edge hugging on mobile */
+}
+
+.profile-cta .cta-btn {
+  width: 100%;                 /* Full width on mobile */
+  max-width: 320px;            /* Cap the width on larger screens */
+  font-size: 16px;             /* Slightly bigger for emphasis */
+  padding: .7rem 1.4rem;       /* More breathing room */
+}
+
+/* Optional: slightly wider on larger screens */
+@media (min-width: 768px) {
+  .profile-cta .cta-btn {
+    max-width: 420px;
+    font-size: 17px;
+  }
+}
 
 
 
@@ -1321,6 +1351,13 @@
             </div>
           </div>
         </div>
+<!-- Profile CTA (between hero card and social links) -->
+<div class="profile-cta" role="group" aria-label="Join actions">
+  <button class="cta-btn primary" id="joinBtnProfile"
+          onclick="document.getElementById('joinBtn')?.click()">
+    Join Now
+  </button>
+</div>
 
         <!-- Social links -->
         <div class="profile-actions" aria-label="Social profiles">
@@ -1519,17 +1556,27 @@
     openProfile();
   }
 
-  ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn','joinBtn'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(!el) return;
-    el.addEventListener('click', function(e){
-      e.preventDefault();
-      openJoinProvision();
-    });
-    el.addEventListener('focus', function(){
-      openJoinProvision();
-    });
+  ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn']
+.forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click', function(e){
+    e.preventDefault();
+    openJoinProvision();
   });
+  el.addEventListener('focus', function(){
+    openJoinProvision();
+  });
+});
+
+document.getElementById('joinBtn')?.addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('kfJoinInfoForm')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+});
+
 
   // About opens profile (unchanged)
   document.getElementById('aboutBtn')?.addEventListener('click', openProfile);
