@@ -813,6 +813,8 @@
     font-size: 17px;
   }
 }
+
+
 /* Keep the message composer always reachable (iOS safe area aware) */
 .composer{
   position: sticky;
@@ -833,7 +835,8 @@
 .mid{ min-height:100svh; display:flex; flex-direction:column; }
 .chat-area{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
 
-
+/* Scroll targets won’t hide under the sticky header */
+#welcomeMsg { scroll-margin-top: 96px; }  /* tweak to your header height */
 
   </style>
 </head>
@@ -927,7 +930,8 @@
         <div class="header-actions">
           <button class="cta-btn" id="aboutBtn">About</button>
           <button class="cta-btn" id="learnBtn">Learn More</button>
-          <button class="cta-btn primary" id="joinBtn">Join Now</button>
+          <!-- Header CTA -->
+<button class="cta-btn primary" id="joinBtn" >Join Now</button>
         </div>
       </header>
 
@@ -1370,13 +1374,23 @@
             </div>
           </div>
         </div>
-<!-- Profile CTA (between hero card and social links) -->
+<!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
 <div class="profile-cta" role="group" aria-label="Join actions">
   <button class="cta-btn primary" id="joinBtnProfile"
-          onclick="document.getElementById('joinBtn')?.click()">
+    onclick="
+      // 🧹 Close side panes
+      document.getElementById('shell')?.classList.remove('left-open','profile-open');
+      
+      // 🪄 Scroll smoothly to the join form chat bubble
+      document.getElementById('finalJoinInfo')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    ">
     Join Now
   </button>
 </div>
+
 
         <!-- Social links -->
         <div class="profile-actions" aria-label="Social profiles">
@@ -1590,7 +1604,7 @@
 
 document.getElementById('joinBtn')?.addEventListener('click', function(e){
   e.preventDefault();
-  document.getElementById('kfJoinInfoForm')?.scrollIntoView({
+  document.getElementById('finalJoinInfo')?.scrollIntoView({
     behavior: 'smooth',
     block: 'start'
   });
