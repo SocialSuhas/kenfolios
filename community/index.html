@@ -813,6 +813,25 @@
     font-size: 17px;
   }
 }
+/* Keep the message composer always reachable (iOS safe area aware) */
+.composer{
+  position: sticky;
+  bottom: env(safe-area-inset-bottom);
+  z-index: 9;
+  background:#fff;
+  border-top:1px solid var(--border);
+  box-shadow:0 -8px 16px rgba(2,6,23,.08);
+}
+
+/* Disclaimer scrolls normally (not sticky) */
+.global-disclaimer{
+  position: static;
+  box-shadow:none;
+}
+
+/* Ensure proper column sizing and smooth scroll on iOS */
+.mid{ min-height:100svh; display:flex; flex-direction:column; }
+.chat-area{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
 
 
 
