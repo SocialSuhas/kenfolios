@@ -886,6 +886,209 @@
 /* Scroll targets won’t hide under the sticky header */
 #welcomeMsg { scroll-margin-top: 96px; }  /* tweak to your header height */
 
+/* ============================================================
+   KenFolios — Onboarding & Activation Section Styles (Final)
+   ------------------------------------------------------------
+   ✅ Proper top spacing below header (no margin collapse)
+   ✅ Perfect horizontal centering
+   ✅ Left–right gutters restored
+   ✅ Hidden during skeleton load, fades in smoothly
+   ✅ Skeleton overlay non-blocking
+   ✅ Responsive + accessible
+   ✅ CTA row centered
+   ============================================================ */
+
+/* Adjustable vertical gap below the header */
+:root { --activation-gap: 20px; }
+
+/* --- Activation Card Base --- */
+#activationTop {
+  margin: 0 auto !important;                  
+  max-width: 720px;                           
+  width: min(100%, calc(100% - 2rem));        
+  position: relative;
+  z-index: 1;
+}
+
+/* Non-collapsing top spacer */
+#activationTop::before {
+  content: "";
+  display: block;
+  height: var(--activation-gap);
+}
+
+#activationTop .wrap {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.1);
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+}
+
+#activationTop .brandbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--kf-red);
+  color: #fff;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+}
+#activationTop .brandbar .badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+#activationTop .content {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+#activationTop .intro {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+#activationTop .intro strong { font-weight: 900; }
+#activationTop .intro .muted { color: var(--muted); font-weight: 600; }
+
+#activationTop .cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center; /* ✅ now centered */
+}
+#activationTop .cta-row .ghost {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+#activationTop .kf-form { display: grid; gap: 0.75rem; }
+#activationTop .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+@media (max-width: 639.98px) {
+  #activationTop .grid2 { grid-template-columns: 1fr; }
+}
+
+#activationTop .kf-field { display: flex; flex-direction: column; gap: 0.3rem; }
+#activationTop .kf-label { font-size: 13px; font-weight: 800; color: var(--muted); }
+#activationTop .kf-input,
+#activationTop .kf-select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font-size: 15px;
+  background: #fff;
+  color: var(--text);
+}
+
+#activationTop .note {
+  font-size: 12.5px;
+  color: var(--muted);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+}
+
+#activationTop .kf-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  min-width: 220px;
+  padding: 0 1.25rem;
+  border-radius: 11px;
+  border: 1px solid var(--kf-red);
+  background: var(--kf-red);
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+#activationTop .kf-submit:hover { opacity: 0.92; }
+
+#activationTop .kf-submit.success {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+  cursor: default;
+  pointer-events: none;
+  display: inline-flex;
+  gap: 0.4rem;
+}
+#activationTop .kf-submit.success::before {
+  content: "✔";
+  font-size: 1.2em;
+  opacity: 0;
+  transform: scale(0.6);
+  animation: tick-appear 0.3s forwards ease-in;
+}
+@keyframes tick-appear {
+  to { opacity: 1; transform: scale(1); }
+}
+
+#activationTop .helper {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.35rem;
+}
+
+#activationTop + .activation-sep {
+  margin: 0.6rem 1rem 0 1rem;
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+}
+
+/* --- Skeleton Sync --- */
+#chatArea.loading #activationTop {
+  opacity: 0;
+  visibility: hidden;   /* keeps spacing reserved */
+  pointer-events: none;
+  transform: translateY(4px);
+}
+#chatArea.chats-ready #activationTop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition-delay: 0.05s;
+}
+
+/* Skeleton above content, non-interactive */
+#chatSkeleton.chat-skeleton {
+  z-index: 2;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  #chatArea.chats-ready #activationTop {
+    transition: none;
+    transition-delay: 0s;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -1004,6 +1207,80 @@
   </div>
 </div>
 <!-- Chat skeleton placeholder (shown only while loading) -->
+<!-- ============================================================
+     KenFolios — Onboarding & Activation Section (HTML)
+     ------------------------------------------------------------
+     • Shown at the top of the chat area after successful payment
+     • Displays onboarding message + activation form
+     • Includes links to download apps and join Telegram group
+   ============================================================ -->
+<section id="activationTop" aria-label="Activation">
+  <div class="wrap">
+    <div class="brandbar" role="heading" aria-level="1">
+      <span class="badge" aria-hidden="true">KF</span>
+      <span>Community Admin • Payment Confirmed</span>
+    </div>
+    <div class="content">
+      <div class="intro">
+        Thank you for joining the <strong>KenFolios Business Community</strong>! 🎉
+        <br />Please complete this <strong>Activation Form</strong> to start using the community.
+        <br /><span class="muted">Support is provided directly inside our member groups and is available only to active, paid members.</span>
+      </div>
+
+      <!-- Activation Form -->
+      <form id="kfActivationForm" class="kf-form" novalidate>
+        <div class="grid2">
+          <div class="kf-field">
+            <label class="kf-label" for="ac_name">Full Name*</label>
+            <input class="kf-input" id="ac_name" name="name" type="text" required />
+          </div>
+          <div class="kf-field">
+            <label class="kf-label" for="ac_txn">Transaction ID (Razorpay)*</label>
+            <input class="kf-input" id="ac_txn" name="transactionId" type="text" placeholder="e.g., pay_LwX..." required />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="kf-field">
+            <label class="kf-label" for="ac_whatsapp">WhatsApp / Telegram Phone*</label>
+            <input class="kf-input" id="ac_whatsapp" name="phone" type="tel" inputmode="tel" placeholder="10-digit number" required />
+          </div>
+          <div class="kf-field">
+            <label class="kf-label" for="ac_tgid">Telegram Username (without @)*</label>
+            <input class="kf-input" id="ac_tgid" name="telegramUser" type="text" placeholder="username" required />
+          </div>
+        </div>
+
+        <div class="note">
+          After submitting, request to join the Telegram group below. <strong>Only paid members who complete this form are accepted by admins.</strong>
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:.5rem; margin-top:.3rem;">
+          <button type="submit" class="kf-submit">Save & Continue</button>
+        </div>
+
+        <div id="acStatus" style="display:none; max-width:520px; margin:.5rem auto 0 auto; text-align:center;">
+          <div style="height:6px; border-radius:999px; background:#e5e7eb; overflow:hidden;">
+            <div id="acBar" style="height:100%; width:0%; background:#E11D2E; transition:width .35s ease;"></div>
+          </div>
+          <div id="acMsg" style="margin-top:8px; font-size:.95rem; color:#E11D2E;">Saving…</div>
+        </div>
+      </form>
+
+      <!-- App Download + Group Join Buttons -->
+      <div class="cta-row" role="group" aria-label="Get apps & join group">
+        <a class="cta-btn ghost" id="dlWhatsapp" href="https://whatsapp.com/dl" target="_blank" rel="noopener">Download WhatsApp</a>
+        <a class="cta-btn ghost" id="dlTelegram" href="https://telegram.org/dl" target="_blank" rel="noopener">Download Telegram</a>
+        <a class="cta-btn primary" id="joinTelegram" href="#" target="_blank" rel="noopener">Join Telegram Group</a>
+      </div>
+
+      <div class="helper">
+        Joining link works for members; <strong>admins admit only those who completed this activation.</strong>
+      </div>
+    </div>
+  </div>
+</section>
+<hr class="activation-sep" aria-hidden="true" />
 
 <div class="chat-note-slot" data-above-pinned="true"></div>
 
@@ -2606,6 +2883,137 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     });
   });
 })();
+/* ============================================================
+   KenFolios — Onboarding & Activation Script
+   ------------------------------------------------------------
+   • Handles onboarding form submission
+   • Sends data to Google Apps Script (Sheets)
+   • Shows saving progress bar and success tick
+   • Sets Telegram join link dynamically
+   ============================================================ */
+(function () {
+  const FORM = document.getElementById("kfActivationForm");
+  if (!FORM) return;
+
+  const SHEETS_ENDPOINT =
+    "https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec";
+  const TELEGRAM_INVITE = "https://t.me/kenfolios";
+  const joinBtn = document.getElementById("joinTelegram");
+  if (joinBtn) joinBtn.href = TELEGRAM_INVITE;
+
+  const chat = document.getElementById("chatArea");
+  if (chat) {
+    window.requestAnimationFrame(function () {
+      document
+        .getElementById("activationTop")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  const val = (id) => (document.getElementById(id)?.value || "").trim();
+  function setEnabled(enabled) {
+    Array.from(FORM.elements).forEach((el) => (el.disabled = !enabled));
+  }
+  function ensureStatus() {
+    const host = document.getElementById("acStatus");
+    if (host && host.style.display !== "block") host.style.display = "block";
+    return {
+      bar: document.getElementById("acBar"),
+      msg: document.getElementById("acMsg"),
+    };
+  }
+  function setProgress(p, text) {
+    const s = ensureStatus();
+    if (s.bar) s.bar.style.width = Math.max(0, Math.min(100, p)) + "%";
+    if (s.msg && text) s.msg.textContent = text;
+  }
+  function valid() {
+    return val("ac_name") && val("ac_txn") && val("ac_whatsapp") && val("ac_tgid");
+  }
+  function toUrlEncoded() {
+    const usp = new URLSearchParams();
+    usp.append("name", val("ac_name"));
+    usp.append("transactionId", val("ac_txn"));
+    usp.append("phone", val("ac_whatsapp"));
+    usp.append("telegramUser", val("ac_tgid"));
+    usp.append("source", "kenfolios-activation");
+    return usp.toString();
+  }
+
+  FORM.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!valid()) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    const submitBtn = FORM.querySelector('button[type="submit"], input[type="submit"]');
+    setEnabled(false);
+    if (submitBtn) submitBtn.textContent = "Saving…";
+
+    setProgress(10, "Validating…");
+    const marks = [30, 55, 80];
+    let i = 0;
+    const id = setInterval(() => {
+      if (i < marks.length) setProgress(marks[i++], "Saving your activation…");
+      else clearInterval(id);
+    }, 300);
+
+    const body = toUrlEncoded();
+
+    fetch(SHEETS_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body,
+    })
+      .then(() => {
+        clearInterval(id);
+        setProgress(100, "Saved. Thank you!");
+        if (submitBtn) {
+          submitBtn.textContent = "Saved";
+          submitBtn.classList.add("success");
+          submitBtn.disabled = true;
+          submitBtn.setAttribute("aria-disabled", "true");
+        }
+        try {
+          FORM.reset();
+        } catch (_) {}
+      })
+      .catch((err) => {
+        console.warn("[Activation] fetch failed, trying sendBeacon", err);
+        try {
+          const blob = new Blob([body], {
+            type: "application/x-www-form-urlencoded;charset=UTF-8",
+          });
+          const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
+          if (ok) {
+            clearInterval(id);
+            setProgress(100, "Saved. Thank you!");
+            if (submitBtn) {
+              submitBtn.textContent = "Saved";
+              submitBtn.classList.add("success");
+              submitBtn.disabled = true;
+              submitBtn.setAttribute("aria-disabled", "true");
+            }
+            try {
+              FORM.reset();
+            } catch (_) {}
+          } else {
+            throw new Error("sendBeacon returned false");
+          }
+        } catch (err2) {
+          console.error("[Activation] POST error:", err2);
+          setProgress(100, "Could not save right now. Please try again.");
+          if (submitBtn) submitBtn.textContent = "Save & Continue";
+        }
+      })
+      .finally(() => {
+        setTimeout(() => setEnabled(true), 300);
+      });
+  });
+})();
+
 </script>
 
 </body>
