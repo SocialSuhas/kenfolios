@@ -1998,101 +1998,108 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 })();
 
 
+>
 /* =========================================================
-   KENFOLIOS MEMBER COUNTER — Live from Google Sheet
-   ---------------------------------------------------------
-   • Uses Apps Script JSONP endpoint (cross-origin safe)
-   • Computes START_COUNT + rowsAdded = live member total
-   • Updates count text in multiple places
-   • Falls back gracefully if offline
+   KenFolios Member Counter — front-end JSONP consumer
+   Works with the hybrid doGet that returns `computedCount`.
+   Place this block just before </body>.
    ========================================================= */
-
 (function(){
-  /*** CONFIG ***/
-  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec'; // ← Replace with your deployed URL if different
-  const POLL_MS = 5 * 60 * 1000;   // Refresh every 5 minutes
-  const FALLBACK_BASE = 23338;     // Fallback if endpoint unreachable
-  const ELEMENT_IDS = ['openProfile3', 'profileMembers']; // All IDs to update
+  // ===== CONFIG =====
+  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec'; // ← replace if your /exec differs
+  const POLL_MS = 5 * 60 * 1000;        // auto-refresh interval
+  const FALLBACK_BASE = 23338;          // used if backend unreachable
+  const ELEMENT_IDS = ['openProfile3','profileMembers']; // elements to update
 
-  /*** UTILITIES ***/
-  // Format number (e.g. 23,338 → en-IN)
+  // ===== utils =====
   function fmt(n){
     try { return new Intl.NumberFormat('en-IN').format(n); }
-    catch { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+    catch { return String(n); }
   }
-
-  // Update displayed count in all target elements
   function renderCount(n){
-    const txt = fmt(n) + ' members';
+    const text = fmt(n) + ' members';
     ELEMENT_IDS.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = txt;
+      if (el) el.textContent = text;
+      else console.warn('[MemberCounter] missing element:', id);
     });
   }
 
-  /*** JSONP FETCH ***/
-  function fetchCountJsonp(url, callbackName, timeoutMs){
+  // ===== JSONP fetch (cache-busting) =====
+  function fetchJsonp(url, timeoutMs){
     return new Promise((resolve, reject) => {
-      const timer = timeoutMs ? setTimeout(() => {
-        cleanup();
-        reject(new Error('Timeout'));
-      }, timeoutMs) : null;
+      const cb = 'kf_cb_' + Math.floor(Math.random() * 1e9);
+      const sep = url.includes('?') ? '&' : '?';
+      const src = url + sep + 'callback=' + encodeURIComponent(cb) + '&_ts=' + Date.now();
+      let timer = null;
 
       function cleanup(){
         if (timer) clearTimeout(timer);
-        try { script.remove(); } catch(e){}
-        delete window[callbackName];
+        try { script.remove(); } catch(e) {}
+        try { delete window[cb]; } catch(e) {}
       }
 
-      window[callbackName] = data => { cleanup(); resolve(data); };
+      window[cb] = function(data){
+        cleanup();
+        resolve(data);
+      };
 
-      const sep = url.includes('?') ? '&' : '?';
       const script = document.createElement('script');
-      script.src = url + sep + 'callback=' + encodeURIComponent(callbackName);
+      script.src = src;
       script.async = true;
-      script.onerror = () => { cleanup(); reject(new Error('Load error')); };
+      script.onerror = function(){ cleanup(); reject(new Error('JSONP load error or blocked (CSP/network)')); };
       document.head.appendChild(script);
+
+      if (timeoutMs) timer = setTimeout(function(){ cleanup(); reject(new Error('JSONP timeout')); }, timeoutMs);
+      console.log('[MemberCounter] JSONP injected:', src);
     });
   }
 
-  /*** MAIN LOGIC ***/
+  // ===== main refresh =====
   async function refreshCount(){
-    const cbName = 'kf_cb_' + Math.floor(Math.random() * 1e6);
     try {
-      const data = await fetchCountJsonp(WEBAPP_URL, cbName, 8000);
-      if (data && data.ok && data.computedCount) {
+      console.log('[MemberCounter] fetching from backend...');
+      const data = await fetchJsonp(WEBAPP_URL, 9000);
+      console.log('[MemberCounter] backend response:', data);
+      if (data && data.ok && typeof data.computedCount !== 'undefined') {
         const count = Number(data.computedCount);
         renderCount(count);
         localStorage.setItem('kf_last_count', String(count));
         return count;
       } else {
-        throw new Error('Invalid data');
+        throw new Error('Invalid payload: ' + JSON.stringify(data));
       }
     } catch (err) {
-      console.warn('[MemberCounter] Fallback:', err);
+      console.error('[MemberCounter] fetch failed:', err);
       const last = Number(localStorage.getItem('kf_last_count')) || FALLBACK_BASE;
+      console.log('[MemberCounter] using fallback/cached value:', last);
       renderCount(last);
       return last;
     }
   }
 
-  /*** INITIALIZATION ***/
+  // ===== init =====
   (function init(){
-    // Quick display using cached value
+    console.log('[MemberCounter] init');
+    // Fast display from cache or fallback
     const cached = Number(localStorage.getItem('kf_last_count'));
-    if (cached && !isNaN(cached)) renderCount(cached);
-    else renderCount(FALLBACK_BASE);
+    if (cached && !isNaN(cached)) {
+      renderCount(cached);
+      console.log('[MemberCounter] showed cached value:', cached);
+    } else {
+      renderCount(FALLBACK_BASE);
+      console.log('[MemberCounter] showed fallback base:', FALLBACK_BASE);
+    }
 
-    // Fetch fresh from server
+    // Fetch fresh value and schedule updates
     refreshCount();
     setInterval(refreshCount, POLL_MS);
 
-    // Optional: expose manual refresh
+    // Expose manual refresh for console: call KF_refreshMemberCount()
     window.KF_refreshMemberCount = refreshCount;
   })();
 
 })();
-
 /* ===== Minimal profile interactions (social only) ===== */
 (function(){
   var openProfile = function(){
