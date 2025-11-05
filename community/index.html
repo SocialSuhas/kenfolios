@@ -880,6 +880,45 @@
 /* Scroll targets won’t hide under the sticky header */
 #welcomeMsg { scroll-margin-top: 96px; }  /* tweak to your header height */
 
+/* ============================================================
+   START: Verified Blue Tick Badge (Social Media Style)
+   ============================================================ */
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #1d9bf0; /* Twitter/X blue */
+  position: relative;
+  top: 2px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.15);
+}
+
+.verified-badge::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+/* hover effect (optional) */
+.verified-badge:hover {
+  background: #0d8ae6;
+}
+
+/* ============================================================
+   END: Verified Blue Tick Badge (Social Media Style)
+   ============================================================ */
+
+
   </style>
 </head>
 <body>
@@ -965,9 +1004,13 @@
         <div class="kf" id="openProfile" title="Open profile">KF</div>
 
         <div class="title">
-          <button id="openProfile2">KenFolios Business Community</button>
-          <div class="meta" id="openProfile3">23,000 members</div>
-        </div>
+  <button id="openProfile2">
+    KenFolios Business Community
+    <span class="verified-badge" title="Verified"></span>
+  </button>
+  <div class="meta" id="openProfile3">23,000 members</div>
+</div>
+
 
         <div class="header-actions">
           <button class="cta-btn" id="aboutBtn">About</button>
