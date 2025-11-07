@@ -1121,10 +1121,15 @@
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-        VStreet is a <strong>virtual ecosystem for India</strong>, inspired by Madison Avenue (media), Silicon Valley (startups) and K Street (advocacy).<br/><br/>
-        It promotes <em>clean, transparent, ethical</em> business practices and grows through thoughtful, direct outreach. <br/>
-        While <strong>VStreet Club</strong> is invite-only, <strong>KenFolios members</strong> receive VStreet Member status and the associated brand benefits.
-      </div>
+  VStreet is a <strong>virtual ecosystem for India</strong> that promotes 
+  <em>clean, transparent, and ethical</em> business practices.<br/><br/>
+  It grows through thoughtful, direct outreach and aims to build a culture 
+  of trust and professionalism.<br/>
+  While <strong>VStreet Club</strong> is invite-only, 
+  <strong>KenFolios members</strong> receive VStreet Member status and the 
+  associated brand benefits.
+</div>
+
     </div>
   </div>
 
@@ -2600,128 +2605,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 })();
 
 /* =========================================================
-   FORM SUBMIT — Final Replacement (fixed endpoint)
-   ---------------------------------------------------------
-   • Posts as application/x-www-form-urlencoded (no JSON)
-   • no-cors to avoid CORS noise; server still receives it
-   • Visuals unchanged; adds sendBeacon fallback
+   FORM SUBMIT — Combined "Details Saved" + Razorpay (Tight Layout)
+   - Compact spacing between text and Razorpay button
    ========================================================= */
 (function(){
   const form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
 
-  // ✅ USE THE NEW, WORKING DEPLOYMENT URL
   const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec";
-  const RAZORPAY_URL    = "#"; // placeholder
-
-  // ---------- UI Status Panel ----------
-  function ensureStatusPanel(){
-    let panel = document.getElementById('kfSubmitStatus');
-    if (panel) return panel;
-
-    panel = document.createElement('div');
-    panel.id = 'kfSubmitStatus';
-    panel.style.marginTop = '2px';
-    panel.style.textAlign = 'center';
-
-    const card = document.createElement('div');
-    card.style.border = '1px solid rgba(255,255,255,.12)';
-    card.style.background = 'rgba(255,255,255,.04)';
-    card.style.borderRadius = '12px';
-    card.style.padding = '8px 12px';
-
-    const barShell = document.createElement('div');
-    barShell.style.height = '6px';
-    barShell.style.borderRadius = '999px';
-    barShell.style.background = 'rgba(255,255,255,.12)';
-    barShell.style.overflow = 'hidden';
-    barShell.style.margin = '0 auto';
-    barShell.style.maxWidth = '320px';
-
-    const barFill = document.createElement('div');
-    barFill.id = 'kfProgressBar';
-    barFill.style.height = '100%';
-    barFill.style.width = '0%';
-    barFill.style.background = '#E11D2E';
-    barFill.style.transition = 'width .35s ease';
-    barShell.appendChild(barFill);
-
-    const msg = document.createElement('div');
-    msg.id = 'kfProgressMsg';
-    msg.style.marginTop = '8px';
-    msg.style.fontSize = '.95rem';
-    msg.style.color = '#E11D2E';
-    msg.textContent = 'Preparing…';
-
-    const ctas = document.createElement('div');
-    ctas.style.display = 'flex';
-    ctas.style.justifyContent = 'center';
-    ctas.style.gap = '10px';
-    ctas.style.marginTop = '12px';
-
-    const payBtn = document.createElement('button');
-    payBtn.id = 'kfPayNowBtn';
-    payBtn.type = 'button';
-    payBtn.textContent = 'Pay Now';
-    payBtn.style.display = 'none';
-    payBtn.style.padding = '.7rem 1.4rem';
-    payBtn.style.borderRadius = '999px';
-    payBtn.style.border = '0';
-    payBtn.style.cursor = 'pointer';
-    payBtn.style.fontWeight = '600';
-    payBtn.style.background = '#E11D2E';
-    payBtn.style.color = '#fff';
-    payBtn.addEventListener('click', function(){
-      if (RAZORPAY_URL && RAZORPAY_URL !== '#') {
-        window.open(RAZORPAY_URL, '_blank', 'noopener');
-      } else {
-        alert('Payment step will appear here (Razorpay) once configured.');
-      }
-    });
-
-    ctas.appendChild(payBtn);
-    card.appendChild(barShell);
-    card.appendChild(msg);
-    card.appendChild(ctas);
-    panel.appendChild(card);
-
-    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    const actions = submitBtn ? submitBtn.closest('.actions') || submitBtn.parentElement : null;
-    if (actions) {
-      actions.style.marginBottom = '0';
-      actions.insertAdjacentElement('afterend', panel);
-    } else {
-      form.insertAdjacentElement('afterend', panel);
-    }
-
-    return panel;
-  }
-
-  function setProgress(pct, text){
-    const panel = ensureStatusPanel();
-    const bar = panel.querySelector('#kfProgressBar');
-    const msg = panel.querySelector('#kfProgressMsg');
-    if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
-    if (text && msg) msg.textContent = text;
-  }
-
-  function beginProgress(){
-    setProgress(10, 'Validating…');
-    const marks = [25, 45, 65, 85];
-    let i = 0;
-    const id = setInterval(() => {
-      if (i >= marks.length) return clearInterval(id);
-      setProgress(marks[i++], 'Saving your details securely…');
-    }, 300);
-    return function finish(text, ok){
-      clearInterval(id);
-      setProgress(100, text || (ok ? 'Saved' : 'Done'));
-      const msg = document.getElementById('kfProgressMsg');
-      if (msg) msg.style.color = ok ? '#E11D2E' : '#f3c13a';
-      const pay = document.getElementById('kfPayNowBtn');
-      if (pay) pay.style.display = ok ? 'inline-block' : 'none';
-    };
-  }
+  const RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd";
 
   // ---------- Helpers ----------
   const val = id => (document.getElementById(id)?.value || '').trim();
@@ -2737,7 +2629,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return requiredOk && acceptOk && expOk;
   }
 
-  // Build x-www-form-urlencoded payload (best mapping to e.parameter)
   function toUrlEncoded(){
     const usp = new URLSearchParams();
     usp.append('fullName', val('fi_name'));
@@ -2752,6 +2643,96 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return usp.toString();
   }
 
+  function ensureBottomContainer(){
+    let c = document.getElementById('kfBottomContainer');
+    if (c) return c;
+    c = document.createElement('div');
+    c.id = 'kfBottomContainer';
+    c.style.marginTop = '10px';
+    c.style.textAlign = 'center';
+    form.insertAdjacentElement('afterend', c);
+    return c;
+  }
+
+  // ✅ Combined Saved message + Tick
+  function showSavedCombinedMessage(){
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.remove();
+
+    const container = ensureBottomContainer();
+    const prev = container.querySelector('.kf-saved-combined');
+    if (prev) prev.remove();
+
+    const saved = document.createElement('div');
+    saved.className = 'kf-saved-combined';
+    saved.style.display = 'inline-block';
+    saved.style.textAlign = 'center';
+    saved.style.padding = '8px 12px';
+    saved.style.borderRadius = '10px';
+    saved.style.gap = '6px';
+
+    const top = document.createElement('div');
+    top.style.display = 'flex';
+    top.style.alignItems = 'center';
+    top.style.justifyContent = 'center';
+    top.style.gap = '8px';
+
+    const tick = document.createElement('span');
+    tick.textContent = '✔';
+    tick.style.color = '#16a34a';
+    tick.style.fontSize = '1.3rem';
+    tick.style.lineHeight = '1';
+    tick.setAttribute('aria-hidden', 'true');
+
+    const title = document.createElement('span');
+    title.textContent = 'Details Saved';
+    title.style.color = '#16a34a';
+    title.style.fontWeight = '700';
+    title.style.fontSize = '1rem';
+
+    top.appendChild(tick);
+    top.appendChild(title);
+
+    const instr = document.createElement('div');
+    instr.style.marginTop = '4px';
+    instr.style.fontSize = '0.95rem';
+    instr.style.color = '#E11D2E';
+    instr.style.fontWeight = '600';
+    instr.textContent = 'Hit Pay Now below and complete the payment to activate membership and proceed for onboarding.';
+
+    saved.appendChild(top);
+    saved.appendChild(instr);
+    container.insertAdjacentElement('afterbegin', saved);
+  }
+
+  // ✅ Inject Razorpay (reduced top margin)
+  function injectRazorpayButton(){
+    const container = ensureBottomContainer();
+    if (document.getElementById('kfRazorpayContainer')) return;
+
+    const rzpWrap = document.createElement('div');
+    rzpWrap.id = 'kfRazorpayContainer';
+    rzpWrap.style.display = 'flex';
+    rzpWrap.style.flexDirection = 'column';
+    rzpWrap.style.alignItems = 'center';
+    rzpWrap.style.justifyContent = 'center';
+    rzpWrap.style.marginTop = '4px'; // tighter spacing
+
+    const rzpForm = document.createElement('form');
+    rzpForm.id = 'kfRazorpayForm';
+    rzpForm.style.display = 'inline-block';
+    rzpForm.style.marginTop = '2px'; // even tighter to text
+
+    const script = document.createElement('script');
+    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+    script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
+    script.async = true;
+
+    rzpForm.appendChild(script);
+    rzpWrap.appendChild(rzpForm);
+    container.appendChild(rzpWrap);
+  }
+
   // ---------- Submit ----------
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -2760,61 +2741,50 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       return;
     }
 
-    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    const finish = beginProgress();
-
-    const body = toUrlEncoded();
-
-    setFormEnabled(false);
+    const submitBtn = form.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.textContent = 'Saving…';
 
-    // Post as application/x-www-form-urlencoded
+    const body = toUrlEncoded();
+    setFormEnabled(false);
+
     fetch(SHEETS_ENDPOINT, {
       method: 'POST',
-      mode: 'no-cors', // we don't need to read response
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
       body
     })
     .then(() => {
-      finish('Details saved. Thank you!', true);
-      // ✅ Convert the submit button into a Saved state
-  const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = 'Saved';
-    submitBtn.classList.add('success');
-    submitBtn.setAttribute('aria-disabled', 'true');
-    submitBtn.disabled = true;
-  }
-
-  // ✅ Keep Pay Now CTA visible
-  const pay = document.getElementById('kfPayNowBtn');
-  if (pay) pay.style.display = 'inline-block';
-
-      if (submitBtn) submitBtn.textContent = 'Saved';
-      form.reset();
+      showSavedCombinedMessage();
+      try { form.reset(); } catch(e){}
+      injectRazorpayButton();
     })
     .catch(err => {
       console.warn('[Sheets] fetch failed, trying sendBeacon', err);
-      // Fallback: sendBeacon (fire-and-forget)
       try {
         const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
         const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
         if (ok) {
-          finish('Details saved. Thank you!', true);
-          if (submitBtn) submitBtn.textContent = 'Saved';
-          form.reset();
-        } else {
-          throw new Error('sendBeacon returned false');
-        }
-      } catch (err2) {
+          showSavedCombinedMessage();
+          try { form.reset(); } catch(e){}
+          injectRazorpayButton();
+        } else throw new Error('sendBeacon returned false');
+      } catch(err2){
         console.error('[Sheets] POST error:', err2);
-        finish('Could not save right now. Please try again.', false);
+        const container = ensureBottomContainer();
+        let errEl = container.querySelector('.kf-save-error');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.className = 'kf-save-error';
+          errEl.style.color = '#f3c13a';
+          errEl.style.fontWeight = '600';
+          errEl.style.marginTop = '6px';
+          container.appendChild(errEl);
+        }
+        errEl.textContent = 'Could not save right now. Please try again.';
         if (submitBtn) submitBtn.textContent = 'Submit Details & Continue';
       }
     })
-    .finally(() => {
-      setTimeout(() => setFormEnabled(true), 300);
-    });
+    .finally(() => setTimeout(() => setFormEnabled(true), 300));
   });
 })();
 </script>
