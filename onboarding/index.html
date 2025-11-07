@@ -1147,6 +1147,175 @@
   }
 }
 
+/* ============================================================
+   KenFolios — Onboarding / Activation Form Styles (Scoped)
+   ------------------------------------------------------------
+   Minimal standalone version — use when page already includes
+   global layout, colors, typography, and button styles.
+   ============================================================ */
+
+#activationTop {
+  margin: 0 auto;
+  max-width: 720px;
+  width: min(100%, calc(100% - 2rem));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.1);
+  overflow: hidden;
+}
+
+#activationTop .brandbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--kf-red);
+  color: #fff;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+}
+
+#activationTop .brandbar .badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+#activationTop .content {
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+#activationTop .intro {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+#activationTop .intro .muted {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+#activationTop .kf-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+#activationTop .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+@media (max-width: 640px) {
+  #activationTop .grid2 { grid-template-columns: 1fr; }
+}
+
+#activationTop .kf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+#activationTop .kf-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+#activationTop .kf-input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font-size: 15px;
+  background: #fff;
+  color: var(--text);
+}
+
+#activationTop .note {
+  font-size: 13px;
+  color: var(--muted);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+}
+
+#activationTop .kf-submit {
+  height: 48px;
+  min-width: 200px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 15px;
+  border: 1px solid var(--kf-red);
+  background: var(--kf-red);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+#activationTop .kf-submit:hover { opacity: 0.92; }
+
+#activationTop .cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+#activationTop .cta-row .ghost {
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+#activationTop .helper {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ============================================================
+   Activation Layout Enhancement — Centered & Wider
+   ------------------------------------------------------------
+   Applies only to the activation card inside .chat-msg.admin
+   ============================================================ */
+
+#activationMsg {
+  display: flex;
+  justify-content: center;
+}
+
+#activationMsg #activationTop {
+  width: min(100%, 780px);            /* wider max width */
+  margin: 1rem auto;                  /* center horizontally with gentle spacing */
+}
+
+#activationMsg .wrap {
+  border-radius: 20px;
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.08);
+}
+
+#activationMsg .content {
+  padding: 1.25rem 1.5rem;            /* a bit more padding for breathing room */
+}
+
+@media (min-width: 768px) {
+  #activationMsg #activationTop {
+    width: min(95%, 800px);           /* slightly wider on large screens */
+  }
+}
+
+@media (max-width: 640px) {
+  #activationMsg #activationTop {
+    width: 100%;                      /* full width on small devices */
+    margin: 0.5rem auto;
+  }
+}
+
+
 
   </style>
 </head>
@@ -1241,14 +1410,19 @@
 </div>
 
 
-        <div class="header-actions">
-          <button class="cta-btn" id="aboutBtn">About</button>
-          <button class="cta-btn" id="learnBtn">Learn More</button>
-          <!-- Header CTA -->
-<button class="cta-btn primary" id="joinBtn" >Join Now</button>
-        </div>
+        <div class="header-actions" style="justify-content:center; display:flex; gap:.75rem;">
+  <button class="cta-btn" id="aboutBtn">About</button>
+  <button class="cta-btn primary" id="learnBtn" style="background-color:#d32f2f; border-color:#d32f2f;">Onboarding</button>
+</div>
       </header>
 
+<!-- ============================================================
+     KenFolios — Onboarding & Activation Section (Final HTML)
+     ------------------------------------------------------------
+     ✅ Uses scoped form styles only
+     ✅ Integrated with chat skeleton & pinned welcome bubble
+     ✅ Ready for real activation endpoint or simple submit
+   ============================================================ -->
 <section class="chat-area" id="chatArea">
   <!-- Chat skeleton placeholder -->
   <div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
@@ -1270,539 +1444,140 @@
     </div>
   </div>
 
-  <div class="chat-note-slot" data-above-pinned="true"></div>
-
-  <!-- PINNED: Welcome -->
+  <!-- PINNED: Onboarding message -->
   <div class="chat-msg admin" id="welcomeMsg">
     <div class="avatar">KF</div>
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-      👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network with 
-      <span id="welcomeMembers"><span class="member-count">23,338</span> members</span>.<br/><br/>
-      This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
-    </div>
-
-      <div class="pinned-label">📌 Pinned</div>
-    </div>
-  </div>
-
-  <div class="chat-note-slot"></div>
-
-  <!-- Q1 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Thanks! Happy to be here. How does this community actually work?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        The community maintains a <strong>PAN-India group of paid-only members</strong> where every new member is introduced.<br/><br/>
-        From there members can:<br/>
-        ✅ Join <strong>city</strong>, <strong>industry</strong>, and <strong>interest</strong> sub-groups.<br/>
-        ✅ Access <strong>20+ community features</strong> designed for professionals and entrepreneurs.<br/>
-        ✅ Create or join focused sub-groups that match their goals and needs.<br/><br/>
-        This keeps the network high-quality, focused, and spam-free.
+        👋 <strong>Welcome to the dedicated onboarding page of KenFolios Business Community.</strong>
+        <p style="margin:.5rem 0 0">
+          Please complete the activation form below to proceed with your community access.
+          This form is only for users who have already completed payment.
+        </p>
+      <!--   <p style="margin:.25rem 0 0; font-size:.95em; color:var(--muted,#555)">
+          Have questions? <a href="#learnMore" id="learnMoreLink">Learn more</a>.
+        </p> -->
       </div>
+      <div class="pinned-label">📌 Onboarding</div>
     </div>
   </div>
 
-  <!-- Q2 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">You mentioned 20+ features — what exactly are those?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
+<!-- ACTIVATION: standalone card, no chat bubble, still skeleton-synced -->
+<div class="chat-msg admin" id="activationMsg" data-skeleton-watch>
+  <section id="activationTop" aria-label="Activation">
+    <div class="wrap">
+      <div class="brandbar" role="heading" aria-level="1">
+        <span class="badge" aria-hidden="true">KF</span>
+        <span>Community Admin • Payment Confirmed</span>
+      </div>
 
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-
-      <div class="kfplan-card" role="region" aria-label="KenFolios pay-once membership plan">
-        <div class="kfplan-head">
-          <div class="kfplan-title">KenFolios Pay-Once Membership</div>
-          <div class="kfplan-sub">One-time membership — full access</div>
+      <div class="content">
+        <div class="intro">
+          Thank you for joining the <strong>KenFolios Business Community</strong>! 🎉
+          <br />Please complete this <strong>Activation Form</strong> to start using the community.
+          <br /><span class="muted">Support is available inside member groups for active, paid members only.</span>
         </div>
 
-        <div class="kfplan-price">
-          <div class="amount">₹1,999</div>
-          <div class="freq">One-time — <small>inclusive of GST</small></div>
-        </div>
-
-        <ul class="kfplan-features">
-          <li class="highlight">
-            <strong>VStreet Member Status</strong> — core inclusion that automatically unlocks all VStreet primary membership benefits.
-          </li>
-          <li>Business development & professional reputation management</li>
-          <li>Lead generation and business collaboration programs</li>
-          <li>Founder roundtables and exclusive networking meets</li>
-          <li>Funding access and investor introductions</li>
-          <li>Mentorship and business strategy guidance</li>
-          <li>Cofounder and partnership search support</li>
-          <li>Hiring & recruitment assistance for startups and SMEs</li>
-          <li>Internship and learning opportunities via KenFolios partners</li>
-          <li>Access to business tools and curated founder resources</li>
-          <li>Media exposure and founder story publishing support</li>
-          <li>Brand identity and online presence enhancement</li>
-          <li><strong>Recurring Membership Eligibility</strong> — future access to renewal and upgrade options with continuity benefits</li>
-          <li>Priority access to KenFolios Events & Founder Summits</li>
-          <li>Business listing in the KenFolios Member Directory</li>
-          <li>Exclusive community offers and collaboration deals</li>
-          <li>Access to learning sessions, courses, and workshops</li>
-          <li>Deal Room access for founders and professionals</li>
-          <li>Dedicated member support and onboarding assistance</li>
-          <li>Personalized growth and business reputation roadmap</li>
-          <li><em>...and dozens of additional value-added features as the network expands.</em></li>
-        </ul>
-
-        <div class="kfplan-cta">
-          <button class="kfplan-btn" type="button"
-                  onclick="document.getElementById('joinBtn')?.click()"
-                  aria-label="Pay Now to join KenFolios">
-            Pay ₹1,999 — Join Now
-          </button>
-          <div class="kfplan-note">
-            One-time fee. Membership activation and onboarding follow after payment.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-
-  <!-- Q3 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">What is VStreet and how does it benefit me?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-  VStreet is a <strong>virtual ecosystem for India</strong> that promotes 
-  <em>clean, transparent, and ethical</em> business practices.<br/><br/>
-  It grows through thoughtful, direct outreach and aims to build a culture 
-  of trust and professionalism.<br/>
-  While <strong>VStreet Club</strong> is invite-only, 
-  <strong>KenFolios members</strong> receive VStreet Member status and the 
-  associated brand benefits.
-</div>
-
-    </div>
-  </div>
-
-  <!-- SINGLE INLINE CTA (appears after Q3) -->
-  <div class="chat-msg admin single-cta" data-stage="3">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <!-- text will be injected by JS based on stage -->
-        <span class="cta-text">Ready to join?</span>
-        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
-      </div>
-      <div class="time">Just now</div>
-    </div>
-  </div>
-
-  <!-- Q4 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Has the community organised meetups in reality?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Yes — launched in <strong>March 2021</strong> (started online), and later expanded offline.<br/>
-        To date: <strong>250+ online meetups</strong> and <strong>30+ offline meetups</strong> connecting founders, operators and leaders.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q5 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Are there any real user testimonials?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Absolutely — we have hundreds of genuine testimonials. See video testimonials and event photos on Instagram: <strong>@KenFoliosHQ</strong>.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q6 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Do you offer trial memberships?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        No — we do not offer trial memberships. This is a <strong>business community for serious professionals</strong> and we keep a low entry fee so members are genuinely committed.
-      </div>
-    </div>
-  </div>
-
-  <!-- SINGLE INLINE CTA (appears after Q6) -->
-  <div class="chat-msg admin single-cta" data-stage="6">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <span class="cta-text">Ready to join?</span>
-        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
-      </div>
-      <div class="time">Just now</div>
-    </div>
-  </div>
-
-  <!-- Q7 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Is the community regulated?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Yes — we grow organically, and our admins actively monitor activities in the background to keep conversations professional and respectful.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q8 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Can I organise events or create community groups?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Yes — since the <strong>VStreet launch (Aug 2025)</strong>, members may create <strong>KenFolios Groups</strong> for cities or interests and host local events under the community banner.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q9 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">How can I get mentorship and funding for my business?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Post your requirement in the relevant groups — mentors and investors often reach out directly. Also join mentoring and fundraising events organised by the community.
-      </div>
-    </div>
-  </div>
-
-  <!-- SINGLE INLINE CTA (appears after Q9) -->
-  <div class="chat-msg admin single-cta" data-stage="9">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <span class="cta-text">Ready to join?</span>
-        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
-      </div>
-      <div class="time">Just now</div>
-    </div>
-  </div>
-
-  <!-- Q10 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">How can I grow my business here?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Use business development services and lead-generation tools inside the community. Join city, interest and industry groups to directly connect with relevant members.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q11 -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">How do I become a member?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Fill the joining form below and you will be redirected to the secure payment page. After payment complete the activation form; moderators will then activate your access to the core Telegram group and other features.
-      </div>
-    </div>
-  </div>
-
-  <!-- Q12: Recurring membership (modified as optional) -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Do you also offer recurring memberships with extra benefits?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Yes — recurring membership is <strong>optional</strong>. It provides extra benefits such as a dedicated community manager, early invites and premium visibility. You may upgrade anytime after activating the primary membership.
-      </div>
-    </div>
-  </div>
-
-  <!-- SINGLE INLINE CTA (appears after Q12) -->
-  <div class="chat-msg admin single-cta" data-stage="12">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <span class="cta-text">Ready to join?</span>
-        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
-      </div>
-      <div class="time">Just now</div>
-    </div>
-  </div>
-
-  <!-- Q13: Extra payments after membership -->
-  <div class="chat-msg member">
-    <div class="bubble">
-      <div class="name">New Member</div>
-      <div class="text">Do I have to pay anything extra after taking this membership for community benefits?</div>
-    </div>
-    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
-  </div>
-
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        No — you do not have to pay anything extra unless you choose to: take recurring memberships, attend paid events, enroll in paid courses, or opt for other paid services or premium offerings.
-      </div>
-    </div>
-  </div>
-
-  <!-- FINAL CLOSING MESSAGE (appears only after the last answer) -->
-  <div class="chat-msg admin" id="closingMsg">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        You’ve now seen everything that <strong>high-quality members</strong> usually want to know before joining. Most professionals decide to join at this stage because the network is practical, credible and built for serious growth.<br/><br/>
-        If you’re ready, please fill the form below to join and start your onboarding.
-      </div>
-    </div>
-  </div>
-
-  <!-- Final form (canonical Join trigger lives here) -->
-  <div class="chat-msg admin" id="finalJoinInfo">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Before you proceed, share a few details so we can fast-track your access. Submitting this will continue your join flow.
-        <form id="kfJoinInfoForm" class="kf-form kf-rowgap" novalidate>
+        <!-- Activation Form -->
+        <form id="kfActivationForm" class="kf-form" novalidate>
           <div class="grid2">
             <div class="kf-field">
-              <label class="kf-label" for="fi_name">Full Name*</label>
-              <input class="kf-input" id="fi_name" name="name" type="text" required />
+              <label class="kf-label" for="ac_name">Full Name*</label>
+              <input class="kf-input" id="ac_name" name="name" type="text" required />
             </div>
             <div class="kf-field">
-              <label class="kf-label" for="fi_dob">Date of Birth*</label>
-              <input class="kf-date" id="fi_dob" name="dob" type="date" required />
+              <label class="kf-label" for="ac_txn">Transaction ID (Razorpay)*</label>
+              <input class="kf-input" id="ac_txn" name="transactionId" type="text" placeholder="e.g., pay_LwX..." required />
             </div>
           </div>
 
           <div class="grid2">
             <div class="kf-field">
-              <label class="kf-label" for="fi_gender">Gender*</label>
-              <select class="kf-select" id="fi_gender" name="gender" required>
-                <option value="" disabled selected>Select</option>
-                <option>Female</option>
-                <option>Male</option>
-                <option>Non-binary</option>
-                <option>Prefer not to say</option>
-                <option>Other</option>
-              </select>
+              <label class="kf-label" for="ac_whatsapp">WhatsApp / Telegram Phone*</label>
+              <input class="kf-input" id="ac_whatsapp" name="phone" type="tel" inputmode="tel" placeholder="10-digit number" required />
             </div>
             <div class="kf-field">
-              <label class="kf-label" for="fi_city">City*</label>
-              <input class="kf-input" id="fi_city" name="city" type="text" required />
+              <label class="kf-label" for="ac_tgid">Telegram Username (without @)*</label>
+              <input class="kf-input" id="ac_tgid" name="telegramUser" type="text" placeholder="username" required />
             </div>
           </div>
 
-          <div class="grid2">
-            <div class="kf-field">
-              <label class="kf-label" for="fi_email">Email*</label>
-              <input class="kf-input" id="fi_email" name="email" type="email" required />
+          <div class="note">
+            After submitting, request to join the Telegram group below.
+            <strong>Only verified members are accepted by admins.</strong>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:.5rem; margin-top:.3rem;">
+            <button type="submit" class="kf-submit">Save & Continue</button>
+          </div>
+
+          <!-- Progress bar + status -->
+          <div id="acStatus" style="display:none; max-width:520px; margin:.5rem auto 0 auto; text-align:center;">
+            <div style="height:6px; border-radius:999px; background:#e5e7eb; overflow:hidden;">
+              <div id="acBar" style="height:100%; width:0%; background:#E11D2E; transition:width .35s ease;"></div>
             </div>
-            <div class="kf-field">
-              <label class="kf-label" for="fi_phone">Phone*</label>
-              <input class="kf-input" id="fi_phone" name="phone" type="tel" inputmode="tel" required />
-            </div>
-          </div>
-
-          <div class="kf-field">
-            <label class="kf-label">What are your expectations from the community?*</label>
-            <div class="kf-checklist" role="group" aria-label="Expectations">
-              <label class="kf-check"><input type="checkbox" name="expectations" value="WhatsApp Groups"> WhatsApp/Telegram Groups</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Business Leads"> Business Leads</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Brand Building"> Brand Building</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Starting a business"> Starting a business</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Growing a business"> Growing a business</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Mentorship"> Mentorship</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Funding"> Funding</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Learning & Skill Development"> Learning & Skill Development</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Events & Meetups"> Events & Meetups</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Meeting Professional Singles"> Meeting Professional Singles</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Investment Opportunities"> Investment Opportunities</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Hiring & Team Building"> Hiring & Team Building</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Internship Openings"> Internship Openings</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Job Openings"> Job Openings</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Other"> Other</label>
-            </div>
-          </div>
-
-          <div class="kf-legal">
-            <label style="display:flex; gap:.5rem; align-items:flex-start;">
-              <input id="fi_accept" type="checkbox" required checked />
-              <span>
-                I accept the <a href="#" data-legal="terms">Terms</a> and <a href="#" data-legal="privacy">Privacy Policy</a> of KenFolios Business Community.
-              </span>
-            </label>
-          </div>
-
-          <div class="kf-note">
-            The information shared here is <strong>strictly confidential</strong> and used only for community onboarding and verification.
-          </div>
-
-          <div class="kf-rowgap">
-            <!-- canonical join trigger button (kept once) -->
-            <button type="submit" class="kf-submit">Submit Details & Continue</button>
-            <button type="button" id="joinBtn" style="display:none">Join Now (canonical)</button>
+            <div id="acMsg" style="margin-top:8px; font-size:.95rem; color:#E11D2E;">Saving…</div>
           </div>
         </form>
+
+        <!-- App Download + Group Join Buttons -->
+        <div class="cta-row" role="group" aria-label="Get apps & join group">
+          <a class="cta-btn ghost" id="dlWhatsapp" href="https://whatsapp.com/dl" target="_blank" rel="noopener">Download WhatsApp</a>
+          <a class="cta-btn ghost" id="dlTelegram" href="https://telegram.org/dl" target="_blank" rel="noopener">Download Telegram</a>
+          <a class="cta-btn primary" id="joinTelegram" href="#" target="_blank" rel="noopener">Join Telegram Group</a>
+        </div>
+
+        <div class="helper">
+          Joining link works only for verified members;
+          <strong>admins admit those who complete activation.</strong>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+</div>
+
+ 
 
   <script>
-    /*
-      CTA behaviour:
-      - Inserts stage-specific, encouraging one-liners into each .single-cta .cta-text.
-      - Lines are chosen randomly from a small set that is relevant to the Q&A upto that stage.
-      - The Join Now button triggers the canonical #joinBtn (kept hidden in the final form) so all CTAs have a single payment/join flow.
-    */
-    document.addEventListener('DOMContentLoaded', function(){
-      const ctaMap = {
-        '3': [
-          'Become part of VStreet — amplify your brand across India.',
-          'Join now to claim your VStreet member status and early visibility.',
-          'Want the VStreet edge? Get verified and start building your brand.'
-        ],
-        '6': [
-          'Get verified access to 20+ features — join now.',
-          'Serious professionals join here. Ready to level up?',
-          'No trials — just focused benefits. Join the verified group.'
-        ],
-        '9': [
-          'Looking for mentors or funding? Join and post your ask to the network.',
-          'Connect with investors and mentors — get started by joining.',
-          'Post your mentorship request to a community that replies.'
-        ],
-        '12': [
-          'Enjoy premium visibility — upgrade anytime after joining.',
-          'Prefer hands-on support? Recurring members get a dedicated manager.',
-          'Upgrade when you want — primary membership gives core access today.'
-        ]
-      };
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('kfActivationForm');
+      const status = document.getElementById('acStatus');
+      const bar = document.getElementById('acBar');
+      const msg = document.getElementById('acMsg');
 
-      document.querySelectorAll('.single-cta').forEach(function(node){
-        const stage = node.getAttribute('data-stage');
-        const pool = ctaMap[stage] || ['Ready to join?'];
-        const choice = pool[Math.floor(Math.random()*pool.length)];
-        const textEl = node.querySelector('.cta-text');
-        if(textEl) textEl.textContent = choice;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = form.querySelector('.kf-submit');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        status.style.display = 'block';
+        bar.style.width = '40%';
+        setTimeout(() => (bar.style.width = '80%'), 600);
+        setTimeout(() => {
+          bar.style.width = '100%';
+          msg.textContent = 'Activation saved! You can now join the Telegram group.';
+          btn.textContent = 'Saved ✓';
+          btn.classList.add('success');
+        }, 1200);
       });
 
-      // UX: scroll to first CTA if desired (commented out by default)
-      // const firstCta = document.querySelector('.single-cta'); if(firstCta) firstCta.scrollIntoView({behavior:'smooth'});
+      const joinBtn = document.getElementById('joinTelegram');
+      joinBtn.addEventListener('click', function (e) {
+        if (status.style.display === 'none') {
+          e.preventDefault();
+          alert('Please complete activation first to access the group.');
+        }
+      });
+
+      document.getElementById('learnMoreLink')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        form.scrollIntoView({ behavior: 'smooth' });
+      });
     });
   </script>
-
+  
 </section>
-
 
 
 
@@ -1907,7 +1682,7 @@
           </div>
         </div>
 <!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
-<div class="profile-cta" role="group" aria-label="Join actions">
+<!-- <div class="profile-cta" role="group" aria-label="Join actions">
   <button class="cta-btn primary" id="joinBtnProfile"
     onclick="
       // 🧹 Close side panes
@@ -1921,7 +1696,7 @@
     ">
     Join Now
   </button>
-</div>
+</div> 
 
 
         <!-- Social links -->
