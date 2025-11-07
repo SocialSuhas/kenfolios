@@ -825,98 +825,102 @@
   }
 }
 
-/* =========================================================
-   PROFILE CTA SECTION — Adaptive Width
-   ---------------------------------------------------------
-   • This styles the "Join Now" button inside the profile pane.
-   • Unlike header/chat buttons, this one adapts to screen width:
-       - On small screens: full width for tap friendliness.
-       - On larger screens: wider, centered, but max capped.
-   • Uses flexbox container (.profile-cta) for clean centering.
-   ========================================================= */
-.profile-cta {
-  margin: .8rem 0 .4rem 0;     /* Comfortable spacing */
-  display: flex;
-  justify-content: center;     /* Centers the button horizontally */
-  padding: 0 1rem;             /* Prevents edge hugging on mobile */
-}
+/* ===== Fix: Join form bubble overflow between 530px–482px ===== */
+@media (max-width: 530px) and (min-width: 482px) {
+  #finalJoinInfo {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 
-.profile-cta .cta-btn {
-  width: 100%;                 /* Full width on mobile */
-  max-width: 320px;            /* Cap the width on larger screens */
-  font-size: 16px;             /* Slightly bigger for emphasis */
-  padding: .7rem 1.4rem;       /* More breathing room */
-}
+  #finalJoinInfo .bubble {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    overflow: hidden;
+  }
 
-/* Optional: slightly wider on larger screens */
-@media (min-width: 768px) {
-  .profile-cta .cta-btn {
+  /* Collapse two-column grid to single column cleanly */
+  #finalJoinInfo .kf-form,
+  #finalJoinInfo .kf-form .grid2 {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 10px !important;
+  }
+
+  /* Remove any residual min-width constraints */
+  #finalJoinInfo .kf-field { min-width: 0 !important; }
+
+  /* Inputs and selects stretch fluidly */
+  #finalJoinInfo .kf-input,
+  #finalJoinInfo .kf-select,
+  #finalJoinInfo .kf-date {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Submit button stacks properly, no overflow */
+  #finalJoinInfo .kf-rowgap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #finalJoinInfo .kf-submit {
+    width: 100% !important;
     max-width: 420px;
-    font-size: 17px;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Payment & bottom containers remain fluid */
+  #kfBottomContainer,
+  #kfRazorpayContainer {
+    width: 100% !important;
+    box-sizing: border-box;
   }
 }
 
 
-/* Keep the message composer always reachable (iOS safe area aware) */
-.composer{
-  position: sticky;
-  bottom: env(safe-area-inset-bottom);
-  z-index: 9;
-  background:#fff;
-  border-top:1px solid var(--border);
-  box-shadow:0 -8px 16px rgba(2,6,23,.08);
-}
-
-/* Disclaimer scrolls normally (not sticky) */
-.global-disclaimer{
-  position: static;
-  box-shadow:none;
-}
-
-/* Ensure proper column sizing and smooth scroll on iOS */
-.mid{ min-height:100svh; display:flex; flex-direction:column; }
-.chat-area{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
-
-/* Scroll targets won’t hide under the sticky header */
-#welcomeMsg { scroll-margin-top: 96px; }  /* tweak to your header height */
-
-/* ============================================================
-   START: Verified Blue Tick Badge (Social Media Style)
-   ============================================================ */
-
+/* ===== Font Awesome "check-circle" replica (pure CSS) ===== */
 .verified-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
   width: 18px;
   height: 18px;
   margin-left: 6px;
-  border-radius: 50%;
-  background: #1d9bf0; /* Twitter/X blue */
-  position: relative;
-  top: 2px;
-  box-shadow: 0 0 2px rgba(0,0,0,0.15);
+  vertical-align: middle;
+  color: #1e90ff; /* Dodger blue */
 }
 
-.verified-badge::after {
-  content: "";
+/* The blue check-circle icon (SVG mask identical to Font Awesome fa-check-circle) */
+.verified-badge::before {
+  content: '';
   display: block;
-  width: 6px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  margin-bottom: 2px;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
+  -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
 }
 
-/* hover effect (optional) */
-.verified-badge:hover {
-  background: #0d8ae6;
+/* Prevent vertical clipping of the blue tick on very narrow screens */
+@media (max-width: 370px) {
+  .verified-badge {
+    position: relative;
+    top: 0.5px;                 /* subtle vertical nudge */
+    flex-shrink: 0;             /* don’t let it collapse */
+    line-height: 1 !important;  /* fix inline clipping */
+    transform: scale(0.9);      /* tiny scale so it fits visually */
+  }
+  /* ensure the button text wraps cleanly next to the icon */
+  #openProfile2 {
+    flex-wrap: wrap;
+    line-height: 1.2;
+    align-items: center;
+  }
 }
-
-/* ============================================================
-   END: Verified Blue Tick Badge (Social Media Style)
-   ============================================================ */
 
 
   </style>
