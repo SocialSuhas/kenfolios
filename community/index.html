@@ -922,6 +922,159 @@
   }
 }
 
+/* =========================================================
+   KenFolios Pay-Once Membership (Chat Bubble Integration)
+   ---------------------------------------------------------
+   - Independent styles (prefix: .kfplan-)
+   - Does not affect global buttons or CTA styles
+   - Red theme, responsive, bubble-safe
+   ========================================================= */
+
+:root {
+  --kf-accent: #E11D2E; /* KenFolios red */
+  --kf-card-bg: #fff;
+  --kf-card-border: rgba(0, 0, 0, 0.06);
+  --kf-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.kfplan-card {
+  border-radius: 12px;
+  border: 1px solid var(--kf-card-border);
+  background: var(--kf-card-bg);
+  padding: 12px 14px;
+  max-width: 620px;
+  box-shadow: var(--kf-shadow);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin-top: 4px;
+}
+
+.kfplan-head .kfplan-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kfplan-head .kfplan-sub {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.kfplan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.kfplan-price .amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--kf-accent);
+}
+
+.kfplan-price .freq {
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.kfplan-features {
+  margin: 8px 0 12px 0;
+  padding-left: 18px;
+  color: #0f172a;
+  list-style-type: disc;
+}
+
+.kfplan-features li {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Highlighted first feature */
+.kfplan-features li.highlight {
+  background: rgba(225, 29, 46, 0.06);
+  border-left: 3px solid var(--kf-accent);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #b91c1c;
+  list-style-type: none;
+}
+
+.kfplan-features li em {
+  color: var(--kf-accent);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* CTA */
+.kfplan-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kfplan-btn {
+  background: var(--kf-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  min-width: 170px;
+}
+
+.kfplan-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  transition: all 0.12s ease;
+}
+
+.kfplan-btn:focus {
+  outline: 3px solid rgba(225, 29, 46, 0.12);
+  outline-offset: 2px;
+}
+
+.kfplan-note {
+  font-size: 0.82rem;
+  color: #475569;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .kfplan-card { padding: 12px; }
+  .kfplan-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .kfplan-price .amount { font-size: 1.35rem; }
+  .kfplan-features {
+    padding-left: 16px;
+    margin-bottom: 12px;
+  }
+  .kfplan-cta { width: 100%; gap: 6px; }
+  .kfplan-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 10px;
+  }
+}
+
 
   </style>
 </head>
@@ -1097,21 +1250,66 @@
     <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
   </div>
 
-  <div class="chat-msg admin">
-    <div class="avatar">KF</div>
-    <div class="bubble">
-      <div class="name">Community Admin</div>
-      <div class="text">
-        Here are the <strong>KenFolios Business Community Member Features</strong> included for verified members:<br/><br/>
-        • <strong>VStreet Member Status</strong> — automatically includes VStreet primary membership benefits.<br/>
-        • Online Events, Offline Meets, Founder Roundtables, Lead Generation<br/>
-        • Business Development Support, Funding Access, Mentorship, Cofounder Search<br/>
-        • Hiring & Team Building, Learning Resources, Internships, Free & Paid Courses<br/>
-        • Exclusive Offers, Brand Support, Founder Stories, Member Directory<br/>
-        • Collaboration Groups, Deal Room Access, Events Calendar (and more)
+<div class="chat-msg admin">
+  <div class="avatar">KF</div>
+  <div class="bubble">
+    <div class="name">Community Admin</div>
+    <div class="text">
+
+      <div class="kfplan-card" role="region" aria-label="KenFolios pay-once membership plan">
+        <div class="kfplan-head">
+          <div class="kfplan-title">KenFolios Pay-Once Membership</div>
+          <div class="kfplan-sub">One-time membership — full access</div>
+        </div>
+
+        <div class="kfplan-price">
+          <div class="amount">₹1,999</div>
+          <div class="freq">One-time — <small>inclusive of GST</small></div>
+        </div>
+
+        <ul class="kfplan-features">
+          <li class="highlight">
+            <strong>VStreet Member Status</strong> — core inclusion that automatically unlocks all VStreet primary membership benefits.
+          </li>
+          <li>Business development & professional reputation management</li>
+          <li>Lead generation and business collaboration programs</li>
+          <li>Founder roundtables and exclusive networking meets</li>
+          <li>Funding access and investor introductions</li>
+          <li>Mentorship and business strategy guidance</li>
+          <li>Cofounder and partnership search support</li>
+          <li>Hiring & recruitment assistance for startups and SMEs</li>
+          <li>Internship and learning opportunities via KenFolios partners</li>
+          <li>Access to business tools and curated founder resources</li>
+          <li>Media exposure and founder story publishing support</li>
+          <li>Brand identity and online presence enhancement</li>
+          <li><strong>Recurring Membership Eligibility</strong> — future access to renewal and upgrade options with continuity benefits</li>
+          <li>Priority access to KenFolios Events & Founder Summits</li>
+          <li>Business listing in the KenFolios Member Directory</li>
+          <li>Exclusive community offers and collaboration deals</li>
+          <li>Access to learning sessions, courses, and workshops</li>
+          <li>Deal Room access for founders and professionals</li>
+          <li>Dedicated member support and onboarding assistance</li>
+          <li>Personalized growth and business reputation roadmap</li>
+          <li><em>...and dozens of additional value-added features as the network expands.</em></li>
+        </ul>
+
+        <div class="kfplan-cta">
+          <button class="kfplan-btn" type="button"
+                  onclick="document.getElementById('joinBtn')?.click()"
+                  aria-label="Pay Now to join KenFolios">
+            Pay ₹1,999 — Join now
+          </button>
+          <div class="kfplan-note">
+            One-time fee. Membership activation and onboarding follow after payment.
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
+</div>
+
+
 
   <!-- Q3 -->
   <div class="chat-msg member">
