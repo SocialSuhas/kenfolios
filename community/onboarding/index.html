@@ -1,17 +1,83 @@
 
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>KenFolios Business Community — Onboarding & Activation</title>
-    <!-- 🚫 De-index this page (transactional page) -->
-  <meta name="robots" content="noindex, nofollow, noarchive">
-  <meta name="googlebot" content="noindex, nofollow, noarchive">
-  <meta name="bingbot" content="noindex, nofollow, noarchive">
+ <!-- =========================================================
+   KENFOLIOS — ONBOARDING PAGE (noindex, no social previews)
+   Page: https://kenfolios.com/onboarding
+   Purpose: allow GA4 + Meta Pixel while preventing indexing & social cards
+   Updated: 07 Nov 2025
+========================================================= -->
 
-  <meta name="theme-color" content="#E11D2E" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KenFolios — Onboarding</title>
+<meta name="theme-color" content="#E11D2E" />
+
+<!-- Prevent indexing and social previews -->
+<meta name="robots" content="noindex, nofollow, noimageindex, noarchive" />
+<meta name="googlebot" content="noindex, nofollow" />
+<meta name="bingbot" content="noindex, nofollow" />
+<!-- Hint to social scrapers (redundant but helpful) -->
+<meta name="twitter:card" content="none" />
+
+<!-- Minimal description (for internal use only) -->
+<meta name="description" content="KenFolios onboarding — registration & payment flow (private). This page is intentionally set to noindex to avoid search or social previews.">
+
+<!-- If you prefer, include a canonical pointing to itself (optional) -->
+<link rel="canonical" href="https://kenfolios.com/onboarding">
+
+<!-- =========================================================
+   GOOGLE ANALYTICS 4 (GA4)
+   Measurement ID: G-8M691HC7BX
+   (keeps analytics working on this page)
+========================================================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M691HC7BX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  // keep page_view enabled so conversions attributed correctly
+  gtag('config', 'G-8M691HC7BX', { 'send_page_view': true });
+
+  // Helper to fire GA4 events from your code
+  function ga4Event(name, params) {
+    try { gtag('event', name, params || {}); } catch(e){ console.warn('GA4 event error', e); }
+  }
+</script>
+
+<!-- =========================================================
+   META PIXEL (Facebook / Meta)
+   Pixel ID: 2897024127219193
+   (loads pixel but page still non-indexable)
+========================================================= -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '2897024127219193');
+  fbq('track', 'PageView');
+  function metaEvent(name, params) {
+    try { fbq('track', name, params || {}); } catch(e) { console.warn('Meta Pixel error', e); }
+  }
+</script>
+<noscript>
+  <img height="1" width="1" style="display:none"
+       src="https://www.facebook.com/tr?id=2897024127219193&ev=PageView&noscript=1"/>
+</noscript>
+
+<!-- =========================================================
+   NOTE:
+   - No Open Graph / Twitter Card tags included — prevents social previews.
+   - No JSON-LD structured data included — keeps page out of Knowledge Graph.
+========================================================= -->
+
+
+
 
   <style>
   :root{
@@ -831,99 +897,272 @@
   }
 }
 
-/* =========================================================
-   PROFILE CTA SECTION — Adaptive Width
-   ---------------------------------------------------------
-   • This styles the "Join Now" button inside the profile pane.
-   • Unlike header/chat buttons, this one adapts to screen width:
-       - On small screens: full width for tap friendliness.
-       - On larger screens: wider, centered, but max capped.
-   • Uses flexbox container (.profile-cta) for clean centering.
-   ========================================================= */
-.profile-cta {
-  margin: .8rem 0 .4rem 0;     /* Comfortable spacing */
-  display: flex;
-  justify-content: center;     /* Centers the button horizontally */
-  padding: 0 1rem;             /* Prevents edge hugging on mobile */
-}
+/* ===== Fix: Join form bubble overflow between 530px–482px ===== */
+@media (max-width: 530px) and (min-width: 482px) {
+  #finalJoinInfo {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 
-.profile-cta .cta-btn {
-  width: 100%;                 /* Full width on mobile */
-  max-width: 320px;            /* Cap the width on larger screens */
-  font-size: 16px;             /* Slightly bigger for emphasis */
-  padding: .7rem 1.4rem;       /* More breathing room */
-}
+  #finalJoinInfo .bubble {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    overflow: hidden;
+  }
 
-/* Optional: slightly wider on larger screens */
-@media (min-width: 768px) {
-  .profile-cta .cta-btn {
+  /* Collapse two-column grid to single column cleanly */
+  #finalJoinInfo .kf-form,
+  #finalJoinInfo .kf-form .grid2 {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 10px !important;
+  }
+
+  /* Remove any residual min-width constraints */
+  #finalJoinInfo .kf-field { min-width: 0 !important; }
+
+  /* Inputs and selects stretch fluidly */
+  #finalJoinInfo .kf-input,
+  #finalJoinInfo .kf-select,
+  #finalJoinInfo .kf-date {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Submit button stacks properly, no overflow */
+  #finalJoinInfo .kf-rowgap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #finalJoinInfo .kf-submit {
+    width: 100% !important;
     max-width: 420px;
-    font-size: 17px;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Payment & bottom containers remain fluid */
+  #kfBottomContainer,
+  #kfRazorpayContainer {
+    width: 100% !important;
+    box-sizing: border-box;
   }
 }
 
 
-/* Keep the message composer always reachable (iOS safe area aware) */
-.composer{
-  position: sticky;
-  bottom: env(safe-area-inset-bottom);
-  z-index: 9;
-  background:#fff;
-  border-top:1px solid var(--border);
-  box-shadow:0 -8px 16px rgba(2,6,23,.08);
+/* ===== Font Awesome "check-circle" replica (pure CSS) ===== */
+.verified-badge {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  vertical-align: middle;
+  color: #1e90ff; /* Dodger blue */
 }
 
-/* Disclaimer scrolls normally (not sticky) */
-.global-disclaimer{
-  position: static;
-  box-shadow:none;
+/* The blue check-circle icon (SVG mask identical to Font Awesome fa-check-circle) */
+.verified-badge::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
+  -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
 }
 
-/* Ensure proper column sizing and smooth scroll on iOS */
-.mid{ min-height:100svh; display:flex; flex-direction:column; }
-.chat-area{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
+/* Prevent vertical clipping of the blue tick on very narrow screens */
+@media (max-width: 370px) {
+  .verified-badge {
+    position: relative;
+    top: 0.5px;                 /* subtle vertical nudge */
+    flex-shrink: 0;             /* don’t let it collapse */
+    line-height: 1 !important;  /* fix inline clipping */
+    transform: scale(0.9);      /* tiny scale so it fits visually */
+  }
+  /* ensure the button text wraps cleanly next to the icon */
+  #openProfile2 {
+    flex-wrap: wrap;
+    line-height: 1.2;
+    align-items: center;
+  }
+}
 
-/* Scroll targets won’t hide under the sticky header */
-#welcomeMsg { scroll-margin-top: 96px; }  /* tweak to your header height */
+/* =========================================================
+   KenFolios Pay-Once Membership (Chat Bubble Integration)
+   ---------------------------------------------------------
+   - Independent styles (prefix: .kfplan-)
+   - Does not affect global buttons or CTA styles
+   - Red theme, responsive, bubble-safe
+   ========================================================= */
+
+:root {
+  --kf-accent: #E11D2E; /* KenFolios red */
+  --kf-card-bg: #fff;
+  --kf-card-border: rgba(0, 0, 0, 0.06);
+  --kf-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.kfplan-card {
+  border-radius: 12px;
+  border: 1px solid var(--kf-card-border);
+  background: var(--kf-card-bg);
+  padding: 12px 14px;
+  max-width: 620px;
+  box-shadow: var(--kf-shadow);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin-top: 4px;
+}
+
+.kfplan-head .kfplan-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kfplan-head .kfplan-sub {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.kfplan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.kfplan-price .amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--kf-accent);
+}
+
+.kfplan-price .freq {
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.kfplan-features {
+  margin: 8px 0 12px 0;
+  padding-left: 18px;
+  color: #0f172a;
+  list-style-type: disc;
+}
+
+.kfplan-features li {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Highlighted first feature */
+.kfplan-features li.highlight {
+  background: rgba(225, 29, 46, 0.06);
+  border-left: 3px solid var(--kf-accent);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #b91c1c;
+  list-style-type: none;
+}
+
+.kfplan-features li em {
+  color: var(--kf-accent);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* CTA */
+.kfplan-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kfplan-btn {
+  background: var(--kf-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  min-width: 170px;
+}
+
+.kfplan-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  transition: all 0.12s ease;
+}
+
+.kfplan-btn:focus {
+  outline: 3px solid rgba(225, 29, 46, 0.12);
+  outline-offset: 2px;
+}
+
+.kfplan-note {
+  font-size: 0.82rem;
+  color: #475569;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .kfplan-card { padding: 12px; }
+  .kfplan-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .kfplan-price .amount { font-size: 1.35rem; }
+  .kfplan-features {
+    padding-left: 16px;
+    margin-bottom: 12px;
+  }
+  .kfplan-cta { width: 100%; gap: 6px; }
+  .kfplan-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 10px;
+  }
+}
 
 /* ============================================================
-   KenFolios — Onboarding & Activation Section Styles (Final)
+   KenFolios — Onboarding / Activation Form Styles (Scoped)
    ------------------------------------------------------------
-   ✅ Proper top spacing below header (no margin collapse)
-   ✅ Perfect horizontal centering
-   ✅ Left–right gutters restored
-   ✅ Hidden during skeleton load, fades in smoothly
-   ✅ Skeleton overlay non-blocking
-   ✅ Responsive + accessible
-   ✅ CTA row centered
+   Minimal standalone version — use when page already includes
+   global layout, colors, typography, and button styles.
    ============================================================ */
 
-/* Adjustable vertical gap below the header */
-:root { --activation-gap: 20px; }
-
-/* --- Activation Card Base --- */
 #activationTop {
-  margin: 0 auto !important;                  
-  max-width: 720px;                           
-  width: min(100%, calc(100% - 2rem));        
-  position: relative;
-  z-index: 1;
-}
-
-/* Non-collapsing top spacer */
-#activationTop::before {
-  content: "";
-  display: block;
-  height: var(--activation-gap);
-}
-
-#activationTop .wrap {
-  position: relative;
+  margin: 0 auto;
+  max-width: 720px;
+  width: min(100%, calc(100% - 2rem));
   border: 1px solid var(--border);
   border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
   box-shadow: 0 6px 22px rgba(2, 6, 23, 0.1);
   overflow: hidden;
-  background: linear-gradient(180deg, #fff, #f8fafc);
 }
 
 #activationTop .brandbar {
@@ -935,10 +1174,11 @@
   font-weight: 800;
   padding: 0.65rem 0.9rem;
 }
+
 #activationTop .brandbar .badge {
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   display: inline-flex;
   align-items: center;
@@ -948,45 +1188,46 @@
 }
 
 #activationTop .content {
-  display: grid;
-  gap: 0.9rem;
   padding: 1rem;
+  display: grid;
+  gap: 1rem;
 }
+
 #activationTop .intro {
   font-size: 15px;
   line-height: 1.5;
   color: var(--text);
 }
-#activationTop .intro strong { font-weight: 900; }
-#activationTop .intro .muted { color: var(--muted); font-weight: 600; }
-
-#activationTop .cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center; /* ✅ now centered */
-}
-#activationTop .cta-row .ghost {
-  background: #fff;
-  color: var(--text);
-  border: 1px solid var(--border);
+#activationTop .intro .muted {
+  color: var(--muted);
+  font-weight: 600;
 }
 
-#activationTop .kf-form { display: grid; gap: 0.75rem; }
+#activationTop .kf-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
 #activationTop .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
 }
-@media (max-width: 639.98px) {
+@media (max-width: 640px) {
   #activationTop .grid2 { grid-template-columns: 1fr; }
 }
 
-#activationTop .kf-field { display: flex; flex-direction: column; gap: 0.3rem; }
-#activationTop .kf-label { font-size: 13px; font-weight: 800; color: var(--muted); }
-#activationTop .kf-input,
-#activationTop .kf-select {
+#activationTop .kf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+#activationTop .kf-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+#activationTop .kf-input {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
@@ -996,7 +1237,7 @@
 }
 
 #activationTop .note {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted);
   background: #f8fafc;
   border: 1px solid var(--border);
@@ -1005,89 +1246,76 @@
 }
 
 #activationTop .kf-submit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   height: 48px;
-  min-width: 220px;
-  padding: 0 1.25rem;
-  border-radius: 11px;
+  min-width: 200px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 15px;
   border: 1px solid var(--kf-red);
   background: var(--kf-red);
   color: #fff;
-  font-weight: 800;
-  font-size: 15px;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 #activationTop .kf-submit:hover { opacity: 0.92; }
 
-#activationTop .kf-submit.success {
-  background: #22c55e;
-  border-color: #22c55e;
-  color: #fff;
-  cursor: default;
-  pointer-events: none;
-  display: inline-flex;
-  gap: 0.4rem;
+#activationTop .cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
-#activationTop .kf-submit.success::before {
-  content: "✔";
-  font-size: 1.2em;
-  opacity: 0;
-  transform: scale(0.6);
-  animation: tick-appear 0.3s forwards ease-in;
-}
-@keyframes tick-appear {
-  to { opacity: 1; transform: scale(1); }
+#activationTop .cta-row .ghost {
+  background: #fff;
+  border: 1px solid var(--border);
 }
 
 #activationTop .helper {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--muted);
   text-align: center;
-  margin-top: 0.35rem;
 }
 
-#activationTop + .activation-sep {
-  margin: 0.6rem 1rem 0 1rem;
-  border: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+/* ============================================================
+   Activation Layout Enhancement — Centered & Wider
+   ------------------------------------------------------------
+   Applies only to the activation card inside .chat-msg.admin
+   ============================================================ */
+
+#activationMsg {
+  display: flex;
+  justify-content: center;
 }
 
-/* --- Skeleton Sync --- */
-#chatArea.loading #activationTop {
-  opacity: 0;
-  visibility: hidden;   /* keeps spacing reserved */
-  pointer-events: none;
-  transform: translateY(4px);
-}
-#chatArea.chats-ready #activationTop {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: opacity 0.22s ease, transform 0.22s ease;
-  transition-delay: 0.05s;
+#activationMsg #activationTop {
+  width: min(100%, 780px);            /* wider max width */
+  margin: 1rem auto;                  /* center horizontally with gentle spacing */
 }
 
-/* Skeleton above content, non-interactive */
-#chatSkeleton.chat-skeleton {
-  z-index: 2;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+#activationMsg .wrap {
+  border-radius: 20px;
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.08);
 }
 
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  #chatArea.chats-ready #activationTop {
-    transition: none;
-    transition-delay: 0s;
+#activationMsg .content {
+  padding: 1.25rem 1.5rem;            /* a bit more padding for breathing room */
+}
+
+@media (min-width: 768px) {
+  #activationMsg #activationTop {
+    width: min(95%, 800px);           /* slightly wider on large screens */
   }
 }
+
+@media (max-width: 640px) {
+  #activationMsg #activationTop {
+    width: 100%;                      /* full width on small devices */
+    margin: 0.5rem auto;
+  }
+}
+
+
 
   </style>
 </head>
@@ -1174,431 +1402,184 @@
         <div class="kf" id="openProfile" title="Open profile">KF</div>
 
         <div class="title">
-          <button id="openProfile2">KenFolios Business Community</button>
-          <div class="meta" id="openProfile3">23,000 members</div>
-        </div>
+  <button id="openProfile2">
+    KenFolios Business Community
+    <span class="verified-badge" title="Verified"></span>
+  </button>
+  <div class="meta" id="openProfile3">23,000 members</div>
+</div>
 
-        <div class="header-actions">
-          <button class="cta-btn" id="aboutBtn">About</button>
-          <button class="cta-btn" id="learnBtn">Learn More</button>
-          <!-- Header CTA -->
-<button class="cta-btn primary" id="joinBtn" >Join Now</button>
-        </div>
+
+        <div class="header-actions" style="justify-content:center; display:flex; gap:.75rem;">
+  <button class="cta-btn" id="aboutBtn">About</button>
+  <button class="cta-btn primary" id="learnBtn" style="background-color:#d32f2f; border-color:#d32f2f;">Onboarding</button>
+</div>
       </header>
 
-      <section class="chat-area" id="chatArea">
-     <!-- Chat skeleton placeholder (shown only while loading) -->
-<div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
-  <div class="sk-row">
-    <div class="sk-ava"></div>
-    <div style="flex:1">
-      <div class="sk-line sk-w1"></div>
-      <div style="height:6px"></div>
-      <div class="sk-line sk-w2"></div>
-    </div>
-  </div>
-  <div class="sk-row">
-    <div class="sk-ava"></div>
-    <div style="flex:1">
-      <div class="sk-line sk-w3"></div>
-      <div style="height:6px"></div>
-      <div class="sk-line sk-w4"></div>
-    </div>
-  </div>
-</div>
-<!-- Chat skeleton placeholder (shown only while loading) -->
 <!-- ============================================================
-     KenFolios — Onboarding & Activation Section (HTML)
+     KenFolios — Onboarding & Activation Section (Final HTML)
      ------------------------------------------------------------
-     • Shown at the top of the chat area after successful payment
-     • Displays onboarding message + activation form
-     • Includes links to download apps and join Telegram group
+     ✅ Uses scoped form styles only
+     ✅ Integrated with chat skeleton & pinned welcome bubble
+     ✅ Ready for real activation endpoint or simple submit
    ============================================================ -->
-<section id="activationTop" aria-label="Activation">
-  <div class="wrap">
-    <div class="brandbar" role="heading" aria-level="1">
-      <span class="badge" aria-hidden="true">KF</span>
-      <span>Community Admin • Payment Confirmed</span>
+<section class="chat-area" id="chatArea">
+  <!-- Chat skeleton placeholder -->
+  <div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
+    <div class="sk-row">
+      <div class="sk-ava"></div>
+      <div style="flex:1">
+        <div class="sk-line sk-w1"></div>
+        <div style="height:6px"></div>
+        <div class="sk-line sk-w2"></div>
+      </div>
     </div>
-    <div class="content">
-      <div class="intro">
-        Thank you for joining the <strong>KenFolios Business Community</strong>! 🎉
-        <br />Please complete this <strong>Activation Form</strong> to start using the community.
-        <br /><span class="muted">Support is provided directly inside our member groups and is available only to active, paid members.</span>
-      </div>
-
-      <!-- Activation Form -->
-      <form id="kfActivationForm" class="kf-form" novalidate>
-        <div class="grid2">
-          <div class="kf-field">
-            <label class="kf-label" for="ac_name">Full Name*</label>
-            <input class="kf-input" id="ac_name" name="name" type="text" required />
-          </div>
-          <div class="kf-field">
-            <label class="kf-label" for="ac_txn">Transaction ID (Razorpay)*</label>
-            <input class="kf-input" id="ac_txn" name="transactionId" type="text" placeholder="e.g., pay_LwX..." required />
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="kf-field">
-            <label class="kf-label" for="ac_whatsapp">WhatsApp / Telegram Phone*</label>
-            <input class="kf-input" id="ac_whatsapp" name="phone" type="tel" inputmode="tel" placeholder="10-digit number" required />
-          </div>
-          <div class="kf-field">
-            <label class="kf-label" for="ac_tgid">Telegram Username (without @)*</label>
-            <input class="kf-input" id="ac_tgid" name="telegramUser" type="text" placeholder="username" required />
-          </div>
-        </div>
-
-        <div class="note">
-          After submitting, request to join the Telegram group below. <strong>Only paid members who complete this form are accepted by admins.</strong>
-        </div>
-
-        <div style="display:flex; justify-content:center; gap:.5rem; margin-top:.3rem;">
-          <button type="submit" class="kf-submit">Save & Continue</button>
-        </div>
-
-        <div id="acStatus" style="display:none; max-width:520px; margin:.5rem auto 0 auto; text-align:center;">
-          <div style="height:6px; border-radius:999px; background:#e5e7eb; overflow:hidden;">
-            <div id="acBar" style="height:100%; width:0%; background:#E11D2E; transition:width .35s ease;"></div>
-          </div>
-          <div id="acMsg" style="margin-top:8px; font-size:.95rem; color:#E11D2E;">Saving…</div>
-        </div>
-      </form>
-
-      <!-- App Download + Group Join Buttons -->
-      <div class="cta-row" role="group" aria-label="Get apps & join group">
-        <a class="cta-btn ghost" id="dlWhatsapp" href="https://whatsapp.com/dl" target="_blank" rel="noopener">Download WhatsApp</a>
-        <a class="cta-btn ghost" id="dlTelegram" href="https://telegram.org/dl" target="_blank" rel="noopener">Download Telegram</a>
-        <a class="cta-btn primary" id="joinTelegram" href="#" target="_blank" rel="noopener">Join Telegram Group</a>
-      </div>
-
-      <div class="helper">
-        Joining link works for members; <strong>admins admit only those who completed this activation.</strong>
+    <div class="sk-row">
+      <div class="sk-ava"></div>
+      <div style="flex:1">
+        <div class="sk-line sk-w3"></div>
+        <div style="height:6px"></div>
+        <div class="sk-line sk-w4"></div>
       </div>
     </div>
   </div>
+
+  <!-- PINNED: Onboarding message -->
+  <div class="chat-msg admin" id="welcomeMsg">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        👋 <strong>Welcome to the dedicated onboarding page of KenFolios Business Community.</strong>
+        <p style="margin:.5rem 0 0">
+          Please complete the activation form below to proceed with your community access.
+          This form is only for users who have already completed payment.
+        </p>
+      <!--   <p style="margin:.25rem 0 0; font-size:.95em; color:var(--muted,#555)">
+          Have questions? <a href="#learnMore" id="learnMoreLink">Learn more</a>.
+        </p> -->
+      </div>
+      <div class="pinned-label">📌 Onboarding</div>
+    </div>
+  </div>
+
+<!-- ACTIVATION: standalone card, no chat bubble, still skeleton-synced -->
+<div class="chat-msg admin" id="activationMsg" data-skeleton-watch>
+  <section id="activationTop" aria-label="Activation">
+    <div class="wrap">
+      <div class="brandbar" role="heading" aria-level="1">
+        <span class="badge" aria-hidden="true">KF</span>
+        <span>Community Admin • Payment Confirmed</span>
+      </div>
+
+      <div class="content">
+        <div class="intro">
+          Thank you for joining the <strong>KenFolios Business Community</strong>! 🎉
+          <br />Please complete this <strong>Activation Form</strong> to start using the community.
+          <br /><span class="muted">Support is available inside member groups for active, paid members only.</span>
+        </div>
+
+        <!-- Activation Form -->
+        <form id="kfActivationForm" class="kf-form" novalidate>
+          <div class="grid2">
+            <div class="kf-field">
+              <label class="kf-label" for="ac_name">Full Name*</label>
+              <input class="kf-input" id="ac_name" name="name" type="text" required />
+            </div>
+            <div class="kf-field">
+              <label class="kf-label" for="ac_txn">Transaction ID (Razorpay)*</label>
+              <input class="kf-input" id="ac_txn" name="transactionId" type="text" placeholder="e.g., pay_LwX..." required />
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="kf-field">
+              <label class="kf-label" for="ac_whatsapp">WhatsApp / Telegram Phone*</label>
+              <input class="kf-input" id="ac_whatsapp" name="phone" type="tel" inputmode="tel" placeholder="10-digit number" required />
+            </div>
+            <div class="kf-field">
+              <label class="kf-label" for="ac_tgid">Telegram Username (without @)*</label>
+              <input class="kf-input" id="ac_tgid" name="telegramUser" type="text" placeholder="username" required />
+            </div>
+          </div>
+
+          <div class="note">
+            After submitting, request to join the Telegram group below.
+            <strong>Only verified members are accepted by admins.</strong>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:.5rem; margin-top:.3rem;">
+            <button type="submit" class="kf-submit">Save & Continue</button>
+          </div>
+
+          <!-- Progress bar + status -->
+          <div id="acStatus" style="display:none; max-width:520px; margin:.5rem auto 0 auto; text-align:center;">
+            <div style="height:6px; border-radius:999px; background:#e5e7eb; overflow:hidden;">
+              <div id="acBar" style="height:100%; width:0%; background:#E11D2E; transition:width .35s ease;"></div>
+            </div>
+            <div id="acMsg" style="margin-top:8px; font-size:.95rem; color:#E11D2E;">Saving…</div>
+          </div>
+        </form>
+
+        <!-- App Download + Group Join Buttons -->
+        <div class="cta-row" role="group" aria-label="Get apps & join group">
+          <a class="cta-btn ghost" id="dlWhatsapp" href="https://whatsapp.com/dl" target="_blank" rel="noopener">Download WhatsApp</a>
+          <a class="cta-btn ghost" id="dlTelegram" href="https://telegram.org/dl" target="_blank" rel="noopener">Download Telegram</a>
+          <a class="cta-btn primary" id="joinTelegram" href="#" target="_blank" rel="noopener">Join Telegram Group</a>
+        </div>
+
+        <div class="helper">
+          Joining link works only for verified members;
+          <strong>admins admit those who complete activation.</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+ 
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('kfActivationForm');
+      const status = document.getElementById('acStatus');
+      const bar = document.getElementById('acBar');
+      const msg = document.getElementById('acMsg');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = form.querySelector('.kf-submit');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        status.style.display = 'block';
+        bar.style.width = '40%';
+        setTimeout(() => (bar.style.width = '80%'), 600);
+        setTimeout(() => {
+          bar.style.width = '100%';
+          msg.textContent = 'Activation saved! You can now join the Telegram group.';
+          btn.textContent = 'Saved ✓';
+          btn.classList.add('success');
+        }, 1200);
+      });
+
+      const joinBtn = document.getElementById('joinTelegram');
+      joinBtn.addEventListener('click', function (e) {
+        if (status.style.display === 'none') {
+          e.preventDefault();
+          alert('Please complete activation first to access the group.');
+        }
+      });
+
+      document.getElementById('learnMoreLink')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        form.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  </script>
+  
 </section>
-<hr class="activation-sep" aria-hidden="true" />
 
-<div class="chat-note-slot" data-above-pinned="true"></div>
 
-<!-- PINNED: Welcome & how this demo works -->
-<div class="chat-msg admin" id="welcomeMsg">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business community.<br/><br/>
-      This is a <em>demo</em> of our community groups. Scroll below for the most-asked questions and answers before joining. 
-      You’ll see what you can do here and how real conversations feel.
-    </div>
-    <div class="pinned-label">📌 Pinned</div>
-  </div>
-</div>
-
-<div class="chat-note-slot"></div>
-
-<!-- Q1: How does it work? -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">Thanks! Happy to be here. How does this community actually work?</div>
-    <div class="time">5 min ago</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Great question 👌 Here’s what you can do inside:<br/><br/>
-      ✅ Join a <strong>PAN-India pool</strong> of verified business members<br/>
-      ✅ Access <strong>online & offline meetups</strong><br/>
-      ✅ <strong>Generate leads</strong> regionally or nationwide<br/>
-      ✅ <strong>Join or create</strong> groups by interest, location, or industry<br/>
-      ✅ Connect with <strong>serious, paid-only members</strong> (high signal, no spam)<br/><br/>
-      …and plenty more using the network’s collective power.
-    </div>
-    <div class="time">4 min ago</div>
-  </div>
-</div>
-
-<!-- Q2: Reviews / proof -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">Do you have reviews or proof that it works?</div>
-    <div class="time">3 min ago</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Yes — we’ve received many <strong>positive member reviews</strong>, and you can see them on Instagram at <strong>@KenFoliosHQ</strong>.
-      The <strong>photos of our events</strong> are available there as well.
-    </div>
-    <div class="time">3 min ago</div>
-  </div>
-</div>
-
-<!-- Q3: Events -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">What kind of events do you run — online or offline?</div>
-    <div class="time">2 min ago</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Both. We host <strong>online & offline meetups</strong> — founder roundtables, deal rooms, and skill clinics.
-      We’ve organized <strong>250+ meets</strong> connecting thousands with co-founders, partners, investors, buyers, and associates.
-      Engage <strong>PAN-India</strong> or tap into <strong>regional/local</strong> chapters.
-    </div>
-    <div class="time">2 min ago</div>
-  </div>
-</div>
-
-<div class="chat-note-slot"></div>
-
-<!-- Q4: Leads & groups -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">How does lead generation work here?</div>
-    <div class="time">2 min ago</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Members post <strong>asks & offers</strong> in the main hub and in focused sub-groups (city, industry, interest).
-      Because it’s a <strong>paid-only pool</strong>, conversations stay practical and high-quality.
-      You can also <strong>create your own sub-group</strong> aligned to your goals.
-    </div>
-    <div class="time">1 min ago</div>
-  </div>
-</div>
-
-<!-- Q5: Code of conduct -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">Is there a code of conduct?</div>
-    <div class="time">1 min ago</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Simple: <strong>be helpful, transparent, and respectful</strong>.
-      No spam or cold pitching — share context and value first. Moderators keep it high-signal.
-    </div>
-    <div class="time">1 min ago</div>
-  </div>
-</div>
-
-<!-- Q6: Mentors / office hours -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">Do you have mentors or office hours?</div>
-    <div class="time">Just now</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      We run <strong>mentor AMAs</strong> and <strong>1:1 office hours</strong> with operators in growth, brand, hiring, and fundraising.
-      Slots are announced in advance; recordings are shared if you miss one.
-    </div>
-    <div class="time">Just now</div>
-  </div>
-</div>
-
-<div class="chat-note-slot"></div>
-
-<!-- Q7: Joining flow (no gateway name; secure payment + manual screening) -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">How do I join as a new member?</div>
-    <div class="time">Just now</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      👉 Join through our <strong>secure payment gateways</strong>.<br/>
-      After payment, you’re <strong>redirected to the community groups</strong> to request access.<br/>
-      Our admins then <strong>manually screen</strong> each member to maintain quality.<br/><br/>
-      ⏳ Approvals usually take <strong>&lt; 24 hours</strong>. At peak times it may take a little longer — the wait is worth it
-      because this process ensures the <strong>highest standards</strong>.
-    </div>
-    <div class="time">Just now</div>
-  </div>
-</div>
-
-<!-- Single inline CTA placed once -->
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-      Ready to join?
-      <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
-    </div>
-    <div class="time">Just now</div>
-  </div>
-</div>
-
-<!-- Q8: First post + invite more questions -->
-<div class="chat-msg member">
-  <div class="bubble">
-    <div class="name">New Member</div>
-    <div class="text">What should my first post look like once I’m in?</div>
-    <div class="time">Just now</div>
-  </div>
-  <div class="avatar" style="background:hsl(210 70% 92%);color:hsl(210 60% 28%)">NM</div>
-</div>
-
-<div class="chat-msg admin">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Keep it crisp:<br/>
-      • <strong>One-liner</strong> about what you do<br/>
-      • <strong>One problem</strong> you solve<br/>
-      • <strong>One thing</strong> you need right now<br/>
-      • <strong>One way</strong> you can help others<br/>
-      Add a link if relevant. Have more questions? <strong>Keep asking here</strong> — we’re listening.
-    </div>
-    <div class="time">Just now</div>
-  </div>
-</div>
-<!-- === FINAL ADMIN INFO + JOIN FORM (last bubble) === -->
-<div class="chat-msg admin" id="finalJoinInfo">
-  <div class="avatar">KF</div>
-  <div class="bubble">
-    <div class="name">Community Admin</div>
-    <div class="text">
-      Before you proceed, share a few details so we can fast-track your access. Submitting this will continue your join flow.
-      <form id="kfJoinInfoForm" class="kf-form kf-rowgap" novalidate>
-        <div class="grid2">
-          <div class="kf-field">
-            <label class="kf-label" for="fi_name">Full Name*</label>
-            <input class="kf-input" id="fi_name" name="name" type="text" required />
-          </div>
-          <div class="kf-field">
-            <label class="kf-label" for="fi_dob">Date of Birth*</label>
-            <input class="kf-date" id="fi_dob" name="dob" type="date" required />
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="kf-field">
-            <label class="kf-label" for="fi_gender">Gender*</label>
-            <select class="kf-select" id="fi_gender" name="gender" required>
-              <option value="" disabled selected>Select</option>
-              <option>Female</option>
-              <option>Male</option>
-              <option>Non-binary</option>
-              <option>Prefer not to say</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="kf-field">
-            <label class="kf-label" for="fi_city">City*</label>
-            <input class="kf-input" id="fi_city" name="city" type="text" required />
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="kf-field">
-            <label class="kf-label" for="fi_email">Email*</label>
-            <input class="kf-input" id="fi_email" name="email" type="email" required />
-          </div>
-          <div class="kf-field">
-            <label class="kf-label" for="fi_phone">Phone*</label>
-            <input class="kf-input" id="fi_phone" name="phone" type="tel" inputmode="tel" required />
-          </div>
-        </div>
-
-        <div class="kf-field">
-          <label class="kf-label">What are your expectations from the community?*</label>
-          <div class="kf-checklist" role="group" aria-label="Expectations">
-            <label class="kf-check"><input type="checkbox" name="expectations" value="WhatsApp Groups"> WhatsApp Groups</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Business Leads"> Business Leads</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Brand Building"> Brand Building</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Starting a business"> Starting a business</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Growing a business"> Growing a business</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Mentorship"> Mentorship</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Funding"> Funding</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Learning & Skill Development"> Learning & Skill Development</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Events & Meetups"> Events & Meetups</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Meeting Professional Singles"> Meeting Professional Singles</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Investment Opportunities"> Investment Opportunities</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Hiring & Team Building"> Hiring & Team Building</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Internship Openings"> Internship Openings</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Job Openings"> Job Openings</label>
-            <label class="kf-check"><input type="checkbox" name="expectations" value="Other"> Other</label>
-          </div>
-        </div>
-
-        <div class="kf-legal">
-          <label style="display:flex; gap:.5rem; align-items:flex-start;">
-            <input id="fi_accept" type="checkbox" required checked />
-            <span>
-              I accept all the <a href="#" data-legal="terms">Terms</a> and
-              <a href="#" data-legal="privacy">Privacy Policy</a> of KenFolios Business Community.
-            </span>
-          </label>
-        </div>
-
-        <div class="kf-note">
-          The information shared here is <strong>strictly confidential</strong> and used only for community onboarding and verification.
-        </div>
-
-        <div class="kf-rowgap">
-          <button type="submit" class="kf-submit">Submit Details & Continue</button>
-        </div>
-      </form>
-    </div>
-    <div class="time">Just now</div>
-  </div>
-</div>
-
-      </section>
 
       <!-- Composer -->
       <footer class="composer" role="group" aria-label="Message composer">
@@ -1659,6 +1640,7 @@
             <div class="identity">
               <div class="titleline">
                 <span class="profile-name">KenFolios Business Community</span>
+                <span class="verified-badge" title="Verified"></span>
               </div>
               <div class="subline">
                 <span class="profile-username">@kenfolios</span>
@@ -1700,7 +1682,7 @@
           </div>
         </div>
 <!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
-<div class="profile-cta" role="group" aria-label="Join actions">
+<!-- <div class="profile-cta" role="group" aria-label="Join actions">
   <button class="cta-btn primary" id="joinBtnProfile"
     onclick="
       // 🧹 Close side panes
@@ -1714,7 +1696,7 @@
     ">
     Join Now
   </button>
-</div>
+</div> 
 
 
         <!-- Social links -->
@@ -1753,7 +1735,10 @@
           <div class="kv">
             <div class="row">
               <div class="l">Bio</div>
-              <div class="r">Demo bio — spotlighting Indian founders, operators, and meaningful business stories. (Placeholder)</div>
+              <div class="r">
+  A growing ecosystem connecting entrepreneurs, mentors, investors, and professionals to collaborate, innovate, and lead India’s next wave of business growth.
+</div>
+
             </div>
             <div class="row">
               <div class="l">Company</div>
@@ -1822,25 +1807,40 @@
         <div class="bubble">
           <div class="name">KenFolios — Terms of Membership</div>
           <div class="text" style="font-size:14px">
-            • Paid, real-identity members only; respectful, value-first conduct required.<br/>
-            • No spam, scraping, or unsolicited prospecting; share context and get consent.<br/>
-            • Keep confidential information private; do not redistribute internal content.<br/>
-            • Moderators may remove posts/members breaching rules; fees are non-refundable in cases of breach.<br/>
-            • You agree to follow applicable laws and represent that shared info is accurate.<br/>
-            • KenFolios may update these terms; continued use implies acceptance.
-          </div>
+  <strong>Terms of Membership — key points</strong><br/>
+  • <strong>Eligibility:</strong> membership is for paid, real-identity individuals who agree to platform rules and applicable law.<br/>
+  • <strong>Fees & payments:</strong> the Pay-Once fee grants access to the features listed; fees are collected via our payment provider and processed securely.<br/>
+  • <strong>No refunds:</strong> membership fees are generally non-refundable except as required by applicable law. In cases of policy breach by a member, fees may be non-refundable. For exceptional circumstances, contact support and provide evidence; refunds are issued at KenFolios' discretion only after review.<br/>
+  • <strong>Member conduct:</strong> respectful, value-first behaviour is required. No spam, scraping, unsolicited prospecting, illegal, abusive or fraudulent activity. Moderators may warn, suspend or remove members for violations.<br/>
+  • <strong>Content & confidentiality:</strong> members are responsible for content they post. Do not share confidential internal materials without permission; redistribution of private content is prohibited.<br/>
+  • <strong>Termination:</strong> KenFolios may suspend or terminate access for breaches, fraud, or misconduct; termination does not automatically trigger a refund unless required by law.<br/>
+  • <strong>Limitation of liability:</strong> services are provided "as-is"; to the maximum extent permitted by law KenFolios' liability for indirect/consequential damages is limited.<br/>
+  • <strong>Changes to terms:</strong> KenFolios may update terms. Material changes will be communicated; continued use after changes indicates acceptance.<br/>
+  • <strong>Governing law & disputes:</strong> disputes will be governed by the jurisdiction specified in the full Terms of Service; see the full text for details on dispute resolution.<br/>
+  • <strong>Full terms:</strong> read the complete Terms of Service, including detailed refund, dispute resolution and limiting clauses, at
+  <a href="https://kenfolios.com/terms-of-service" target="_blank" rel="noopener">kenfolios.com/terms-of-service</a>. Last updated: <em>Oct 2025</em>.
+</div>
+
         </div>
       </section>
       <section id="legalPrivacy" aria-label="Privacy" style="display:none">
         <div class="bubble">
           <div class="name">KenFolios — Privacy Policy (Summary)</div>
           <div class="text" style="font-size:14px">
-            • We collect onboarding details to verify members and deliver services.<br/>
-            • Data is stored securely and not sold. Limited sharing with processors (payment, email, analytics) under contracts.<br/>
-            • You can request access, correction, or deletion where applicable.<br/>
-            • Security best-effort measures are applied; no method is 100% secure.<br/>
-            • For queries: <a href="mailto:hello@kenfolios.com">hello@kenfolios.com</a>.
-          </div>
+  <strong>Terms of Membership — key points</strong><br/>
+  • <strong>Eligibility:</strong> membership is for paid, real-identity individuals who agree to platform rules and applicable law.<br/>
+  • <strong>Fees & payments:</strong> the Pay-Once fee grants access to the features listed; fees are collected via our payment provider and processed securely.<br/>
+  • <strong>No refunds:</strong> membership fees are generally non-refundable except as required by applicable law. In cases of policy breach by a member, fees may be non-refundable. For exceptional circumstances, contact support and provide evidence; refunds are issued at KenFolios' discretion only after review.<br/>
+  • <strong>Member conduct:</strong> respectful, value-first behaviour is required. No spam, scraping, unsolicited prospecting, illegal, abusive or fraudulent activity. Moderators may warn, suspend or remove members for violations.<br/>
+  • <strong>Content & confidentiality:</strong> members are responsible for content they post. Do not share confidential internal materials without permission; redistribution of private content is prohibited.<br/>
+  • <strong>Termination:</strong> KenFolios may suspend or terminate access for breaches, fraud, or misconduct; termination does not automatically trigger a refund unless required by law.<br/>
+  • <strong>Limitation of liability:</strong> services are provided "as-is"; to the maximum extent permitted by law KenFolios' liability for indirect/consequential damages is limited.<br/>
+  • <strong>Changes to terms:</strong> KenFolios may update terms. Material changes will be communicated; continued use after changes indicates acceptance.<br/>
+  • <strong>Governing law & disputes:</strong> disputes will be governed by the jurisdiction specified in the full Terms of Service; see the full text for details on dispute resolution.<br/>
+  • <strong>Full terms:</strong> read the complete Terms of Service, including detailed refund, dispute resolution and limiting clauses, at
+  <a href="https://kenfolios.com/terms-of-service" target="_blank" rel="noopener">kenfolios.com/terms-of-service</a>. Last updated: <em>Oct 2025</em>.
+</div>
+
         </div>
       </section>
     </div>
@@ -2280,100 +2280,6 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   }
 })();
 
-
-/* ===== Global deterministic member counter (same for everyone) =====
-   How it works:
-   - Pick a DEPLOY_EPOCH_ISO (UTC) = when you want counting to start.
-   - Time is divided into fixed slots (e.g., every 30 minutes).
-   - For each elapsed slot, we add +1 or +2 — chosen deterministically per slot.
-   - Anyone loading the page computes the same total -> same number for all.
-*/
-(function(){
-  const START_COUNT = 23338;                         // starting number
-  const DEPLOY_EPOCH_ISO = '2025-10-17T14:30:00Z';   // <<< set to your launch time (UTC)
-  const SLOT_MINUTES = 30;                           // one tick per this many minutes
-  const DEBUG = /(?:^|[?&])debugmembers=1\b/.test(location.search);
-
-  const headEl   = document.getElementById('openProfile3');
-  const profileEl= document.getElementById('profileMembers');
-
-  // Format with Indian grouping
-  function fmt(n){
-    try { return new Intl.NumberFormat('en-IN').format(n); }
-    catch { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-  }
-  function render(n){
-    const txt = fmt(n) + ' members';
-    if (headEl)   headEl.textContent = txt;
-    if (profileEl)profileEl.textContent = txt;
-  }
-
-  // Simple deterministic hash -> pseudo-random 0..1 for a given integer (slot index)
-  function hash01(i){
-    // 32-bit xorshift-like mix; stable across browsers
-    let x = (i | 0) ^ 0x9E3779B9;
-    x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
-    // Convert to [0,1)
-    return ((x >>> 0) / 4294967296);
-  }
-  // For a slot index, deterministically choose +1 or +2
-  function incrementForSlot(slotIndex){
-    // ~40% chance of +2, else +1 (tweak threshold as you like)
-    return hash01(slotIndex) < 0.4 ? 2 : 1;
-  }
-
-  function compute(nowMs){
-    const epochMs = Date.parse(DEPLOY_EPOCH_ISO);
-    if (!isFinite(epochMs)) {
-      if (DEBUG) console.warn('[members] Bad DEPLOY_EPOCH_ISO; using START_COUNT');
-      return { count: START_COUNT, nextAt: nowMs + 60_000 };
-    }
-
-    const slotMs = SLOT_MINUTES * 60 * 1000;
-    const elapsedMs = Math.max(0, nowMs - epochMs);
-    const slotsElapsed = Math.floor(elapsedMs / slotMs);
-
-    // Sum deterministic increments for each elapsed slot
-    let totalInc = 0;
-    for (let s = 0; s < slotsElapsed; s++) totalInc += incrementForSlot(s);
-
-    const count = START_COUNT + totalInc;
-
-    // Next repaint at the next slot boundary
-    const nextAt = epochMs + (slotsElapsed + 1) * slotMs;
-
-    if (DEBUG) {
-      console.log('[members] slotsElapsed=', slotsElapsed, 'count=', count,
-                  'nextAt=', new Date(nextAt).toISOString());
-    }
-    return { count, nextAt };
-  }
-
-  function schedule(nextAt){
-    const now = Date.now();
-    // Ensure a minimum delay so we don't spin at boundary
-    const delay = Math.max(250, nextAt - now);
-    setTimeout(refresh, delay);
-  }
-
-  function refresh(){
-    const now = Date.now();
-    const { count, nextAt } = compute(now);
-    render(count);
-    schedule(nextAt);
-  }
-
-  // Initial paint + schedule next slot
-  refresh();
-
-  // Re-sync when the tab becomes visible/focused
-  document.addEventListener('visibilitychange', function(){
-    if (document.visibilityState === 'visible') refresh();
-  });
-  window.addEventListener('focus', refresh);
-})();
-
-
 /* ===== Minimal profile interactions (social only) ===== */
 (function(){
   var openProfile = function(){
@@ -2664,356 +2570,382 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     openOverlay(legal); showLegal(which);
   });
 })();
-
 /* =========================================================
-   FORM SUBMIT — Final Replacement (fixed endpoint)
-   ---------------------------------------------------------
-   • Posts as application/x-www-form-urlencoded (no JSON)
-   • no-cors to avoid CORS noise; server still receives it
-   • Visuals unchanged; adds sendBeacon fallback
+   KenFolios Member Counter — front-end JSONP consumer
+   + FORM SUBMIT — Compact layout + progress visual + Razorpay
+   Behavior:
+   - On submit: hide submit button (so users can't re-click) and show progress pill in its place
+   - Progress pill stays until data saved AND Razorpay button script has loaded
+   - On success: replace pill with subtle saved notice and show Razorpay container
+   - On failure: restore submit button and show error
    ========================================================= */
+
 (function(){
-  const form = document.getElementById('kfJoinInfoForm');
-  if (!form) return;
+  // ===== MEMBER COUNTER (unchanged) =====
+  (function(){
+    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec';
+    const POLL_MS = 5 * 60 * 1000;
+    const FALLBACK_BASE = 23338;
+    const ELEMENT_IDS = ['openProfile3', 'profileMembers', 'welcomeMembers'];
 
-  // ✅ USE THE NEW, WORKING DEPLOYMENT URL
-  const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec";
-  const RAZORPAY_URL    = "#"; // placeholder
-
-  // ---------- UI Status Panel ----------
-  function ensureStatusPanel(){
-    let panel = document.getElementById('kfSubmitStatus');
-    if (panel) return panel;
-
-    panel = document.createElement('div');
-    panel.id = 'kfSubmitStatus';
-    panel.style.marginTop = '2px';
-    panel.style.textAlign = 'center';
-
-    const card = document.createElement('div');
-    card.style.border = '1px solid rgba(255,255,255,.12)';
-    card.style.background = 'rgba(255,255,255,.04)';
-    card.style.borderRadius = '12px';
-    card.style.padding = '8px 12px';
-
-    const barShell = document.createElement('div');
-    barShell.style.height = '6px';
-    barShell.style.borderRadius = '999px';
-    barShell.style.background = 'rgba(255,255,255,.12)';
-    barShell.style.overflow = 'hidden';
-    barShell.style.margin = '0 auto';
-    barShell.style.maxWidth = '320px';
-
-    const barFill = document.createElement('div');
-    barFill.id = 'kfProgressBar';
-    barFill.style.height = '100%';
-    barFill.style.width = '0%';
-    barFill.style.background = '#E11D2E';
-    barFill.style.transition = 'width .35s ease';
-    barShell.appendChild(barFill);
-
-    const msg = document.createElement('div');
-    msg.id = 'kfProgressMsg';
-    msg.style.marginTop = '8px';
-    msg.style.fontSize = '.95rem';
-    msg.style.color = '#E11D2E';
-    msg.textContent = 'Preparing…';
-
-    const ctas = document.createElement('div');
-    ctas.style.display = 'flex';
-    ctas.style.justifyContent = 'center';
-    ctas.style.gap = '10px';
-    ctas.style.marginTop = '12px';
-
-    const payBtn = document.createElement('button');
-    payBtn.id = 'kfPayNowBtn';
-    payBtn.type = 'button';
-    payBtn.textContent = 'Pay Now';
-    payBtn.style.display = 'none';
-    payBtn.style.padding = '.7rem 1.4rem';
-    payBtn.style.borderRadius = '999px';
-    payBtn.style.border = '0';
-    payBtn.style.cursor = 'pointer';
-    payBtn.style.fontWeight = '600';
-    payBtn.style.background = '#E11D2E';
-    payBtn.style.color = '#fff';
-    payBtn.addEventListener('click', function(){
-      if (RAZORPAY_URL && RAZORPAY_URL !== '#') {
-        window.open(RAZORPAY_URL, '_blank', 'noopener');
-      } else {
-        alert('Payment step will appear here (Razorpay) once configured.');
-      }
-    });
-
-    ctas.appendChild(payBtn);
-    card.appendChild(barShell);
-    card.appendChild(msg);
-    card.appendChild(ctas);
-    panel.appendChild(card);
-
-    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    const actions = submitBtn ? submitBtn.closest('.actions') || submitBtn.parentElement : null;
-    if (actions) {
-      actions.style.marginBottom = '0';
-      actions.insertAdjacentElement('afterend', panel);
-    } else {
-      form.insertAdjacentElement('afterend', panel);
+    function fmt(n){
+      try { return new Intl.NumberFormat('en-IN').format(n); }
+      catch { return String(n); }
     }
 
-    return panel;
-  }
-
-  function setProgress(pct, text){
-    const panel = ensureStatusPanel();
-    const bar = panel.querySelector('#kfProgressBar');
-    const msg = panel.querySelector('#kfProgressMsg');
-    if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
-    if (text && msg) msg.textContent = text;
-  }
-
-  function beginProgress(){
-    setProgress(10, 'Validating…');
-    const marks = [25, 45, 65, 85];
-    let i = 0;
-    const id = setInterval(() => {
-      if (i >= marks.length) return clearInterval(id);
-      setProgress(marks[i++], 'Saving your details securely…');
-    }, 300);
-    return function finish(text, ok){
-      clearInterval(id);
-      setProgress(100, text || (ok ? 'Saved' : 'Done'));
-      const msg = document.getElementById('kfProgressMsg');
-      if (msg) msg.style.color = ok ? '#E11D2E' : '#f3c13a';
-      const pay = document.getElementById('kfPayNowBtn');
-      if (pay) pay.style.display = ok ? 'inline-block' : 'none';
-    };
-  }
-
-  // ---------- Helpers ----------
-  const val = id => (document.getElementById(id)?.value || '').trim();
-  const checkedValues = name =>
-    Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(cb => cb.value);
-  const setFormEnabled = enabled => Array.from(form.elements).forEach(el => el.disabled = !enabled);
-
-  function valid(){
-    const requiredOk = val('fi_name') && val('fi_dob') && val('fi_gender') &&
-                       val('fi_email') && val('fi_phone') && val('fi_city');
-    const acceptOk = !!document.getElementById('fi_accept')?.checked;
-    const expOk = checkedValues('expectations').length > 0;
-    return requiredOk && acceptOk && expOk;
-  }
-
-  // Build x-www-form-urlencoded payload (best mapping to e.parameter)
-  function toUrlEncoded(){
-    const usp = new URLSearchParams();
-    usp.append('fullName', val('fi_name'));
-    usp.append('name', val('fi_name'));
-    usp.append('dob', val('fi_dob'));
-    usp.append('gender', val('fi_gender'));
-    usp.append('email', val('fi_email'));
-    usp.append('phone', val('fi_phone'));
-    usp.append('city', val('fi_city'));
-    checkedValues('expectations').forEach(v => usp.append('expectations', v));
-    usp.append('source', 'kenfolios-join-v2');
-    return usp.toString();
-  }
-
-  // ---------- Submit ----------
-  form.addEventListener('submit', function(e){
-    e.preventDefault();
-    if (!valid()) {
-      alert('Please complete all required fields, select at least one expectation, and accept the Terms & Privacy.');
-      return;
-    }
-
-    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-    const finish = beginProgress();
-
-    const body = toUrlEncoded();
-
-    setFormEnabled(false);
-    if (submitBtn) submitBtn.textContent = 'Saving…';
-
-    // Post as application/x-www-form-urlencoded
-    fetch(SHEETS_ENDPOINT, {
-      method: 'POST',
-      mode: 'no-cors', // we don't need to read response
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body
-    })
-    .then(() => {
-      finish('Details saved. Thank you!', true);
-      // ✅ Convert the submit button into a Saved state
-  const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-  if (submitBtn) {
-    submitBtn.textContent = 'Saved';
-    submitBtn.classList.add('success');
-    submitBtn.setAttribute('aria-disabled', 'true');
-    submitBtn.disabled = true;
-  }
-
-  // ✅ Keep Pay Now CTA visible
-  const pay = document.getElementById('kfPayNowBtn');
-  if (pay) pay.style.display = 'inline-block';
-
-      if (submitBtn) submitBtn.textContent = 'Saved';
-      form.reset();
-    })
-    .catch(err => {
-      console.warn('[Sheets] fetch failed, trying sendBeacon', err);
-      // Fallback: sendBeacon (fire-and-forget)
-      try {
-        const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
-        const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
-        if (ok) {
-          finish('Details saved. Thank you!', true);
-          if (submitBtn) submitBtn.textContent = 'Saved';
-          form.reset();
+    function renderCount(n){
+      const text = fmt(n) + ' members';
+      ELEMENT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'welcomeMembers') {
+          el.innerHTML = `<span class="member-count">${fmt(n)}</span> members`;
         } else {
-          throw new Error('sendBeacon returned false');
+          el.textContent = text;
         }
-      } catch (err2) {
-        console.error('[Sheets] POST error:', err2);
-        finish('Could not save right now. Please try again.', false);
-        if (submitBtn) submitBtn.textContent = 'Submit Details & Continue';
-      }
-    })
-    .finally(() => {
-      setTimeout(() => setFormEnabled(true), 300);
-    });
-  });
-})();
-/* ============================================================
-   KenFolios — Onboarding & Activation Script
-   ------------------------------------------------------------
-   • Handles onboarding form submission
-   • Sends data to Google Apps Script (Sheets)
-   • Shows saving progress bar and success tick
-   • Sets Telegram join link dynamically
-   ============================================================ */
-(function () {
-  const FORM = document.getElementById("kfActivationForm");
-  if (!FORM) return;
-
-  const SHEETS_ENDPOINT =
-    "https://script.google.com/macros/s/AKfycbyI1iWZK4aWum2-dk3IRfi88CTE6jBgvcozm3zC3iQ2Frw1QFmPPb_daAKM3gPY1HmMZA/exec";
-  const TELEGRAM_INVITE = "https://t.me/kenfolios";
-  const joinBtn = document.getElementById("joinTelegram");
-  if (joinBtn) joinBtn.href = TELEGRAM_INVITE;
-
-  const chat = document.getElementById("chatArea");
-  if (chat) {
-    window.requestAnimationFrame(function () {
-      document
-        .getElementById("activationTop")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
-
-  const val = (id) => (document.getElementById(id)?.value || "").trim();
-  function setEnabled(enabled) {
-    Array.from(FORM.elements).forEach((el) => (el.disabled = !enabled));
-  }
-  function ensureStatus() {
-    const host = document.getElementById("acStatus");
-    if (host && host.style.display !== "block") host.style.display = "block";
-    return {
-      bar: document.getElementById("acBar"),
-      msg: document.getElementById("acMsg"),
-    };
-  }
-  function setProgress(p, text) {
-    const s = ensureStatus();
-    if (s.bar) s.bar.style.width = Math.max(0, Math.min(100, p)) + "%";
-    if (s.msg && text) s.msg.textContent = text;
-  }
-  function valid() {
-    return val("ac_name") && val("ac_txn") && val("ac_whatsapp") && val("ac_tgid");
-  }
-  function toUrlEncoded() {
-    const usp = new URLSearchParams();
-    usp.append("name", val("ac_name"));
-    usp.append("transactionId", val("ac_txn"));
-    usp.append("phone", val("ac_whatsapp"));
-    usp.append("telegramUser", val("ac_tgid"));
-    usp.append("source", "kenfolios-activation");
-    return usp.toString();
-  }
-
-  FORM.addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (!valid()) {
-      alert("Please fill all required fields.");
-      return;
+      });
     }
 
-    const submitBtn = FORM.querySelector('button[type="submit"], input[type="submit"]');
-    setEnabled(false);
-    if (submitBtn) submitBtn.textContent = "Saving…";
+    function fetchJsonp(url, timeoutMs){
+      return new Promise((resolve, reject) => {
+        const cb = 'kf_cb_' + Math.floor(Math.random() * 1e9);
+        const sep = url.includes('?') ? '&' : '?';
+        const src = url + sep + 'callback=' + encodeURIComponent(cb) + '&_ts=' + Date.now();
+        let timer = null;
 
-    setProgress(10, "Validating…");
-    const marks = [30, 55, 80];
-    let i = 0;
-    const id = setInterval(() => {
-      if (i < marks.length) setProgress(marks[i++], "Saving your activation…");
-      else clearInterval(id);
-    }, 300);
-
-    const body = toUrlEncoded();
-
-    fetch(SHEETS_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body,
-    })
-      .then(() => {
-        clearInterval(id);
-        setProgress(100, "Saved. Thank you!");
-        if (submitBtn) {
-          submitBtn.textContent = "Saved";
-          submitBtn.classList.add("success");
-          submitBtn.disabled = true;
-          submitBtn.setAttribute("aria-disabled", "true");
+        function cleanup(){
+          if (timer) clearTimeout(timer);
+          try { script.remove(); } catch(e) {}
+          try { delete window[cb]; } catch(e) {}
         }
-        try {
-          FORM.reset();
-        } catch (_) {}
+
+        window[cb] = function(data){ cleanup(); resolve(data); };
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onerror = function(){ cleanup(); reject(new Error('JSONP load error or blocked (CSP/network)')); };
+        document.head.appendChild(script);
+
+        if (timeoutMs) timer = setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeoutMs);
+      });
+    }
+
+    async function refreshCount(){
+      try {
+        const data = await fetchJsonp(WEBAPP_URL, 9000);
+        if (data && data.ok && typeof data.computedCount !== 'undefined') {
+          const count = Number(data.computedCount);
+          renderCount(count);
+          localStorage.setItem('kf_last_count', String(count));
+          return count;
+        } else {
+          throw new Error('Invalid payload: ' + JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error('[MemberCounter] fetch failed:', err);
+        const last = Number(localStorage.getItem('kf_last_count')) || FALLBACK_BASE;
+        renderCount(last);
+        return last;
+      }
+    }
+
+    (function init(){
+      const cached = Number(localStorage.getItem('kf_last_count'));
+      if (cached && !isNaN(cached)) renderCount(cached); else renderCount(FALLBACK_BASE);
+      refreshCount();
+      setInterval(refreshCount, POLL_MS);
+      window.KF_refreshMemberCount = refreshCount;
+    })();
+  })();
+
+  // ===== FORM SUBMIT =====
+  (function(){
+    const form = document.getElementById('kfJoinInfoForm');
+    if (!form) return;
+
+    const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec";
+    const RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd";
+
+    // ---------- Helpers ----------
+    const val = id => (document.getElementById(id)?.value || '').trim();
+    const checkedValues = name => Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(cb => cb.value);
+    const setFormEnabled = enabled => Array.from(form.elements).forEach(el => el.disabled = !enabled);
+
+    function valid(){
+      const requiredOk = val('fi_name') && val('fi_dob') && val('fi_gender') &&
+                         val('fi_email') && val('fi_phone') && val('fi_city');
+      const acceptOk = !!document.getElementById('fi_accept')?.checked;
+      const expOk = checkedValues('expectations').length > 0;
+      return requiredOk && acceptOk && expOk;
+    }
+
+    function toUrlEncoded(){
+      const usp = new URLSearchParams();
+      usp.append('fullName', val('fi_name'));
+      usp.append('dob', val('fi_dob'));
+      usp.append('gender', val('fi_gender'));
+      usp.append('email', val('fi_email'));
+      usp.append('phone', val('fi_phone'));
+      usp.append('city', val('fi_city'));
+      checkedValues('expectations').forEach(v => usp.append('expectations', v));
+      usp.append('source', 'kenfolios-join-v2');
+      return usp.toString();
+    }
+
+    function ensureBottomContainer(){
+      let c = document.getElementById('kfBottomContainer');
+      if (c) return c;
+      c = document.createElement('div');
+      c.id = 'kfBottomContainer';
+      c.style.marginTop = '10px';
+      c.style.textAlign = 'center';
+      form.insertAdjacentElement('afterend', c);
+      return c;
+    }
+
+    // ---------- UI helpers for button replacement ----------
+    function createProgressPill(colorTextBackground, text){
+      const pill = document.createElement('div');
+      pill.className = 'kf-progress-pill';
+      pill.setAttribute('role','status');
+      pill.setAttribute('aria-live','polite');
+      pill.style.display = 'inline-flex';
+      pill.style.alignItems = 'center';
+      pill.style.gap = '8px';
+      pill.style.padding = '8px 12px';
+      pill.style.borderRadius = '999px';
+      pill.style.fontWeight = '600';
+      pill.style.fontSize = '0.95rem';
+      pill.style.background = colorTextBackground || '#e6f0ff';
+      pill.style.color = '#111';
+
+      const spinner = document.createElement('span');
+      spinner.className = 'kf-spinner';
+      spinner.style.width = '16px';
+      spinner.style.height = '16px';
+      spinner.style.borderRadius = '50%';
+      spinner.style.border = '2px solid rgba(0,0,0,0.15)';
+      spinner.style.borderTopColor = 'rgba(0,0,0,0.55)';
+      spinner.style.animation = 'kf-spin 0.8s linear infinite';
+
+      const txt = document.createElement('span');
+      txt.className = 'kf-progress-text';
+      txt.textContent = text || 'Processing…';
+
+      pill.appendChild(spinner);
+      pill.appendChild(txt);
+
+      if (!document.getElementById('kf-progress-style')){
+        const s = document.createElement('style');
+        s.id = 'kf-progress-style';
+        s.textContent = `@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}} .kf-progress-pill{box-shadow:0 4px 10px rgba(2,6,23,0.06)}`;
+        document.head.appendChild(s);
+      }
+      return pill;
+    }
+
+    function showProgressReplacingButton(submitBtn, initialText){
+      // hide submit button but keep it in DOM so we can restore on failure
+      submitBtn.dataset.kf_original_display = submitBtn.style.display || '';
+      submitBtn.style.display = 'none';
+      submitBtn.setAttribute('aria-hidden','true');
+
+      // insert pill right after submitBtn's place
+      const pill = createProgressPill(null, initialText || 'Processing…');
+      submitBtn.parentNode.insertBefore(pill, submitBtn.nextSibling);
+      return pill;
+    }
+
+    function restoreSubmitButton(submitBtn){
+      submitBtn.style.display = submitBtn.dataset.kf_original_display || '';
+      submitBtn.removeAttribute('aria-hidden');
+    }
+
+    function hideAndRemovePill(pill){
+      if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
+    }
+
+    // ---------- Saved confirmation ----------
+    function showSavedNotice(){
+      const container = ensureBottomContainer();
+      const prev = container.querySelector('.kf-saved-notice');
+      if (prev) prev.remove();
+
+      const notice = document.createElement('div');
+      notice.className = 'kf-saved-notice';
+      notice.style.display = 'inline-block';
+      notice.style.padding = '10px 14px';
+      notice.style.borderRadius = '8px';
+      notice.style.background = 'rgba(220, 245, 220, 0.95)';
+      notice.style.color = '#000';
+      notice.style.fontSize = '1rem';
+      notice.style.fontWeight = '600';
+      notice.style.marginTop = '0px';
+      notice.style.marginBottom = '10px';
+      notice.textContent = '✅ Details Saved. Hit the Pay Now button to complete the payment to activate membership and proceed with onboarding.';
+
+      container.insertAdjacentElement('afterbegin', notice);
+      return notice;
+    }
+
+    // ---------- Razorpay Button (with load handling) ----------
+    function injectRazorpayButton(onReadyCallback, onErrorCallback, pill){
+      const container = ensureBottomContainer();
+      if (document.getElementById('kfRazorpayContainer')) {
+        // if already exists, call ready callback immediately
+        if (typeof onReadyCallback === 'function') onReadyCallback();
+        return;
+      }
+
+      const rzpWrap = document.createElement('div');
+      rzpWrap.id = 'kfRazorpayContainer';
+      rzpWrap.style.display = 'flex';
+      rzpWrap.style.flexDirection = 'column';
+      rzpWrap.style.alignItems = 'center';
+      rzpWrap.style.justifyContent = 'center';
+      rzpWrap.style.marginTop = '4px';
+
+      const rzpForm = document.createElement('form');
+      rzpForm.id = 'kfRazorpayForm';
+      rzpForm.style.display = 'inline-block';
+
+      const script = document.createElement('script');
+      script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+      script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
+      script.async = true;
+
+      // Keep pill showing while payment button loads; update text
+      if (pill) {
+        const txt = pill.querySelector('.kf-progress-text');
+        if (txt) txt.textContent = 'Loading payment button…';
+      }
+
+      script.onload = function(){
+        // small delay to let the injected button render
+        setTimeout(function(){
+          if (typeof onReadyCallback === 'function') onReadyCallback();
+        }, 250);
+      };
+
+      script.onerror = function(){
+        if (typeof onErrorCallback === 'function') onErrorCallback();
+      };
+
+      rzpForm.appendChild(script);
+      rzpWrap.appendChild(rzpForm);
+      container.appendChild(rzpWrap);
+    }
+
+    // ---------- Show combined saved message (keeps notice + payment container) ----------
+    function finalizeSuccess(pill){
+      // replace pill with saved notice and keep razorpay container visible
+      hideAndRemovePill(pill);
+      showSavedNotice();
+      // ensure razorpay container is visible (it will be appended by injectRazorpayButton)
+    }
+
+    // ---------- Submit handling ----------
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (!valid()) {
+        alert('Please complete all required fields and accept the Terms.');
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (!submitBtn) {
+        // Safety fallback — show pill in bottom container
+        const fallbackPill = createProgressPill(null, 'Processing…');
+        ensureBottomContainer().appendChild(fallbackPill);
+      }
+
+      // Show progress pill replacing the button to prevent re-submits
+      const pill = submitBtn ? showProgressReplacingButton(submitBtn, 'Saving details…') : createProgressPill(null, 'Saving details…');
+
+      // disable all form controls anyway
+      setFormEnabled(false);
+
+      const body = toUrlEncoded();
+
+      // Define helpers used in both fetch and sendBeacon flows
+      function onSaveSuccess(){
+        // Keep pill visible, update text, then load razorpay button; only when razorpay ready we finalize
+        const txt = pill.querySelector('.kf-progress-text');
+        if (txt) txt.textContent = 'Saved. Preparing payment button…';
+
+        // inject razorpay; when it signals ready, replace pill with notice and keep razorpay UI
+        injectRazorpayButton(function onRzpReady(){
+          finalizeSuccess(pill);
+        }, function onRzpError(){
+          // razorpay failed — show notice + error under container and restore submit only if needed
+          hideAndRemovePill(pill);
+          const container = ensureBottomContainer();
+          const err = document.createElement('div');
+          err.className = 'kf-save-error';
+          err.style.color = '#b45309';
+          err.style.fontWeight = '600';
+          err.style.marginTop = '6px';
+          err.textContent = 'Payment button failed to load. Please refresh the page.';
+          container.appendChild(err);
+        }, pill);
+      }
+
+      function onSaveFailure(){
+        // Remove pill and restore submit button so user can try again
+        hideAndRemovePill(pill);
+        if (submitBtn) restoreSubmitButton(submitBtn);
+        setFormEnabled(true);
+        const container = ensureBottomContainer();
+        let errEl = container.querySelector('.kf-save-error');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.className = 'kf-save-error';
+          errEl.style.color = '#f3c13a';
+          errEl.style.fontWeight = '600';
+          errEl.style.marginTop = '6px';
+          container.appendChild(errEl);
+        }
+        errEl.textContent = 'Could not save right now. Please try again.';
+      }
+
+      // Try fetch first (CORS mode no-cors as before)
+      fetch(SHEETS_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body
       })
-      .catch((err) => {
-        console.warn("[Activation] fetch failed, trying sendBeacon", err);
+      .then(() => {
+        // Note: with mode 'no-cors' we don't get a usable response, but success => assume saved
+        onSaveSuccess();
+        try { form.reset(); } catch(e){}
+      })
+      .catch(err => {
+        console.warn('[Sheets] fetch failed, trying sendBeacon', err);
         try {
-          const blob = new Blob([body], {
-            type: "application/x-www-form-urlencoded;charset=UTF-8",
-          });
+          const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
           const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
           if (ok) {
-            clearInterval(id);
-            setProgress(100, "Saved. Thank you!");
-            if (submitBtn) {
-              submitBtn.textContent = "Saved";
-              submitBtn.classList.add("success");
-              submitBtn.disabled = true;
-              submitBtn.setAttribute("aria-disabled", "true");
-            }
-            try {
-              FORM.reset();
-            } catch (_) {}
+            onSaveSuccess();
+            try { form.reset(); } catch(e) {}
           } else {
-            throw new Error("sendBeacon returned false");
+            throw new Error('sendBeacon returned false');
           }
-        } catch (err2) {
-          console.error("[Activation] POST error:", err2);
-          setProgress(100, "Could not save right now. Please try again.");
-          if (submitBtn) submitBtn.textContent = "Save & Continue";
+        } catch(err2){
+          console.error('[Sheets] POST error:', err2);
+          onSaveFailure();
         }
       })
       .finally(() => {
-        setTimeout(() => setEnabled(true), 300);
+        // keep form disabled until we either finalize success or show an error
+        // if save was successful we will finalize only when razorpay is ready
       });
-  });
-})();
 
+    });
+  })();
+
+})();
 </script>
 
 </body>
