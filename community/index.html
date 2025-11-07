@@ -1053,9 +1053,10 @@
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-        👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network.<br/><br/>
-        This is a <em>demo</em> of how conversations flow here. Scroll below to explore the most-asked questions before joining.
-      </div>
+  👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network.<br/><br/>
+  This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
+</div>
+
       <div class="pinned-label">📌 Pinned</div>
     </div>
   </div>
@@ -1593,6 +1594,7 @@
             <div class="identity">
               <div class="titleline">
                 <span class="profile-name">KenFolios Business Community</span>
+                <span class="verified-badge" title="Verified"></span>
               </div>
               <div class="subline">
                 <span class="profile-username">@kenfolios</span>
@@ -2214,109 +2216,6 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   }
 })();
 
-
-
-/* =========================================================
-   KenFolios Member Counter — front-end JSONP consumer
-   Works with the hybrid doGet that returns `computedCount`.
-   Place this block just before </body>.
-   ========================================================= */
-(function(){
-  // ===== CONFIG =====
-  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec'; // ← replace if your /exec differs
-  const POLL_MS = 5 * 60 * 1000;        // auto-refresh interval
-  const FALLBACK_BASE = 23338;          // used if backend unreachable
-  const ELEMENT_IDS = ['openProfile3','profileMembers']; // elements to update
-
-  // ===== utils =====
-  function fmt(n){
-    try { return new Intl.NumberFormat('en-IN').format(n); }
-    catch { return String(n); }
-  }
-  function renderCount(n){
-    const text = fmt(n) + ' members';
-    ELEMENT_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-      else console.warn('[MemberCounter] missing element:', id);
-    });
-  }
-
-  // ===== JSONP fetch (cache-busting) =====
-  function fetchJsonp(url, timeoutMs){
-    return new Promise((resolve, reject) => {
-      const cb = 'kf_cb_' + Math.floor(Math.random() * 1e9);
-      const sep = url.includes('?') ? '&' : '?';
-      const src = url + sep + 'callback=' + encodeURIComponent(cb) + '&_ts=' + Date.now();
-      let timer = null;
-
-      function cleanup(){
-        if (timer) clearTimeout(timer);
-        try { script.remove(); } catch(e) {}
-        try { delete window[cb]; } catch(e) {}
-      }
-
-      window[cb] = function(data){
-        cleanup();
-        resolve(data);
-      };
-
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      script.onerror = function(){ cleanup(); reject(new Error('JSONP load error or blocked (CSP/network)')); };
-      document.head.appendChild(script);
-
-      if (timeoutMs) timer = setTimeout(function(){ cleanup(); reject(new Error('JSONP timeout')); }, timeoutMs);
-      console.log('[MemberCounter] JSONP injected:', src);
-    });
-  }
-
-  // ===== main refresh =====
-  async function refreshCount(){
-    try {
-      console.log('[MemberCounter] fetching from backend...');
-      const data = await fetchJsonp(WEBAPP_URL, 9000);
-      console.log('[MemberCounter] backend response:', data);
-      if (data && data.ok && typeof data.computedCount !== 'undefined') {
-        const count = Number(data.computedCount);
-        renderCount(count);
-        localStorage.setItem('kf_last_count', String(count));
-        return count;
-      } else {
-        throw new Error('Invalid payload: ' + JSON.stringify(data));
-      }
-    } catch (err) {
-      console.error('[MemberCounter] fetch failed:', err);
-      const last = Number(localStorage.getItem('kf_last_count')) || FALLBACK_BASE;
-      console.log('[MemberCounter] using fallback/cached value:', last);
-      renderCount(last);
-      return last;
-    }
-  }
-
-  // ===== init =====
-  (function init(){
-    console.log('[MemberCounter] init');
-    // Fast display from cache or fallback
-    const cached = Number(localStorage.getItem('kf_last_count'));
-    if (cached && !isNaN(cached)) {
-      renderCount(cached);
-      console.log('[MemberCounter] showed cached value:', cached);
-    } else {
-      renderCount(FALLBACK_BASE);
-      console.log('[MemberCounter] showed fallback base:', FALLBACK_BASE);
-    }
-
-    // Fetch fresh value and schedule updates
-    refreshCount();
-    setInterval(refreshCount, POLL_MS);
-
-    // Expose manual refresh for console: call KF_refreshMemberCount()
-    window.KF_refreshMemberCount = refreshCount;
-  })();
-
-})();
 /* ===== Minimal profile interactions (social only) ===== */
 (function(){
   var openProfile = function(){
@@ -2607,11 +2506,108 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     openOverlay(legal); showLegal(which);
   });
 })();
-
 /* =========================================================
-   FORM SUBMIT — Combined "Details Saved" + Razorpay (Tight Layout)
-   - Compact spacing between text and Razorpay button
+   KenFolios Member Counter — front-end JSONP consumer
+   Works with the hybrid doGet that returns `computedCount`.
+   Place this block just before </body>.
    ========================================================= */
+(function(){
+  // ===== CONFIG =====
+  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec'; // ← replace if your /exec differs
+  const POLL_MS = 5 * 60 * 1000;        // auto-refresh interval
+  const FALLBACK_BASE = 23338;          // used if backend unreachable
+  const ELEMENT_IDS = ['openProfile3','profileMembers']; // elements to update
+
+  // ===== utils =====
+  function fmt(n){
+    try { return new Intl.NumberFormat('en-IN').format(n); }
+    catch { return String(n); }
+  }
+  function renderCount(n){
+    const text = fmt(n) + ' members';
+    ELEMENT_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+      else console.warn('[MemberCounter] missing element:', id);
+    });
+  }
+
+  // ===== JSONP fetch (cache-busting) =====
+  function fetchJsonp(url, timeoutMs){
+    return new Promise((resolve, reject) => {
+      const cb = 'kf_cb_' + Math.floor(Math.random() * 1e9);
+      const sep = url.includes('?') ? '&' : '?';
+      const src = url + sep + 'callback=' + encodeURIComponent(cb) + '&_ts=' + Date.now();
+      let timer = null;
+
+      function cleanup(){
+        if (timer) clearTimeout(timer);
+        try { script.remove(); } catch(e) {}
+        try { delete window[cb]; } catch(e) {}
+      }
+
+      window[cb] = function(data){
+        cleanup();
+        resolve(data);
+      };
+
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onerror = function(){ cleanup(); reject(new Error('JSONP load error or blocked (CSP/network)')); };
+      document.head.appendChild(script);
+
+      if (timeoutMs) timer = setTimeout(function(){ cleanup(); reject(new Error('JSONP timeout')); }, timeoutMs);
+      console.log('[MemberCounter] JSONP injected:', src);
+    });
+  }
+
+  // ===== main refresh =====
+  async function refreshCount(){
+    try {
+      console.log('[MemberCounter] fetching from backend...');
+      const data = await fetchJsonp(WEBAPP_URL, 9000);
+      console.log('[MemberCounter] backend response:', data);
+      if (data && data.ok && typeof data.computedCount !== 'undefined') {
+        const count = Number(data.computedCount);
+        renderCount(count);
+        localStorage.setItem('kf_last_count', String(count));
+        return count;
+      } else {
+        throw new Error('Invalid payload: ' + JSON.stringify(data));
+      }
+    } catch (err) {
+      console.error('[MemberCounter] fetch failed:', err);
+      const last = Number(localStorage.getItem('kf_last_count')) || FALLBACK_BASE;
+      console.log('[MemberCounter] using fallback/cached value:', last);
+      renderCount(last);
+      return last;
+    }
+  }
+
+  // ===== init =====
+  (function init(){
+    console.log('[MemberCounter] init');
+    // Fast display from cache or fallback
+    const cached = Number(localStorage.getItem('kf_last_count'));
+    if (cached && !isNaN(cached)) {
+      renderCount(cached);
+      console.log('[MemberCounter] showed cached value:', cached);
+    } else {
+      renderCount(FALLBACK_BASE);
+      console.log('[MemberCounter] showed fallback base:', FALLBACK_BASE);
+    }
+
+    // Fetch fresh value and schedule updates
+    refreshCount();
+    setInterval(refreshCount, POLL_MS);
+
+    // Expose manual refresh for console: call KF_refreshMemberCount()
+    window.KF_refreshMemberCount = refreshCount;
+  })();
+
+})();
+/* FORM SUBMIT — Compact layout + progress visual + Razorpay */
 (function(){
   const form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
@@ -2621,8 +2617,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   // ---------- Helpers ----------
   const val = id => (document.getElementById(id)?.value || '').trim();
-  const checkedValues = name =>
-    Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(cb => cb.value);
+  const checkedValues = name => Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(cb => cb.value);
   const setFormEnabled = enabled => Array.from(form.elements).forEach(el => el.disabled = !enabled);
 
   function valid(){
@@ -2636,7 +2631,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   function toUrlEncoded(){
     const usp = new URLSearchParams();
     usp.append('fullName', val('fi_name'));
-    usp.append('name', val('fi_name'));
     usp.append('dob', val('fi_dob'));
     usp.append('gender', val('fi_gender'));
     usp.append('email', val('fi_email'));
@@ -2658,58 +2652,81 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return c;
   }
 
-  // ✅ Combined Saved message + Tick
-  function showSavedCombinedMessage(){
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.remove();
-
+  // ---------- Progress visual ----------
+  function showProgressPill(fromButton){
     const container = ensureBottomContainer();
-    const prev = container.querySelector('.kf-saved-combined');
+    const prev = container.querySelector('.kf-progress-pill');
     if (prev) prev.remove();
 
-    const saved = document.createElement('div');
-    saved.className = 'kf-saved-combined';
-    saved.style.display = 'inline-block';
-    saved.style.textAlign = 'center';
-    saved.style.padding = '8px 12px';
-    saved.style.borderRadius = '10px';
-    saved.style.gap = '6px';
+    const pill = document.createElement('div');
+    pill.className = 'kf-progress-pill';
+    pill.style.display = 'inline-flex';
+    pill.style.alignItems = 'center';
+    pill.style.gap = '8px';
+    pill.style.padding = '8px 12px';
+    pill.style.borderRadius = '999px';
+    pill.style.fontWeight = '600';
+    pill.style.fontSize = '0.95rem';
 
-    const top = document.createElement('div');
-    top.style.display = 'flex';
-    top.style.alignItems = 'center';
-    top.style.justifyContent = 'center';
-    top.style.gap = '8px';
+    try {
+      const btnStyle = window.getComputedStyle(fromButton);
+      pill.style.background = btnStyle.backgroundColor || '#e6f0ff';
+      pill.style.color = btnStyle.color || '#111';
+    } catch(e){}
 
-    const tick = document.createElement('span');
-    tick.textContent = '✔';
-    tick.style.color = '#16a34a';
-    tick.style.fontSize = '1.3rem';
-    tick.style.lineHeight = '1';
-    tick.setAttribute('aria-hidden', 'true');
+    const spinner = document.createElement('span');
+    spinner.style.width = '16px';
+    spinner.style.height = '16px';
+    spinner.style.borderRadius = '50%';
+    spinner.style.border = '2px solid rgba(0,0,0,0.15)';
+    spinner.style.borderTopColor = 'rgba(0,0,0,0.55)';
+    spinner.style.animation = 'kf-spin 0.8s linear infinite';
 
-    const title = document.createElement('span');
-    title.textContent = 'Details Saved';
-    title.style.color = '#16a34a';
-    title.style.fontWeight = '700';
-    title.style.fontSize = '1rem';
+    const txt = document.createElement('span');
+    txt.textContent = 'Processing…';
 
-    top.appendChild(tick);
-    top.appendChild(title);
+    pill.appendChild(spinner);
+    pill.appendChild(txt);
+    container.insertAdjacentElement('afterbegin', pill);
 
-    const instr = document.createElement('div');
-    instr.style.marginTop = '4px';
-    instr.style.fontSize = '0.95rem';
-    instr.style.color = '#E11D2E';
-    instr.style.fontWeight = '600';
-    instr.textContent = 'Hit Pay Now below and complete the payment to activate membership and proceed for onboarding.';
-
-    saved.appendChild(top);
-    saved.appendChild(instr);
-    container.insertAdjacentElement('afterbegin', saved);
+    if (!document.getElementById('kf-progress-style')){
+      const s = document.createElement('style');
+      s.id = 'kf-progress-style';
+      s.textContent = `@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`;
+      document.head.appendChild(s);
+    }
+    return pill;
   }
 
-  // ✅ Inject Razorpay (reduced top margin)
+  function hideProgressPill(){
+    const container = ensureBottomContainer();
+    const prev = container.querySelector('.kf-progress-pill');
+    if (prev) prev.remove();
+  }
+
+  // ---------- Saved confirmation ----------
+  function showSavedNotice(){
+    const container = ensureBottomContainer();
+    const prev = container.querySelector('.kf-saved-notice');
+    if (prev) prev.remove();
+
+    const notice = document.createElement('div');
+    notice.className = 'kf-saved-notice';
+    notice.style.display = 'inline-block';
+    notice.style.padding = '10px 14px';
+    notice.style.borderRadius = '8px';
+    notice.style.background = 'rgba(220, 245, 220, 0.9)';
+    notice.style.color = '#000';
+    notice.style.fontSize = '1rem';
+    notice.style.fontWeight = '600';
+    notice.style.marginTop = '6px';
+    notice.style.marginBottom = '8px'; // 👈 new line for spacing
+    notice.textContent = '✅ Details Saved. Hit the Pay Now button to complete the payment to activate membership and proceed with onboarding.';
+
+    container.insertAdjacentElement('afterbegin', notice);
+  }
+
+  // ---------- Razorpay Button ----------
   function injectRazorpayButton(){
     const container = ensureBottomContainer();
     if (document.getElementById('kfRazorpayContainer')) return;
@@ -2719,76 +2736,72 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     rzpWrap.style.display = 'flex';
     rzpWrap.style.flexDirection = 'column';
     rzpWrap.style.alignItems = 'center';
-    rzpWrap.style.justifyContent = 'center';
-    rzpWrap.style.marginTop = '4px'; // tighter spacing
+    rzpWrap.style.marginTop = '4px';
 
     const rzpForm = document.createElement('form');
     rzpForm.id = 'kfRazorpayForm';
     rzpForm.style.display = 'inline-block';
-    rzpForm.style.marginTop = '2px'; // even tighter to text
 
     const script = document.createElement('script');
     script.src = "https://checkout.razorpay.com/v1/payment-button.js";
     script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
     script.async = true;
 
+    const pill = showProgressPill(document.querySelector('button[type=\"submit\"]'));
+    pill.querySelector('span:last-child').textContent = 'Loading payment button…';
+
+    script.onload = () => setTimeout(() => hideProgressPill(), 200);
+    script.onerror = () => {
+      hideProgressPill();
+      const err = document.createElement('div');
+      err.style.color = '#b45309';
+      err.style.fontWeight = '600';
+      err.style.marginTop = '6px';
+      err.textContent = 'Payment button failed to load. Please refresh the page.';
+      rzpWrap.appendChild(err);
+    };
+
     rzpForm.appendChild(script);
     rzpWrap.appendChild(rzpForm);
     container.appendChild(rzpWrap);
+  }
+
+  function showSavedCombinedMessage(){
+    const submitBtn = form.querySelector('button[type=\"submit\"]');
+    if (submitBtn) submitBtn.remove();
+    showSavedNotice();
   }
 
   // ---------- Submit ----------
   form.addEventListener('submit', function(e){
     e.preventDefault();
     if (!valid()) {
-      alert('Please complete all required fields, select at least one expectation, and accept the Terms & Privacy.');
+      alert('Please complete all required fields and accept the Terms.');
       return;
     }
 
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.textContent = 'Saving…';
-
-    const body = toUrlEncoded();
+    const submitBtn = form.querySelector('button[type=\"submit\"]');
+    const pill = showProgressPill(submitBtn);
     setFormEnabled(false);
 
+    const body = toUrlEncoded();
     fetch(SHEETS_ENDPOINT, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
       body
     })
-    .then(() => {
+    .then(()=>{
+      hideProgressPill();
       showSavedCombinedMessage();
       try { form.reset(); } catch(e){}
       injectRazorpayButton();
     })
-    .catch(err => {
-      console.warn('[Sheets] fetch failed, trying sendBeacon', err);
-      try {
-        const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
-        const ok = navigator.sendBeacon(SHEETS_ENDPOINT, blob);
-        if (ok) {
-          showSavedCombinedMessage();
-          try { form.reset(); } catch(e){}
-          injectRazorpayButton();
-        } else throw new Error('sendBeacon returned false');
-      } catch(err2){
-        console.error('[Sheets] POST error:', err2);
-        const container = ensureBottomContainer();
-        let errEl = container.querySelector('.kf-save-error');
-        if (!errEl) {
-          errEl = document.createElement('div');
-          errEl.className = 'kf-save-error';
-          errEl.style.color = '#f3c13a';
-          errEl.style.fontWeight = '600';
-          errEl.style.marginTop = '6px';
-          container.appendChild(errEl);
-        }
-        errEl.textContent = 'Could not save right now. Please try again.';
-        if (submitBtn) submitBtn.textContent = 'Submit Details & Continue';
-      }
+    .catch(()=>{
+      hideProgressPill();
+      alert('Could not save right now. Please try again.');
     })
-    .finally(() => setTimeout(() => setFormEnabled(true), 300));
+    .finally(()=> setTimeout(()=> setFormEnabled(true), 300));
   });
 })();
 </script>
