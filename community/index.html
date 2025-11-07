@@ -1053,9 +1053,10 @@
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-  👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network.<br/><br/>
-  This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
-</div>
+      👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network with 
+      <span id="welcomeMembers"><span class="member-count">23,338</span> members</span>.<br/><br/>
+      This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
+    </div>
 
       <div class="pinned-label">📌 Pinned</div>
     </div>
@@ -2509,26 +2510,33 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 /* =========================================================
    KenFolios Member Counter — front-end JSONP consumer
    Works with the hybrid doGet that returns `computedCount`.
-   Place this block just before </body>.
+   Updates header, profile, and inline welcome message.
    ========================================================= */
 (function(){
   // ===== CONFIG =====
-  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec'; // ← replace if your /exec differs
+  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycby7X6-Sbso0XYAEjLWUEq-2jmMnRDzAmLO8nVepAzEMLxDSm1lCnetsAs4KEwrU0BDF9g/exec'; 
   const POLL_MS = 5 * 60 * 1000;        // auto-refresh interval
   const FALLBACK_BASE = 23338;          // used if backend unreachable
-  const ELEMENT_IDS = ['openProfile3','profileMembers']; // elements to update
+  const ELEMENT_IDS = ['openProfile3', 'profileMembers', 'welcomeMembers']; // added welcomeMembers
 
   // ===== utils =====
   function fmt(n){
     try { return new Intl.NumberFormat('en-IN').format(n); }
     catch { return String(n); }
   }
+
   function renderCount(n){
     const text = fmt(n) + ' members';
     ELEMENT_IDS.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = text;
-      else console.warn('[MemberCounter] missing element:', id);
+      if (!el) return;
+
+      // Inline update only for welcome message
+      if (id === 'welcomeMembers') {
+        el.innerHTML = `<span class="member-count">${fmt(n)}</span> members`;
+      } else {
+        el.textContent = text;
+      }
     });
   }
 
@@ -2554,20 +2562,24 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       const script = document.createElement('script');
       script.src = src;
       script.async = true;
-      script.onerror = function(){ cleanup(); reject(new Error('JSONP load error or blocked (CSP/network)')); };
+      script.onerror = function(){
+        cleanup();
+        reject(new Error('JSONP load error or blocked (CSP/network)'));
+      };
       document.head.appendChild(script);
 
-      if (timeoutMs) timer = setTimeout(function(){ cleanup(); reject(new Error('JSONP timeout')); }, timeoutMs);
-      console.log('[MemberCounter] JSONP injected:', src);
+      if (timeoutMs)
+        timer = setTimeout(function(){
+          cleanup();
+          reject(new Error('JSONP timeout'));
+        }, timeoutMs);
     });
   }
 
   // ===== main refresh =====
   async function refreshCount(){
     try {
-      console.log('[MemberCounter] fetching from backend...');
       const data = await fetchJsonp(WEBAPP_URL, 9000);
-      console.log('[MemberCounter] backend response:', data);
       if (data && data.ok && typeof data.computedCount !== 'undefined') {
         const count = Number(data.computedCount);
         renderCount(count);
@@ -2579,7 +2591,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     } catch (err) {
       console.error('[MemberCounter] fetch failed:', err);
       const last = Number(localStorage.getItem('kf_last_count')) || FALLBACK_BASE;
-      console.log('[MemberCounter] using fallback/cached value:', last);
       renderCount(last);
       return last;
     }
@@ -2587,25 +2598,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   // ===== init =====
   (function init(){
-    console.log('[MemberCounter] init');
-    // Fast display from cache or fallback
     const cached = Number(localStorage.getItem('kf_last_count'));
     if (cached && !isNaN(cached)) {
       renderCount(cached);
-      console.log('[MemberCounter] showed cached value:', cached);
     } else {
       renderCount(FALLBACK_BASE);
-      console.log('[MemberCounter] showed fallback base:', FALLBACK_BASE);
     }
 
-    // Fetch fresh value and schedule updates
     refreshCount();
     setInterval(refreshCount, POLL_MS);
-
-    // Expose manual refresh for console: call KF_refreshMemberCount()
     window.KF_refreshMemberCount = refreshCount;
   })();
-
 })();
 /* FORM SUBMIT — Compact layout + progress visual + Razorpay */
 (function(){
