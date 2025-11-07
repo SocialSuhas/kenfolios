@@ -3,53 +3,43 @@
 <html lang="en">
 <head>
  <!-- =========================================================
-   KENFOLIOS BUSINESS COMMUNITY — /community PAGE
-   COMPLETE HEAD: SEO + GA4 + META PIXEL + STRUCTURED DATA
-   Assets stored in: https://kenfolios.com/assets/
+   KENFOLIOS — ONBOARDING PAGE (noindex, no social previews)
+   Page: https://kenfolios.com/onboarding
+   Purpose: allow GA4 + Meta Pixel while preventing indexing & social cards
    Updated: 07 Nov 2025
 ========================================================= -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>KenFolios Business Community — Join</title>
+<title>KenFolios — Onboarding</title>
 <meta name="theme-color" content="#E11D2E" />
 
-<!-- ================== BASIC SEO ================== -->
-<meta name="description" content="KenFolios Business Community is India’s largest online business network connecting entrepreneurs and professionals with the right people for their growth. Founded by Suhas Naik and managed by KenFolios Media Private Limited, the platform builds trusted business connections across India.">
-<meta name="keywords" content="KenFolios, KenFolios Business Community, Business Network India, Entrepreneurs Network, Professional Growth, Indian Startups, Business Networking, Suhas Naik, KenFolios Media, Online Business Community">
-<link rel="canonical" href="https://kenfolios.com/community">
-<meta name="robots" content="index,follow">
-<meta name="author" content="KenFolios Media Private Limited">
+<!-- Prevent indexing and social previews -->
+<meta name="robots" content="noindex, nofollow, noimageindex, noarchive" />
+<meta name="googlebot" content="noindex, nofollow" />
+<meta name="bingbot" content="noindex, nofollow" />
+<!-- Hint to social scrapers (redundant but helpful) -->
+<meta name="twitter:card" content="none" />
 
-<!-- ================== OPEN GRAPH ================== -->
-<meta property="og:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
-<meta property="og:description" content="KenFolios Business Community connects entrepreneurs and professionals to build meaningful business growth opportunities across India.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://kenfolios.com/community">
-<meta property="og:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
-<meta property="og:site_name" content="KenFolios Business Community">
-<meta property="article:publisher" content="https://www.facebook.com/KenFolios">
+<!-- Minimal description (for internal use only) -->
+<meta name="description" content="KenFolios onboarding — registration & payment flow (private). This page is intentionally set to noindex to avoid search or social previews.">
 
-<!-- ================== TWITTER CARD ================== -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
-<meta name="twitter:description" content="India’s largest online business network empowering entrepreneurs and professionals through trusted connections.">
-<meta name="twitter:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
-<meta name="twitter:site" content="@KenFolios">
-
-<!-- ================== FAVICON ================== -->
-<link rel="icon" href="https://kenfolios.com/assets/favicon-kenfolios-64x64.png" type="image/png">
+<!-- If you prefer, include a canonical pointing to itself (optional) -->
+<link rel="canonical" href="https://kenfolios.com/onboarding">
 
 <!-- =========================================================
    GOOGLE ANALYTICS 4 (GA4)
    Measurement ID: G-8M691HC7BX
+   (keeps analytics working on this page)
 ========================================================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-8M691HC7BX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+  // keep page_view enabled so conversions attributed correctly
   gtag('config', 'G-8M691HC7BX', { 'send_page_view': true });
 
+  // Helper to fire GA4 events from your code
   function ga4Event(name, params) {
     try { gtag('event', name, params || {}); } catch(e){ console.warn('GA4 event error', e); }
   }
@@ -58,6 +48,7 @@
 <!-- =========================================================
    META PIXEL (Facebook / Meta)
    Pixel ID: 2897024127219193
+   (loads pixel but page still non-indexable)
 ========================================================= -->
 <script>
   !function(f,b,e,v,n,t,s)
@@ -68,7 +59,7 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '2897024127219193'); 
+  fbq('init', '2897024127219193');
   fbq('track', 'PageView');
   function metaEvent(name, params) {
     try { fbq('track', name, params || {}); } catch(e) { console.warn('Meta Pixel error', e); }
@@ -80,78 +71,9 @@
 </noscript>
 
 <!-- =========================================================
-   STRUCTURED DATA (SAFE JSON-LD INJECTOR)
-========================================================= -->
-<script>
-(function(){
-  var ld = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://kenfolios.com/#organization",
-        "name": "KenFolios Business Community",
-        "url": "https://kenfolios.com",
-        "logo": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
-        "description": "KenFolios Business Community is India’s largest online business network connecting entrepreneurs, professionals, and organizations for trusted growth and collaboration.",
-        "foundingDate": "2021-03",
-        "parentOrganization": {
-          "@type": "Organization",
-          "name": "KenFolios Media Private Limited",
-          "foundingDate": "2013-01",
-          "url": "https://kenfolios.com"
-        },
-        "sameAs": [
-          "https://www.facebook.com/KenFolios",
-          "https://www.instagram.com/KenFoliosHQ",
-          "https://twitter.com/KenFolios",
-          "https://www.linkedin.com/company/KenFolios"
-        ],
-        "founder": { "@id": "https://kenfolios.com/#founder" }
-      },
-      {
-        "@type": "Person",
-        "@id": "https://kenfolios.com/#founder",
-        "name": "Suhas Naik",
-        "jobTitle": "Founder & CEO",
-        "description": "Suhas Naik is an Indian entrepreneur and founder of KenFolios, India’s largest online business community and media network. With over two decades of experience, he has led KenFolios Media Private Limited to publish 5,000+ stories in English and Hindi, reaching over 100 million readers.",
-        "url": "https://socialsuhas.in",
-        "image": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
-        "nationality": "Indian",
-        "sameAs": [
-          "https://www.facebook.com/socialsuhas",
-          "https://www.instagram.com/socialsuhas",
-          "https://twitter.com/socialsuhas",
-          "https://www.linkedin.com/in/socialsuhas",
-          "https://www.youtube.com/@socialsuhasHQ",
-          "https://socialsuhas.in"
-        ],
-        "worksFor": { "@id": "https://kenfolios.com/#organization" }
-      },
-      {
-        "@type": "WebPage",
-        "@id": "https://kenfolios.com/community/#webpage",
-        "url": "https://kenfolios.com/community",
-        "name": "KenFolios Business Community",
-        "isPartOf": { "@id": "https://kenfolios.com/#organization" },
-        "about": { "@id": "https://kenfolios.com/#organization" },
-        "inLanguage": "en",
-        "datePublished": "2021-03-15",
-        "dateModified": "2025-11-07",
-        "primaryImageOfPage": "https://kenfolios.com/assets/og-kenfolios-community-1200x630.png"
-      }
-    ]
-  };
-
-  var s = document.createElement('script');
-  s.type = 'application/ld+json';
-  s.text = JSON.stringify(ld);
-  document.head.appendChild(s);
-})();
-</script>
-
-<!-- =========================================================
-   END HEAD BLOCK
+   NOTE:
+   - No Open Graph / Twitter Card tags included — prevents social previews.
+   - No JSON-LD structured data included — keeps page out of Knowledge Graph.
 ========================================================= -->
 
 
