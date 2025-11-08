@@ -3,43 +3,53 @@
 <html lang="en">
 <head>
  <!-- =========================================================
-   KENFOLIOS — ONBOARDING PAGE (noindex, no social previews)
-   Page: https://kenfolios.com/onboarding
-   Purpose: allow GA4 + Meta Pixel while preventing indexing & social cards
+   KENFOLIOS BUSINESS COMMUNITY — /community PAGE
+   COMPLETE HEAD: SEO + GA4 + META PIXEL + STRUCTURED DATA
+   Assets stored in: https://kenfolios.com/assets/
    Updated: 07 Nov 2025
 ========================================================= -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>KenFolios — Onboarding</title>
+<title>KenFolios Business Community — Join</title>
 <meta name="theme-color" content="#E11D2E" />
 
-<!-- Prevent indexing and social previews -->
-<meta name="robots" content="noindex, nofollow, noimageindex, noarchive" />
-<meta name="googlebot" content="noindex, nofollow" />
-<meta name="bingbot" content="noindex, nofollow" />
-<!-- Hint to social scrapers (redundant but helpful) -->
-<meta name="twitter:card" content="none" />
+<!-- ================== BASIC SEO ================== -->
+<meta name="description" content="KenFolios Business Community is India’s largest online business network connecting entrepreneurs and professionals with the right people for their growth. Founded by Suhas Naik and managed by KenFolios Media Private Limited, the platform builds trusted business connections across India.">
+<meta name="keywords" content="KenFolios, KenFolios Business Community, Business Network India, Entrepreneurs Network, Professional Growth, Indian Startups, Business Networking, Suhas Naik, KenFolios Media, Online Business Community">
+<link rel="canonical" href="https://kenfolios.com/community">
+<meta name="robots" content="index,follow">
+<meta name="author" content="KenFolios Media Private Limited">
 
-<!-- Minimal description (for internal use only) -->
-<meta name="description" content="KenFolios onboarding — registration & payment flow (private). This page is intentionally set to noindex to avoid search or social previews.">
+<!-- ================== OPEN GRAPH ================== -->
+<meta property="og:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
+<meta property="og:description" content="KenFolios Business Community connects entrepreneurs and professionals to build meaningful business growth opportunities across India.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kenfolios.com/community">
+<meta property="og:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
+<meta property="og:site_name" content="KenFolios Business Community">
+<meta property="article:publisher" content="https://www.facebook.com/KenFolios">
 
-<!-- If you prefer, include a canonical pointing to itself (optional) -->
-<link rel="canonical" href="https://kenfolios.com/onboarding">
+<!-- ================== TWITTER CARD ================== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
+<meta name="twitter:description" content="India’s largest online business network empowering entrepreneurs and professionals through trusted connections.">
+<meta name="twitter:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
+<meta name="twitter:site" content="@KenFolios">
+
+<!-- ================== FAVICON ================== -->
+<link rel="icon" href="https://kenfolios.com/assets/favicon-kenfolios-64x64.png" type="image/png">
 
 <!-- =========================================================
    GOOGLE ANALYTICS 4 (GA4)
    Measurement ID: G-8M691HC7BX
-   (keeps analytics working on this page)
 ========================================================= -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-8M691HC7BX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  // keep page_view enabled so conversions attributed correctly
   gtag('config', 'G-8M691HC7BX', { 'send_page_view': true });
 
-  // Helper to fire GA4 events from your code
   function ga4Event(name, params) {
     try { gtag('event', name, params || {}); } catch(e){ console.warn('GA4 event error', e); }
   }
@@ -48,7 +58,6 @@
 <!-- =========================================================
    META PIXEL (Facebook / Meta)
    Pixel ID: 2897024127219193
-   (loads pixel but page still non-indexable)
 ========================================================= -->
 <script>
   !function(f,b,e,v,n,t,s)
@@ -59,7 +68,7 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '2897024127219193');
+  fbq('init', '2897024127219193'); 
   fbq('track', 'PageView');
   function metaEvent(name, params) {
     try { fbq('track', name, params || {}); } catch(e) { console.warn('Meta Pixel error', e); }
@@ -71,9 +80,78 @@
 </noscript>
 
 <!-- =========================================================
-   NOTE:
-   - No Open Graph / Twitter Card tags included — prevents social previews.
-   - No JSON-LD structured data included — keeps page out of Knowledge Graph.
+   STRUCTURED DATA (SAFE JSON-LD INJECTOR)
+========================================================= -->
+<script>
+(function(){
+  var ld = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://kenfolios.com/#organization",
+        "name": "KenFolios Business Community",
+        "url": "https://kenfolios.com",
+        "logo": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
+        "description": "KenFolios Business Community is India’s largest online business network connecting entrepreneurs, professionals, and organizations for trusted growth and collaboration.",
+        "foundingDate": "2021-03",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "KenFolios Media Private Limited",
+          "foundingDate": "2013-01",
+          "url": "https://kenfolios.com"
+        },
+        "sameAs": [
+          "https://www.facebook.com/KenFolios",
+          "https://www.instagram.com/KenFoliosHQ",
+          "https://twitter.com/KenFolios",
+          "https://www.linkedin.com/company/KenFolios"
+        ],
+        "founder": { "@id": "https://kenfolios.com/#founder" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://kenfolios.com/#founder",
+        "name": "Suhas Naik",
+        "jobTitle": "Founder & CEO",
+        "description": "Suhas Naik is an Indian entrepreneur and founder of KenFolios, India’s largest online business community and media network. With over two decades of experience, he has led KenFolios Media Private Limited to publish 5,000+ stories in English and Hindi, reaching over 100 million readers.",
+        "url": "https://socialsuhas.in",
+        "image": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
+        "nationality": "Indian",
+        "sameAs": [
+          "https://www.facebook.com/socialsuhas",
+          "https://www.instagram.com/socialsuhas",
+          "https://twitter.com/socialsuhas",
+          "https://www.linkedin.com/in/socialsuhas",
+          "https://www.youtube.com/@socialsuhasHQ",
+          "https://socialsuhas.in"
+        ],
+        "worksFor": { "@id": "https://kenfolios.com/#organization" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://kenfolios.com/community/#webpage",
+        "url": "https://kenfolios.com/community",
+        "name": "KenFolios Business Community",
+        "isPartOf": { "@id": "https://kenfolios.com/#organization" },
+        "about": { "@id": "https://kenfolios.com/#organization" },
+        "inLanguage": "en",
+        "datePublished": "2021-03-15",
+        "dateModified": "2025-11-07",
+        "primaryImageOfPage": "https://kenfolios.com/assets/og-kenfolios-community-1200x630.png"
+      }
+    ]
+  };
+
+  var s = document.createElement('script');
+  s.type = 'application/ld+json';
+  s.text = JSON.stringify(ld);
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- =========================================================
+   END HEAD BLOCK
 ========================================================= -->
 
 
@@ -1147,175 +1225,6 @@
   }
 }
 
-/* ============================================================
-   KenFolios — Onboarding / Activation Form Styles (Scoped)
-   ------------------------------------------------------------
-   Minimal standalone version — use when page already includes
-   global layout, colors, typography, and button styles.
-   ============================================================ */
-
-#activationTop {
-  margin: 0 auto;
-  max-width: 720px;
-  width: min(100%, calc(100% - 2rem));
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff, #f8fafc);
-  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.1);
-  overflow: hidden;
-}
-
-#activationTop .brandbar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: var(--kf-red);
-  color: #fff;
-  font-weight: 800;
-  padding: 0.65rem 0.9rem;
-}
-
-#activationTop .brandbar .badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 900;
-}
-
-#activationTop .content {
-  padding: 1rem;
-  display: grid;
-  gap: 1rem;
-}
-
-#activationTop .intro {
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text);
-}
-#activationTop .intro .muted {
-  color: var(--muted);
-  font-weight: 600;
-}
-
-#activationTop .kf-form {
-  display: grid;
-  gap: 0.8rem;
-}
-
-#activationTop .grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-@media (max-width: 640px) {
-  #activationTop .grid2 { grid-template-columns: 1fr; }
-}
-
-#activationTop .kf-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-#activationTop .kf-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-}
-#activationTop .kf-input {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.55rem 0.7rem;
-  font-size: 15px;
-  background: #fff;
-  color: var(--text);
-}
-
-#activationTop .note {
-  font-size: 13px;
-  color: var(--muted);
-  background: #f8fafc;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.5rem 0.6rem;
-}
-
-#activationTop .kf-submit {
-  height: 48px;
-  min-width: 200px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 15px;
-  border: 1px solid var(--kf-red);
-  background: var(--kf-red);
-  color: #fff;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-#activationTop .kf-submit:hover { opacity: 0.92; }
-
-#activationTop .cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-#activationTop .cta-row .ghost {
-  background: #fff;
-  border: 1px solid var(--border);
-}
-
-#activationTop .helper {
-  font-size: 12.5px;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* ============================================================
-   Activation Layout Enhancement — Centered & Wider
-   ------------------------------------------------------------
-   Applies only to the activation card inside .chat-msg.admin
-   ============================================================ */
-
-#activationMsg {
-  display: flex;
-  justify-content: center;
-}
-
-#activationMsg #activationTop {
-  width: min(100%, 780px);            /* wider max width */
-  margin: 1rem auto;                  /* center horizontally with gentle spacing */
-}
-
-#activationMsg .wrap {
-  border-radius: 20px;
-  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.08);
-}
-
-#activationMsg .content {
-  padding: 1.25rem 1.5rem;            /* a bit more padding for breathing room */
-}
-
-@media (min-width: 768px) {
-  #activationMsg #activationTop {
-    width: min(95%, 800px);           /* slightly wider on large screens */
-  }
-}
-
-@media (max-width: 640px) {
-  #activationMsg #activationTop {
-    width: 100%;                      /* full width on small devices */
-    margin: 0.5rem auto;
-  }
-}
-
-
 
   </style>
 </head>
@@ -1410,19 +1319,16 @@
 </div>
 
 
-        <div class="header-actions" style="justify-content:center; display:flex; gap:.75rem;">
+        <div class="header-actions" 
+     style="display: flex; justify-content: center; align-items: center; gap: 1rem;">
   <button class="cta-btn" id="aboutBtn">About</button>
-  <button class="cta-btn primary" id="learnBtn" style="background-color:#d32f2f; border-color:#d32f2f;">Onboarding</button>
+  <!-- <button class="cta-btn" id="learnBtn1">Learn More</button> -->
+  <button class="cta-btn primary" id="learnBtn">Onboarding</button>
 </div>
+
+
       </header>
 
-<!-- ============================================================
-     KenFolios — Onboarding & Activation Section (Final HTML)
-     ------------------------------------------------------------
-     ✅ Uses scoped form styles only
-     ✅ Integrated with chat skeleton & pinned welcome bubble
-     ✅ Ready for real activation endpoint or simple submit
-   ============================================================ -->
 <section class="chat-area" id="chatArea">
   <!-- Chat skeleton placeholder -->
   <div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
@@ -1444,140 +1350,89 @@
     </div>
   </div>
 
-  <!-- PINNED: Onboarding message -->
+
+
+  <!-- PINNED: Welcome -->
   <div class="chat-msg admin" id="welcomeMsg">
     <div class="avatar">KF</div>
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-        👋 <strong>Welcome to the dedicated onboarding page of KenFolios Business Community.</strong>
-        <p style="margin:.5rem 0 0">
-          Please complete the activation form below to proceed with your community access.
-          This form is only for users who have already completed payment.
-        </p>
-      <!--   <p style="margin:.25rem 0 0; font-size:.95em; color:var(--muted,#555)">
-          Have questions? <a href="#learnMore" id="learnMoreLink">Learn more</a>.
-        </p> -->
-      </div>
+  👋 Welcome to the dedicated onboarding page of <strong>KenFolios Business Community</strong>.<br/><br/>
+  Please complete the activation form below to proceed with your community access. 
+  This form is only for users who have already completed payment.
+</div>
       <div class="pinned-label">📌 Onboarding</div>
     </div>
   </div>
 
-<!-- ACTIVATION: standalone card, no chat bubble, still skeleton-synced -->
-<div class="chat-msg admin" id="activationMsg" data-skeleton-watch>
-  <section id="activationTop" aria-label="Activation">
-    <div class="wrap">
-      <div class="brandbar" role="heading" aria-level="1">
-        <span class="badge" aria-hidden="true">KF</span>
-        <span>Community Admin • Payment Confirmed</span>
-      </div>
 
-      <div class="content">
-        <div class="intro">
-          Thank you for joining the <strong>KenFolios Business Community</strong>! 🎉
-          <br />Please complete this <strong>Activation Form</strong> to start using the community.
-          <br /><span class="muted">Support is available inside member groups for active, paid members only.</span>
-        </div>
 
-        <!-- Activation Form -->
-        <form id="kfActivationForm" class="kf-form" novalidate>
-          <div class="grid2">
-            <div class="kf-field">
-              <label class="kf-label" for="ac_name">Full Name*</label>
-              <input class="kf-input" id="ac_name" name="name" type="text" required />
-            </div>
-            <div class="kf-field">
-              <label class="kf-label" for="ac_txn">Transaction ID (Razorpay)*</label>
-              <input class="kf-input" id="ac_txn" name="transactionId" type="text" placeholder="e.g., pay_LwX..." required />
-            </div>
-          </div>
+  
+ <!-- Final form (canonical Join trigger lives here) -->
+  <div class="chat-msg admin" id="finalJoinInfo">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+  <p style="margin:0 0 .5rem; font-size:1rem;">
+    <strong>Thank you for joining the <span style="white-space:nowrap;">KenFolios Business Community</span>! 🎉</strong>
+  </p>
 
-          <div class="grid2">
-            <div class="kf-field">
-              <label class="kf-label" for="ac_whatsapp">WhatsApp / Telegram Phone*</label>
-              <input class="kf-input" id="ac_whatsapp" name="phone" type="tel" inputmode="tel" placeholder="10-digit number" required />
-            </div>
-            <div class="kf-field">
-              <label class="kf-label" for="ac_tgid">Telegram Username (without @)*</label>
-              <input class="kf-input" id="ac_tgid" name="telegramUser" type="text" placeholder="username" required />
-            </div>
-          </div>
+  <p style="margin:0 0 .35rem; font-size:0.98rem;">
+    Please complete this <strong>Activation Form</strong> to <em>start using the community</em>.
+  </p>
 
-          <div class="note">
-            After submitting, request to join the Telegram group below.
-            <strong>Only verified members are accepted by admins.</strong>
-          </div>
+  <p style="margin:0; font-size:0.88rem; color:#555;">
+    <small>
+      <strong>Note:</strong>
+      <span style="background:#fff7cc; padding:2px 6px; border-radius:4px;">Support is available inside member groups</span>
+      for <strong>active, paid members only</strong>.
+    </small>
+  </p>
 
-          <div style="display:flex; justify-content:center; gap:.5rem; margin-top:.3rem;">
-            <button type="submit" class="kf-submit">Save & Continue</button>
-          </div>
+        <form id="kfJoinInfoForm2" class="kf-form kf-rowgap" novalidate>
+  <div class="grid2">
+    <div class="kf-field">
+      <label class="kf-label" for="fi_name">Full Name*</label>
+      <input class="kf-input" id="fi_name" name="name" type="text" required />
+    </div>
 
-          <!-- Progress bar + status -->
-          <div id="acStatus" style="display:none; max-width:520px; margin:.5rem auto 0 auto; text-align:center;">
-            <div style="height:6px; border-radius:999px; background:#e5e7eb; overflow:hidden;">
-              <div id="acBar" style="height:100%; width:0%; background:#E11D2E; transition:width .35s ease;"></div>
-            </div>
-            <div id="acMsg" style="margin-top:8px; font-size:.95rem; color:#E11D2E;">Saving…</div>
-          </div>
-        </form>
+    <div class="kf-field">
+      <label class="kf-label" for="fi_txn">Transaction ID (Razorpay)*</label>
+      <input class="kf-input" id="fi_txn" name="transaction_id" type="text" placeholder="e.g., pay_LwX..." required />
+    </div>
+  </div>
 
-        <!-- App Download + Group Join Buttons -->
-        <div class="cta-row" role="group" aria-label="Get apps & join group">
-          <a class="cta-btn ghost" id="dlWhatsapp" href="https://whatsapp.com/dl" target="_blank" rel="noopener">Download WhatsApp</a>
-          <a class="cta-btn ghost" id="dlTelegram" href="https://telegram.org/dl" target="_blank" rel="noopener">Download Telegram</a>
-          <a class="cta-btn primary" id="joinTelegram" href="#" target="_blank" rel="noopener">Join Telegram Group</a>
-        </div>
+  <div class="grid2">
+    <div class="kf-field">
+      <label class="kf-label" for="fi_phone">WhatsApp / Telegram Phone*</label>
+      <input class="kf-input" id="fi_phone" name="phone" type="tel" inputmode="tel" maxlength="10" pattern="\d{10}" placeholder="10-digit number" required />
+    </div>
 
-        <div class="helper">
-          Joining link works only for verified members;
-          <strong>admins admit those who complete activation.</strong>
-        </div>
+    <div class="kf-field">
+      <label class="kf-label" for="fi_tg">Telegram Username (without @)*</label>
+      <input class="kf-input" id="fi_tg" name="telegram_username" type="text" placeholder="username" required />
+    </div>
+  </div>
+  <div class="kf-note">
+    Upon submitting the details, you will get the option to join the Telegram groups.
+  </div>
+
+  <div class="kf-rowgap" style="margin-top: .5rem;">
+       <button type="submit" class="kf-submit">Submit Details & Continue</button>
+   
+  </div>
+</form>
+
       </div>
     </div>
-  </section>
-</div>
+  </div>
 
- 
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const form = document.getElementById('kfActivationForm');
-      const status = document.getElementById('acStatus');
-      const bar = document.getElementById('acBar');
-      const msg = document.getElementById('acMsg');
 
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const btn = form.querySelector('.kf-submit');
-        btn.disabled = true;
-        btn.textContent = 'Saving…';
-        status.style.display = 'block';
-        bar.style.width = '40%';
-        setTimeout(() => (bar.style.width = '80%'), 600);
-        setTimeout(() => {
-          bar.style.width = '100%';
-          msg.textContent = 'Activation saved! You can now join the Telegram group.';
-          btn.textContent = 'Saved ✓';
-          btn.classList.add('success');
-        }, 1200);
-      });
-
-      const joinBtn = document.getElementById('joinTelegram');
-      joinBtn.addEventListener('click', function (e) {
-        if (status.style.display === 'none') {
-          e.preventDefault();
-          alert('Please complete activation first to access the group.');
-        }
-      });
-
-      document.getElementById('learnMoreLink')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        form.scrollIntoView({ behavior: 'smooth' });
-      });
-    });
-  </script>
-  
 </section>
+
 
 
 
@@ -1682,7 +1537,7 @@
           </div>
         </div>
 <!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
-<!-- <div class="profile-cta" role="group" aria-label="Join actions">
+<div class="profile-cta" role="group" aria-label="Join actions">
   <button class="cta-btn primary" id="joinBtnProfile"
     onclick="
       // 🧹 Close side panes
@@ -1696,7 +1551,7 @@
     ">
     Join Now
   </button>
-</div> 
+</div>
 
 
         <!-- Social links -->
@@ -2945,6 +2800,236 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     });
   })();
 
+})();
+</script>
+<script>
+/* ===== kfJoinInfoForm2 submit script (posts to new web app URL) =====
+   - Targets form id: kfJoinInfoForm2
+   - Expects fields with IDs: fi_name, fi_txn, fi_phone, fi_tg
+   - Posts to the provided Apps Script /exec URL
+   - Shows progress pill; on success shows "Join Group" button (placeholder link)
+*/
+
+(function(){
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbzMHpN-AmUXEMAaEG_4GpVQsbyIlLb2sYtkfE2i91fgj6WCuElmzPtkC4-KpILKyx4/exec';
+  const JOIN_PLACEHOLDER_URL = 'https://t.me/your-group-placeholder'; // replace with real group link
+
+  function ready(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+
+  ready(function(){
+    const form = document.getElementById('kfJoinInfoForm2');
+    if (!form) return;
+
+    // helpers
+    const byId = id => document.getElementById(id);
+    const val = id => (byId(id) ? String(byId(id).value).trim() : '');
+    const setFormEnabled = enabled => Array.prototype.slice.call(form.elements).forEach(el => el.disabled = !enabled);
+
+    // bottom container for messages (unique id per script)
+    function ensureBottomContainer(){
+      let c = document.getElementById('kfBottomContainer2');
+      if (c) return c;
+      c = document.createElement('div');
+      c.id = 'kfBottomContainer2';
+      c.style.marginTop = '10px';
+      c.style.textAlign = 'center';
+      try { form.insertAdjacentElement('afterend', c); } catch(e) { document.body.appendChild(c); }
+      return c;
+    }
+
+    // progress pill
+    function createProgressPill(text){
+      const pill = document.createElement('div');
+      pill.className = 'kf-progress-pill2';
+      pill.setAttribute('role','status');
+      pill.setAttribute('aria-live','polite');
+      pill.style.display = 'inline-flex';
+      pill.style.alignItems = 'center';
+      pill.style.gap = '8px';
+      pill.style.padding = '8px 12px';
+      pill.style.borderRadius = '999px';
+      pill.style.fontWeight = '600';
+      pill.style.fontSize = '0.95rem';
+      pill.style.background = '#e6f0ff';
+      pill.style.color = '#111';
+      pill.style.boxShadow = '0 4px 10px rgba(2,6,23,0.06)';
+
+      const spinner = document.createElement('span');
+      spinner.className = 'kf-spinner2';
+      spinner.style.display = 'inline-block';
+      spinner.style.width = '16px';
+      spinner.style.height = '16px';
+      spinner.style.borderRadius = '50%';
+      spinner.style.border = '2px solid rgba(0,0,0,0.15)';
+      spinner.style.borderTopColor = 'rgba(0,0,0,0.55)';
+      // rotation via interval (self-contained)
+      let angle = 0;
+      const intId = setInterval(()=>{ angle = (angle + 30) % 360; spinner.style.transform = 'rotate(' + angle + 'deg)'; }, 80);
+      spinner.dataset.kf_interval = intId;
+
+      const txt = document.createElement('span');
+      txt.className = 'kf-progress-text2';
+      txt.textContent = text || 'Processing…';
+
+      pill.appendChild(spinner);
+      pill.appendChild(txt);
+      return pill;
+    }
+
+    function removePill(pill){
+      try {
+        if (!pill) return;
+        const spinner = pill.querySelector('.kf-spinner2');
+        if (spinner && spinner.dataset && spinner.dataset.kf_interval) clearInterval(Number(spinner.dataset.kf_interval));
+        if (pill.parentNode) pill.parentNode.removeChild(pill);
+      } catch(e){}
+    }
+
+    function showSavedNotice(message){
+      const c = ensureBottomContainer();
+      const prev = c.querySelector('.kf-saved-notice2');
+      if (prev) prev.remove();
+      const n = document.createElement('div');
+      n.className = 'kf-saved-notice2';
+      n.style.display = 'inline-block';
+      n.style.padding = '10px 14px';
+      n.style.borderRadius = '8px';
+      n.style.background = 'rgba(220,245,220,0.95)';
+      n.style.color = '#000';
+      n.style.fontSize = '1rem';
+      n.style.fontWeight = '600';
+      n.style.marginTop = '0';
+      n.style.marginBottom = '10px';
+      n.textContent = message || '✅ Details Saved.';
+      c.insertAdjacentElement('afterbegin', n);
+      return n;
+    }
+
+    function showJoinButton(){
+  const c = ensureBottomContainer();
+  const prev = c.querySelector('.kf-join-button2');
+  if (prev) prev.remove();
+  const a = document.createElement('a');
+  a.className = 'kf-join-button2';
+  a.href = JOIN_PLACEHOLDER_URL;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.style.display = 'inline-block';
+  a.style.marginTop = '8px';
+  a.style.padding = '10px 16px';
+  a.style.borderRadius = '8px';
+  a.style.background = '#E11D2E';
+  a.style.color = '#fff';
+  a.style.fontWeight = '700';
+  a.style.textDecoration = 'none';
+  a.style.fontSize = '0.95rem';
+  a.textContent = 'Join Group';
+  c.appendChild(a);
+  return a;
+}
+
+
+    // validation
+    function valid(){
+      const nameOk = !!val('fi_name');
+      const txnOk = !!val('fi_txn');
+      const phoneRaw = (val('fi_phone') || '').replace(/\s|\+|-/g,'');
+      const phoneOk = /^\d{10}$/.test(phoneRaw);
+      const tgOk = !!val('fi_tg');
+      return nameOk && txnOk && phoneOk && tgOk;
+    }
+
+    // url-encode body consistent with server expectations
+    function toUrlEncoded(){
+      const usp = new URLSearchParams();
+      usp.append('fullName', val('fi_name'));
+      usp.append('transactionId', val('fi_txn'));
+      usp.append('phone', val('fi_phone'));
+      usp.append('telegramUsername', val('fi_tg'));
+      usp.append('source', 'kenfolios-join-verify-frontend');
+      return usp.toString();
+    }
+
+    // attach submit handler once
+    if (!form.dataset.kf_handler2_attached) {
+      form.addEventListener('submit', function(evt){
+        evt.preventDefault();
+        if (!valid()) {
+          alert('Please complete all required fields correctly. Phone must be a 10-digit number.');
+          return;
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        let pill;
+        if (submitBtn) {
+          submitBtn.dataset.kf_orig_display = submitBtn.style.display || '';
+          submitBtn.style.display = 'none';
+          submitBtn.setAttribute('aria-hidden','true');
+          pill = createProgressPill('Saving details…');
+          submitBtn.parentNode.insertBefore(pill, submitBtn.nextSibling);
+        } else {
+          pill = createProgressPill('Saving details…');
+          ensureBottomContainer().appendChild(pill);
+        }
+
+        setFormEnabled(false);
+        const body = toUrlEncoded();
+
+        // Try fetch no-cors first (will send but response opaque)
+        fetch(ENDPOINT, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body
+        })
+        .then(function(){
+          // success path (we can't read response in no-cors) — assume saved
+          removePill(pill);
+          showSavedNotice('✅ Details Saved. Click Join Group to proceed.');
+          showJoinButton();
+          try { form.reset(); } catch(e){}
+        })
+        .catch(function(fetchErr){
+          // fetch failed (maybe blocked), try sendBeacon
+          console.warn('[frontend] fetch failed, trying sendBeacon', fetchErr);
+          try {
+            const blob = new Blob([body], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
+            const ok = navigator.sendBeacon(ENDPOINT, blob);
+            if (ok) {
+              removePill(pill);
+              showSavedNotice('✅ Details Saved (via sendBeacon). Click Join Group to proceed.');
+              showJoinButton();
+              try { form.reset(); } catch(e){}
+            } else {
+              throw new Error('sendBeacon returned false');
+            }
+          } catch(beErr){
+            console.error('[frontend] POST error:', beErr);
+            removePill(pill);
+            if (submitBtn) {
+              submitBtn.style.display = submitBtn.dataset.kf_orig_display || '';
+              submitBtn.removeAttribute('aria-hidden');
+            }
+            setFormEnabled(true);
+            const c = ensureBottomContainer();
+            let errEl = c.querySelector('.kf-save-error2');
+            if (!errEl) {
+              errEl = document.createElement('div');
+              errEl.className = 'kf-save-error2';
+              errEl.style.color = '#f3c13a';
+              errEl.style.fontWeight = '600';
+              errEl.style.marginTop = '6px';
+              c.appendChild(errEl);
+            }
+            errEl.textContent = 'Could not save right now. Please try again.';
+          }
+        });
+
+      });
+      form.dataset.kf_handler2_attached = '1';
+    }
+
+  }); // ready
 })();
 </script>
 
