@@ -3003,6 +3003,313 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+/**
+ * KenFolios — JOIN FORM submit (Worker)
+ * Adds human-readable reference ID to success notice:
+ *   format: AAA1111-000009
+ *   (3 letters)(4 digits)-(db id zero-padded to 6)
+ */
+
+(function(){
+
+  var WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd";
+
+  var form = document.getElementById('kfJoinInfoForm');
+  if (!form) return;
+
+  function $id(id){ return document.getElementById(id); }
+  function val(id){ var el = $id(id); return el ? el.value.trim() : ""; }
+  function checkedValues(name){
+    var list = form.querySelectorAll('input[name="'+name+'"]:checked');
+    var arr = []; for (var i=0;i<list.length;i++) arr.push(list[i].value);
+    return arr;
+  }
+  function setFormEnabled(enabled){
+    var els = form.elements;
+    for (var i=0;i<els.length;i++){ els[i].disabled = !enabled; }
+  }
+
+  function ensureBottomContainer(){
+    var c = document.getElementById('kfBottomContainer');
+    if (!c) {
+      c = document.createElement('div');
+      c.id = 'kfBottomContainer';
+      c.style.marginTop = '10px';
+      c.style.textAlign = 'center';
+      form.insertAdjacentElement('afterend', c);
+    }
+    return c;
+  }
+
+  function createProgressPill(text){
+    var pill = document.createElement('div');
+    pill.className = 'kf-progress-pill';
+    pill.style.display = 'inline-flex';
+    pill.style.alignItems = 'center';
+    pill.style.gap = '8px';
+    pill.style.padding = '8px 12px';
+    pill.style.borderRadius = '999px';
+    pill.style.fontWeight = '600';
+    pill.style.fontSize = '0.95rem';
+    pill.style.background = '#e6f0ff';
+    pill.style.color = '#111';
+
+    var spin = document.createElement('span');
+    spin.style.width = '16px';
+    spin.style.height = '16px';
+    spin.style.borderRadius = '50%';
+    spin.style.border = '2px solid rgba(0,0,0,0.20)';
+    spin.style.borderTopColor = 'rgba(0,0,0,0.55)';
+    spin.style.animation = 'kf-spin 0.8s linear infinite';
+
+    var txt = document.createElement('span');
+    txt.className = 'kf-progress-text';
+    txt.textContent = text || "Processing…";
+
+    pill.appendChild(spin);
+    pill.appendChild(txt);
+
+    if (!document.getElementById('kf-spin-style')){
+      var style = document.createElement('style');
+      style.id = 'kf-spin-style';
+      style.textContent = "@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      document.head.appendChild(style);
+    }
+
+    return pill;
+  }
+
+  function showProgressReplacingButton(btn, text){
+    btn.dataset.orig_display = btn.style.display || '';
+    btn.style.display = 'none';
+    btn.setAttribute('aria-hidden','true');
+    var pill = createProgressPill(text);
+    btn.parentNode.insertBefore(pill, btn.nextSibling);
+    return pill;
+  }
+
+  function restoreSubmitButton(btn){
+    btn.style.display = btn.dataset.orig_display || '';
+    btn.removeAttribute('aria-hidden');
+  }
+
+  function removePill(p){
+    if (p && p.parentNode) p.parentNode.removeChild(p);
+  }
+
+  // create a reference prefix of 3 uppercase letters + 4 digits
+  function makePrefix(){
+    var letters = '';
+    for (var i=0;i<3;i++){
+      var n = Math.floor(Math.random() * 26);
+      letters += String.fromCharCode(65 + n); // A-Z
+    }
+    var nums = '';
+    for (var j=0;j<4;j++){
+      nums += String(Math.floor(Math.random() * 10));
+    }
+    return letters + nums;
+  }
+
+  function padNumber(num, width){
+    var s = String(num || 0);
+    while (s.length < width) s = '0' + s;
+    return s;
+  }
+
+  // create saved notice element that accepts the ref string
+  function createSavedNoticeElementWithRef(ref){
+    var n = document.createElement('div');
+    n.className = 'kf-saved-notice';
+    n.style.display = 'block';
+    n.style.padding = '12px 16px';
+    n.style.borderRadius = '8px';
+    n.style.background = 'rgba(220,245,220,0.95)';
+    n.style.color = '#000';
+    n.style.fontSize = '1rem';
+    n.style.fontWeight = '600';
+    n.style.marginBottom = '14px'; // space before Razorpay (user wanted ~5px extra; this keeps it clear)
+    n.textContent = "✅ Details saved. Ref ID: " + ref + " — use the Pay Now button below to activate membership and proceed to onboarding.";
+    return n;
+  }
+
+  // remove intro message if present
+  function removeFormIntroMessage(){
+    var el1 = document.querySelector('.kf-form-intro');
+    var el2 = document.querySelector('#kfFormIntro');
+    var el3 = form.previousElementSibling;
+    if (el1 && el1.parentNode) el1.parentNode.removeChild(el1);
+    if (el2 && el2.parentNode) el2.parentNode.removeChild(el2);
+    if (el3 && el3.textContent && el3.textContent.toLowerCase().indexOf('before you proceed') !== -1) {
+      el3.parentNode.removeChild(el3);
+    }
+  }
+
+  // collapse whitespace text nodes around form
+  function removeExtraWhitespaceAroundForm(){
+    if (form && form.parentNode){
+      var sib = form.previousSibling;
+      while (sib && sib.nodeType === 3){
+        var temp = sib.previousSibling;
+        sib.parentNode.removeChild(sib);
+        sib = temp;
+      }
+      sib = form.nextSibling;
+      while (sib && sib.nodeType === 3){
+        var temp2 = sib.nextSibling;
+        sib.parentNode.removeChild(sib);
+        sib = temp2;
+      }
+    }
+  }
+
+  function injectRazorpayButtonInto(container, onReady, onError){
+    var wrap = document.createElement('div');
+    wrap.id = 'kfRazorpayContainer';
+    wrap.style.textAlign = 'center';
+    wrap.style.marginTop = '5px'; // extra vertical gap requested
+
+    var rform = document.createElement('form');
+    rform.id = 'kfRazorpayForm';
+
+    var script = document.createElement('script');
+    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+    script.async = true;
+    script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
+
+    script.onload = function(){ setTimeout(function(){ if(onReady) onReady(); }, 200); };
+    script.onerror = function(){ if(onError) onError(); };
+
+    rform.appendChild(script);
+    wrap.appendChild(rform);
+    container.appendChild(wrap);
+  }
+
+  function replaceFormWithSuccessUI(dbCount, memberId){
+    removeFormIntroMessage();
+    removeExtraWhitespaceAroundForm();
+
+    // create ref id: PREFIX-DBPAD
+    var prefix = makePrefix();
+    var dbPad = padNumber(memberId, 6);
+    var ref = prefix + '-' + dbPad;
+
+    // persist counts and optional ref
+    try {
+      if (dbCount != null) localStorage.setItem('kf_last_count_db', String(dbCount));
+      localStorage.setItem('kf_last_ref', ref);
+      if (typeof window.KF_BASE_OFFSET === 'number' && dbCount != null) {
+        var total = Number(window.KF_BASE_OFFSET) + Number(dbCount);
+        if (!isNaN(total)) localStorage.setItem('kf_last_count_total', String(total));
+      }
+    } catch(e){}
+
+    var wrapper = document.createElement('div');
+    wrapper.className = "kf-success-wrapper";
+    wrapper.style.textAlign = "center";
+    wrapper.style.padding = "0";
+
+    var notice = createSavedNoticeElementWithRef(ref);
+    wrapper.appendChild(notice);
+
+    var payBox = document.createElement('div');
+    payBox.id = "kfPaymentBox";
+    wrapper.appendChild(payBox);
+
+    try { form.parentNode.replaceChild(wrapper, form); }
+    catch(e){ form.style.display = 'none'; form.insertAdjacentElement('afterend', wrapper); }
+
+    injectRazorpayButtonInto(payBox, function(){ try { payBox.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){} }, function(){
+      var err = document.createElement('div');
+      err.style.color = "#b45309";
+      err.style.fontWeight = "600";
+      err.style.marginTop = "8px";
+      err.textContent = "Payment button failed. Please refresh.";
+      wrapper.appendChild(err);
+    });
+  }
+
+  function valid(){
+    if (!val('fi_name') || !val('fi_dob') || !val('fi_gender') ||
+        !val('fi_email') || !val('fi_phone') || !val('fi_city')) return false;
+    if (!($id('fi_accept') && $id('fi_accept').checked)) return false;
+    if (checkedValues('expectations').length === 0) return false;
+    return true;
+  }
+
+  function buildJsonPayload(){
+    return {
+      name: val('fi_name'),
+      dob: val('fi_dob'),
+      gender: val('fi_gender'),
+      email: val('fi_email'),
+      phone: val('fi_phone'),
+      city: val('fi_city'),
+      expectations: checkedValues('expectations'),
+      accept: $id('fi_accept') ? $id('fi_accept').checked : false,
+      source: "kenfolios-join-v2"
+    };
+  }
+
+  // Show spinner + disable form, call worker
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+
+    if (!valid()){
+      alert("Please complete all fields and accept the Terms.");
+      return;
+    }
+
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var pill = showProgressReplacingButton(submitBtn, "Saving details…");
+    setFormEnabled(false);
+
+    var payload = buildJsonPayload();
+
+    fetch(WRITE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json;charset=utf-8" },
+      body: JSON.stringify(payload)
+    })
+    .then(function(resp){
+      return resp.text().then(function(txt){
+        var json = null;
+        try { json = JSON.parse(txt); } catch(e){}
+
+        if (!resp.ok) throw new Error(json && json.message ? json.message : "HTTP " + resp.status);
+        if (!json || !json.ok) throw new Error(json && json.message ? json.message : "Save failed");
+
+        removePill(pill);
+
+        var dbCount = (typeof json.dbCount === 'number') ? json.dbCount : null;
+        var memberId = (json.member_id != null) ? json.member_id : null;
+
+        replaceFormWithSuccessUI(dbCount, memberId);
+      });
+    })
+    .catch(function(err){
+      console.error("Submit failed:", err);
+      removePill(pill);
+      if (submitBtn) restoreSubmitButton(submitBtn);
+      setFormEnabled(true);
+
+      var c = ensureBottomContainer();
+      var errEl = c.querySelector('.kf-save-error');
+      if (!errEl){
+        errEl = document.createElement('div');
+        errEl.className = 'kf-save-error';
+        errEl.style.color = '#f3c13a';
+        errEl.style.fontWeight = '600';
+        errEl.style.marginTop = '6px';
+        c.appendChild(errEl);
+      }
+      errEl.textContent = "Could not save right now. Please try again.";
+    });
+
+  });
+
+})();
 </script>
 
 </body>
