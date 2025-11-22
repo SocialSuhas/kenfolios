@@ -3164,6 +3164,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     var rform = document.createElement('form');
     rform.id = 'kfRazorpayForm';
 
+    // 🔹 TRACK INITIATE CHECKOUT ON RAZORPAY FORM SUBMIT
+    rform.addEventListener('submit', function(){
+      try {
+        if (typeof fbq === "function"){
+          fbq('track', 'InitiateCheckout', { currency: "INR" });
+        }
+      } catch(e){
+        console.error("InitiateCheckout error", e);
+      }
+    }, { once: true });
+
     var script = document.createElement('script');
     script.src = "https://checkout.razorpay.com/v1/payment-button.js";
     script.async = true;
@@ -3172,25 +3183,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     script.onload = function(){
       setTimeout(function(){
         if (onReady) onReady();
-
-        var payBtn = rform.querySelector('button');
-
-        if (payBtn){
-          payBtn.addEventListener('click', function(){
-            try{
-              if (typeof fbq === "function"){
-                fbq('track', 'InitiateCheckout', { currency: "INR" });
-              }
-            } catch(e){
-              console.error("InitiateCheckout error", e);
-            }
-          }, { once: true });
-        }
-
       }, 200);
     };
 
-    script.onerror = function(){ if(onError) onError(); };
+    script.onerror = function(){
+      if(onError) onError();
+    };
 
     rform.appendChild(script);
     wrap.appendChild(rform);
