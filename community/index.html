@@ -3011,6 +3011,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
  */
 (function(){
 
+  // GLOBAL INIT GUARD
+  // Prevents this script from initializing twice if included multiple times on the page.
+  if (window.__KF_JOINFORM_INIT) {
+    console.warn("KF JOIN script already initialized — skipping duplicate.");
+    return;
+  }
+  window.__KF_JOINFORM_INIT = true;
+
   var WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
   var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd"; // UPDATED & FINAL
 
@@ -3155,6 +3163,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
+  /**
+   * Attach InitiateCheckout via a capturing click listener
+   * on the Razorpay form (robust against their internal DOM).
+   */
   function injectRazorpayButtonInto(container, onReady, onError){
     var wrap = document.createElement('div');
     wrap.id = 'kfRazorpayContainer';
@@ -3164,30 +3176,40 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     var rform = document.createElement('form');
     rform.id = 'kfRazorpayForm';
 
-    // 🔹 TRACK INITIATE CHECKOUT ON RAZORPAY FORM SUBMIT
-    rform.addEventListener('submit', function(){
-      try {
-        if (typeof fbq === "function"){
-          fbq('track', 'InitiateCheckout', { currency: "INR" });
-        }
-      } catch(e){
-        console.error("InitiateCheckout error", e);
-      }
-    }, { once: true });
-
     var script = document.createElement('script');
     script.src = "https://checkout.razorpay.com/v1/payment-button.js";
     script.async = true;
     script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
 
+    // fire InitiateCheckout only once per page
+    var icFired = false;
+
+    // capture click anywhere in Razorpay form (even if they have their own handlers)
+    rform.addEventListener('click', function(){
+      if (icFired) return;
+      icFired = true;
+
+      try {
+        if (typeof fbq === "function"){
+          var ref = null;
+          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
+          var payload = { currency: "INR" };
+          if (ref) payload.ref_id = ref;
+          fbq('track', 'InitiateCheckout', payload);
+        }
+      } catch(e){
+        console.error("InitiateCheckout error", e);
+      }
+    }, true); // useCapture = true
+
     script.onload = function(){
-      setTimeout(function(){
-        if (onReady) onReady();
-      }, 200);
+      if (onReady){
+        setTimeout(function(){ onReady(); }, 300);
+      }
     };
 
     script.onerror = function(){
-      if(onError) onError();
+      if (onError) onError();
     };
 
     rform.appendChild(script);
@@ -3285,7 +3307,25 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       var dbCount = typeof json.dbCount === "number" ? json.dbCount : null;
       var memberId = json.member_id ?? null;
 
+      // Build success UI & store ref
       replaceFormWithSuccessUI(dbCount, memberId);
+
+      // FIRE "SIGN-IN COMPLETE" / REGISTRATION COMPLETE EVENT
+      try {
+        if (typeof fbq === "function") {
+          var ref = null;
+          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
+          var payload = {
+            content_name: "KenFolios Join Form",
+            status: "success"
+          };
+          if (ref) payload.ref_id = ref;
+          fbq('track', 'CompleteRegistration', payload);
+        }
+      } catch(e){
+        console.error("CompleteRegistration error", e);
+      }
+
     })
     .catch(err=>{
       console.error("Submit failed:", err);
@@ -3306,7 +3346,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   });
 
 })();
-
 </script>
 
 </body>
