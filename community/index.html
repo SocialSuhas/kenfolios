@@ -3009,11 +3009,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
  *   format: AAA1111-000009
  *   (3 letters)(4 digits)-(db id zero-padded to 6)
  */
-
 (function(){
 
   var WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
-  var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RihOc6tnVioCAy";
+  var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd"; // UPDATED & FINAL
 
   var form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
@@ -3031,7 +3030,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   function ensureBottomContainer(){
-    var c = document.getElementById('kfBottomContainer');
+    var c = $id('kfBottomContainer');
     if (!c) {
       c = document.createElement('div');
       c.id = 'kfBottomContainer';
@@ -3070,7 +3069,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     pill.appendChild(spin);
     pill.appendChild(txt);
 
-    if (!document.getElementById('kf-spin-style')){
+    if (!$id('kf-spin-style')){
       var style = document.createElement('style');
       style.id = 'kf-spin-style';
       style.textContent = "@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
@@ -3098,12 +3097,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     if (p && p.parentNode) p.parentNode.removeChild(p);
   }
 
-  // create a reference prefix of 3 uppercase letters + 4 digits
   function makePrefix(){
     var letters = '';
     for (var i=0;i<3;i++){
-      var n = Math.floor(Math.random() * 26);
-      letters += String.fromCharCode(65 + n); // A-Z
+      letters += String.fromCharCode(65 + Math.floor(Math.random()*26));
     }
     var nums = '';
     for (var j=0;j<4;j++){
@@ -3118,49 +3115,43 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return s;
   }
 
-  // create saved notice element that accepts the ref string
   function createSavedNoticeElementWithRef(ref){
     var n = document.createElement('div');
     n.className = 'kf-saved-notice';
+    n.textContent = "✅ Details saved. Ref ID: " + ref + " — use the Pay Now button below to activate membership and proceed to onboarding.";
     n.style.display = 'block';
     n.style.padding = '12px 16px';
     n.style.borderRadius = '8px';
-    n.style.background = 'rgba(220,245,220,0.95)';
     n.style.color = '#000';
-    n.style.fontSize = '1rem';
     n.style.fontWeight = '600';
-    n.style.marginBottom = '14px'; // space before Razorpay (user wanted ~5px extra; this keeps it clear)
-    n.textContent = "✅ Details saved. Ref ID: " + ref + " — use the Pay Now button below to activate membership and proceed to onboarding.";
+    n.style.marginBottom = '14px';
+    n.style.background = 'rgba(220,245,220,0.95)';
+    n.style.fontSize = '1rem';
     return n;
   }
 
-  // remove intro message if present
   function removeFormIntroMessage(){
     var el1 = document.querySelector('.kf-form-intro');
-    var el2 = document.querySelector('#kfFormIntro');
+    var el2 = $id('kfFormIntro');
     var el3 = form.previousElementSibling;
-    if (el1 && el1.parentNode) el1.parentNode.removeChild(el1);
-    if (el2 && el2.parentNode) el2.parentNode.removeChild(el2);
-    if (el3 && el3.textContent && el3.textContent.toLowerCase().indexOf('before you proceed') !== -1) {
-      el3.parentNode.removeChild(el3);
-    }
+    if (el1) el1.remove();
+    if (el2) el2.remove();
+    if (el3 && el3.textContent.toLowerCase().includes('before you proceed')) el3.remove();
   }
 
-  // collapse whitespace text nodes around form
   function removeExtraWhitespaceAroundForm(){
-    if (form && form.parentNode){
-      var sib = form.previousSibling;
-      while (sib && sib.nodeType === 3){
-        var temp = sib.previousSibling;
-        sib.parentNode.removeChild(sib);
-        sib = temp;
-      }
-      sib = form.nextSibling;
-      while (sib && sib.nodeType === 3){
-        var temp2 = sib.nextSibling;
-        sib.parentNode.removeChild(sib);
-        sib = temp2;
-      }
+    if (!form || !form.parentNode) return;
+    var sib = form.previousSibling;
+    while (sib && sib.nodeType === 3){
+      var tmp = sib.previousSibling;
+      sib.remove();
+      sib = tmp;
+    }
+    sib = form.nextSibling;
+    while (sib && sib.nodeType === 3){
+      var tmp2 = sib.nextSibling;
+      sib.remove();
+      sib = tmp2;
     }
   }
 
@@ -3168,7 +3159,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     var wrap = document.createElement('div');
     wrap.id = 'kfRazorpayContainer';
     wrap.style.textAlign = 'center';
-    wrap.style.marginTop = '5px'; // extra vertical gap requested
+    wrap.style.marginTop = '5px';
 
     var rform = document.createElement('form');
     rform.id = 'kfRazorpayForm';
@@ -3178,7 +3169,27 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     script.async = true;
     script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
 
-    script.onload = function(){ setTimeout(function(){ if(onReady) onReady(); }, 200); };
+    script.onload = function(){
+      setTimeout(function(){
+        if (onReady) onReady();
+
+        var payBtn = rform.querySelector('button');
+
+        if (payBtn){
+          payBtn.addEventListener('click', function(){
+            try{
+              if (typeof fbq === "function"){
+                fbq('track', 'InitiateCheckout', { currency: "INR" });
+              }
+            } catch(e){
+              console.error("InitiateCheckout error", e);
+            }
+          }, { once: true });
+        }
+
+      }, 200);
+    };
+
     script.onerror = function(){ if(onError) onError(); };
 
     rform.appendChild(script);
@@ -3190,52 +3201,49 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     removeFormIntroMessage();
     removeExtraWhitespaceAroundForm();
 
-    // create ref id: PREFIX-DBPAD
-    var prefix = makePrefix();
-    var dbPad = padNumber(memberId, 6);
-    var ref = prefix + '-' + dbPad;
-
-    // persist counts and optional ref
+    var ref = makePrefix() + '-' + padNumber(memberId, 6);
     try {
       if (dbCount != null) localStorage.setItem('kf_last_count_db', String(dbCount));
       localStorage.setItem('kf_last_ref', ref);
       if (typeof window.KF_BASE_OFFSET === 'number' && dbCount != null) {
-        var total = Number(window.KF_BASE_OFFSET) + Number(dbCount);
-        if (!isNaN(total)) localStorage.setItem('kf_last_count_total', String(total));
+        localStorage.setItem('kf_last_count_total', String(Number(window.KF_BASE_OFFSET) + Number(dbCount)));
       }
     } catch(e){}
 
     var wrapper = document.createElement('div');
     wrapper.className = "kf-success-wrapper";
     wrapper.style.textAlign = "center";
-    wrapper.style.padding = "0";
 
-    var notice = createSavedNoticeElementWithRef(ref);
-    wrapper.appendChild(notice);
+    wrapper.appendChild(createSavedNoticeElementWithRef(ref));
 
     var payBox = document.createElement('div');
     payBox.id = "kfPaymentBox";
     wrapper.appendChild(payBox);
 
-    try { form.parentNode.replaceChild(wrapper, form); }
-    catch(e){ form.style.display = 'none'; form.insertAdjacentElement('afterend', wrapper); }
+    form.replaceWith(wrapper);
 
-    injectRazorpayButtonInto(payBox, function(){ try { payBox.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){} }, function(){
+    injectRazorpayButtonInto(payBox, function(){
+      try{ payBox.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){}
+    }, function(){
       var err = document.createElement('div');
       err.style.color = "#b45309";
       err.style.fontWeight = "600";
-      err.style.marginTop = "8px";
       err.textContent = "Payment button failed. Please refresh.";
       wrapper.appendChild(err);
     });
   }
 
   function valid(){
-    if (!val('fi_name') || !val('fi_dob') || !val('fi_gender') ||
-        !val('fi_email') || !val('fi_phone') || !val('fi_city')) return false;
-    if (!($id('fi_accept') && $id('fi_accept').checked)) return false;
-    if (checkedValues('expectations').length === 0) return false;
-    return true;
+    return (
+      val('fi_name') &&
+      val('fi_dob') &&
+      val('fi_gender') &&
+      val('fi_email') &&
+      val('fi_phone') &&
+      val('fi_city') &&
+      $id('fi_accept').checked &&
+      checkedValues('expectations').length > 0
+    );
   }
 
   function buildJsonPayload(){
@@ -3247,12 +3255,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       phone: val('fi_phone'),
       city: val('fi_city'),
       expectations: checkedValues('expectations'),
-      accept: $id('fi_accept') ? $id('fi_accept').checked : false,
+      accept: $id('fi_accept').checked,
       source: "kenfolios-join-v2"
     };
   }
 
-  // Show spinner + disable form, call worker
   form.addEventListener('submit', function(e){
     e.preventDefault();
 
@@ -3265,51 +3272,43 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     var pill = showProgressReplacingButton(submitBtn, "Saving details…");
     setFormEnabled(false);
 
-    var payload = buildJsonPayload();
-
     fetch(WRITE_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json;charset=utf-8" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(buildJsonPayload())
     })
-    .then(function(resp){
-      return resp.text().then(function(txt){
-        var json = null;
-        try { json = JSON.parse(txt); } catch(e){}
+    .then(r => r.json().catch(()=>({})).then(json => ({json, ok:r.ok, status:r.status})))
+    .then(({json, ok, status})=>{
+      removePill(pill);
+      if (!ok || !json?.ok){
+        throw new Error(json?.message || ("HTTP " + status));
+      }
 
-        if (!resp.ok) throw new Error(json && json.message ? json.message : "HTTP " + resp.status);
-        if (!json || !json.ok) throw new Error(json && json.message ? json.message : "Save failed");
+      var dbCount = typeof json.dbCount === "number" ? json.dbCount : null;
+      var memberId = json.member_id ?? null;
 
-        removePill(pill);
-
-        var dbCount = (typeof json.dbCount === 'number') ? json.dbCount : null;
-        var memberId = (json.member_id != null) ? json.member_id : null;
-
-        replaceFormWithSuccessUI(dbCount, memberId);
-      });
+      replaceFormWithSuccessUI(dbCount, memberId);
     })
-    .catch(function(err){
+    .catch(err=>{
       console.error("Submit failed:", err);
       removePill(pill);
-      if (submitBtn) restoreSubmitButton(submitBtn);
+      restoreSubmitButton(submitBtn);
       setFormEnabled(true);
 
       var c = ensureBottomContainer();
-      var errEl = c.querySelector('.kf-save-error');
-      if (!errEl){
-        errEl = document.createElement('div');
-        errEl.className = 'kf-save-error';
-        errEl.style.color = '#f3c13a';
-        errEl.style.fontWeight = '600';
-        errEl.style.marginTop = '6px';
-        c.appendChild(errEl);
-      }
+      var errEl = c.querySelector('.kf-save-error') || document.createElement('div');
+      errEl.className = 'kf-save-error';
+      errEl.style.color = "#f3c13a";
+      errEl.style.fontWeight = "600";
+      errEl.style.marginTop = "6px";
       errEl.textContent = "Could not save right now. Please try again.";
+      if (!errEl.parentNode) c.appendChild(errEl);
     });
 
   });
 
 })();
+
 </script>
 
 </body>
