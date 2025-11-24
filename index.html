@@ -1,134 +1,335 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KenFolios — India’s Largest Business Community</title>
-  <meta name="description" content="KenFolios: telling India’s impactful stories since 2013 — and empowering people to create their own." />
+  <meta charset="UTF-8" />
+  <title>KenFolios – New Homepage Coming Soon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
   <style>
-    :root{
-      --ken-red: #fd013a;
-      --ken-red-dark: #c8002d;
-      --white: #ffffff;
-      --ink: #111111;
-      --muted: #666666;
-      --ui: #e5e5e5;
-      --alt: #fafafa;
-      --container: 1200px;
-      --radius: 16px;
-      --space-1: .5rem;
-      --space-2: 1rem;
-      --space-3: 1.5rem;
-      --space-4: 2rem;
-      --space-5: 3rem;
-      --space-6: 4rem;
+    :root {
+      --kf-red: #E11D2E;
+      --kf-dark: #0f172a;
+      --kf-bg: #020617;
+      --kf-text: #f9fafb;
     }
 
-    html{box-sizing:border-box}
-    *,*:before,*:after{box-sizing:inherit}
-    body{
-      margin:0; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-      color: var(--ink); background: var(--white); line-height: 1.55; -webkit-font-smoothing: antialiased;
-    }
-    img{max-width:100%; height:auto; display:block}
-    a{color:inherit; text-decoration:none}
-    .container{max-width: var(--container); padding: 0 var(--space-2); margin: 0 auto}
-
-    .brand-block{ background: var(--ken-red); color: var(--white); }
-
-    header{ position: sticky; top: 0; z-index: 50; }
-    .header-inner{ display:flex; align-items:center; justify-content:space-between; padding: var(--space-2) 0; }
-    .logo{ display:flex; align-items:center; gap:.5rem; letter-spacing:1.5px; font-size: 1.75rem; }
-    .logo span{ font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 900; text-transform: uppercase; }
-    nav{ display:flex; gap: clamp(.5rem, 2vw, 1.25rem); }
-    nav a{ color: var(--white); opacity:.95; font-weight:600; }
-    nav a:hover, nav a:focus-visible{ opacity:1; text-decoration: underline; text-underline-offset: 4px; }
-
-    @media (max-width: 720px){ nav{ flex-wrap: wrap; } .header-inner{ gap: .75rem; } }
-
-    .hero{ padding: var(--space-5) 0 var(--space-6); position: relative; overflow:hidden; }
-    .hero-grid{ display:grid; grid-template-columns: 1fr; gap: var(--space-5); align-items:center; text-align: center; }
-    .hero h1{ font-size: clamp(28px, 5vw, 44px); line-height:1.15; margin:0 0 var(--space-2); color: var(--white); }
-    .hero p{ color: rgba(255,255,255,.92); font-size: clamp(16px, 2.5vw, 18px); margin: 0 0 var(--space-3); max-width: 60ch; margin-left: auto; margin-right: auto; }
-    .cta{ display:inline-block; background: var(--white); color: var(--ken-red); border:2px solid var(--white);
-      padding: .75rem 1.1rem; border-radius: 999px; font-weight: 700; }
-    .cta:hover, .cta:focus-visible{ background: transparent; color: var(--white); }
-
-    @media (max-width: 960px){
-      .hero{ padding: var(--space-5) 0 var(--space-5); }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    .section{ padding: var(--space-5) 0; }
-    .section h2{ font-size: clamp(22px, 3.5vw, 30px); margin: 0 0 var(--space-2); }
-    .muted{ color: var(--muted); }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+      color: var(--kf-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-    :focus-visible{ outline: 2px solid var(--white); outline-offset: 2px; }
+    .wrapper {
+      max-width: 720px;
+      width: 100%;
+      padding: 24px;
+    }
 
-    @media (prefers-reduced-motion: no-preference){
-      .fade-in{ animation: fade .8s ease-out both; }
-      @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform: none } }
+    .card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 24px;
+      border: 1px solid rgba(248, 250, 252, 0.06);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(15, 23, 42, 0.8);
+      padding: 32px 24px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -120px;
+      background: radial-gradient(circle at top left, rgba(225, 29, 46, 0.25), transparent 60%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(248, 250, 252, 0.08);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(248, 250, 252, 0.8);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--kf-red);
+      box-shadow: 0 0 0 0 rgba(225, 29, 46, 0.65);
+      animation: ping 1.4s infinite;
+    }
+
+    @keyframes ping {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      75% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    h1 {
+      font-size: clamp(1.9rem, 3vw, 2.3rem);
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    h1 span.highlight {
+      color: var(--kf-red);
+    }
+
+    .subtext {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: rgba(248, 250, 252, 0.78);
+      max-width: 34rem;
+    }
+
+    .timer-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .timer-circle {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 30% 0, rgba(248, 250, 252, 0.16), transparent 55%),
+        conic-gradient(
+          from 270deg,
+          var(--kf-red) var(--progress, 0deg),
+          rgba(51, 65, 85, 0.9) var(--progress, 0deg)
+        );
+      padding: 3px;
+      transition: background 0.25s ease-out;
+    }
+
+    .timer-inner {
+      width: 86%;
+      height: 86%;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.98);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.9);
+    }
+
+    .timer-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .timer-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: rgba(148, 163, 184, 0.95);
+      margin-top: 4px;
+    }
+
+    .timer-text-block {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .timer-heading {
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(248, 250, 252, 0.7);
+      margin-bottom: 8px;
+    }
+
+    .timer-description {
+      font-size: 0.9rem;
+      color: rgba(209, 213, 219, 0.9);
+      margin-bottom: 12px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #fecaca, var(--kf-red));
+      transition: width 0.28s ease-out;
+    }
+
+    .redirect-note {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: rgba(148, 163, 184, 0.9);
+    }
+
+    .redirect-note a {
+      color: #fca5a5;
+      text-decoration: none;
+      border-bottom: 1px dotted rgba(252, 165, 165, 0.5);
+    }
+
+    .redirect-note a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 24px 18px 22px;
+      }
+      .timer-section {
+        gap: 16px;
+      }
+      .timer-circle {
+        width: 100px;
+        height: 100px;
+      }
+      .timer-value {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="brand-block">
-    <header>
-      <div class="container header-inner" role="navigation" aria-label="Primary">
-        <a class="logo" href="/" aria-label="KenFolios Home">
-          <span>KENFOLIOS</span>
-        </a>
-        <nav>
-          <a href="/">Home</a>
-          <a href="/community">Community</a>
-          <a href="/about">About</a>
-          <a href="/newsletter">Newsletter</a>
-          <a href="/terms">Terms</a>
-          <a href="/privacy">Privacy</a>
-        </nav>
-      </div>
-    </header>
+  <main class="wrapper">
+    <section class="card" aria-labelledby="headline">
+      <div class="card-inner">
+        <div>
+          <div class="badge">
+            <span class="badge-dot"></span>
+            KenFolios Update
+          </div>
+          <h1 id="headline">
+            Our homepage is <span class="highlight">getting a new look.</span>
+          </h1>
+          <p class="subtext">
+            We’re refreshing the KenFolios experience. In just a moment, you’ll be taken to our
+            community space where the action continues as usual.
+          </p>
+        </div>
 
-    <main>
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="fade-in">
-            <h1>
-              In 2013, we told their stories.<br/>
-              In 2025, we help them write their own.
-            </h1>
-            <p>
-              KenFolios began with impactful storytelling and grew into India’s largest business community — connecting dreamers, doers, and leaders nationwide.
+        <div class="timer-section">
+          <div class="timer-circle" id="timerCircle">
+            <div class="timer-inner">
+              <div style="text-align:center;">
+                <div class="timer-value" id="countdownValue">10</div>
+                <div class="timer-label">seconds</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timer-text-block">
+            <div class="timer-heading">Auto redirect in progress</div>
+            <div class="timer-description">
+              Please wait while we redirect you to the KenFolios Community.  
+              Your content, stories, and connections remain fully accessible.
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <p class="redirect-note">
+              If you’re not redirected automatically, 
+              <a href="https://kenfolios.com/community/" id="manualLink">click here to continue</a>.
             </p>
-            <a class="cta" href="#explore">Explore Stories</a>
           </div>
         </div>
-      </section>
-    </main>
-  </div>
-
-  <section id="explore" class="section">
-    <div class="container">
-      <h2>About KenFolios</h2>
-      <p class="muted">Founded in January 2013 to tell impactful stories, KenFolios is now a nationwide community for India’s builders and leaders.</p>
-    </div>
-  </section>
-
-  <footer class="section" role="contentinfo" style="border-top:1px solid var(--ui)">
-    <div class="container" style="display:flex; gap:var(--space-3); flex-wrap:wrap; align-items:center; justify-content:space-between;">
-      <div style="display:flex; align-items:center; gap:.5rem; color:var(--muted)">
-        <strong>KENFOLIOS</strong>
-        <span aria-hidden="true">•</span>
-        <span>© 2026</span>
       </div>
-      <div style="display:flex; gap:1rem; color:var(--muted)">
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-        <a href="/terms">Terms</a>
-        <a href="/privacy">Privacy</a>
-      </div>
-    </div>
-  </footer>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const REDIRECT_URL = "https://kenfolios.com/community/";
+      const TOTAL_SECONDS = 10;
+
+      const countdownEl = document.getElementById("countdownValue");
+      const progressBarEl = document.getElementById("progressBar");
+      const timerCircleEl = document.getElementById("timerCircle");
+      const manualLinkEl = document.getElementById("manualLink");
+
+      let remaining = TOTAL_SECONDS;
+
+      manualLinkEl.addEventListener("click", function (e) {
+        // allow normal navigation, but clear interval so we don't double-fire
+        clearInterval(intervalId);
+      });
+
+      function updateUI() {
+        countdownEl.textContent = remaining.toString();
+
+        const progressRatio = (TOTAL_SECONDS - remaining) / TOTAL_SECONDS;
+        progressBarEl.style.width = (progressRatio * 100).toFixed(2) + "%";
+
+        const degrees = 360 * progressRatio;
+        timerCircleEl.style.setProperty("--progress", degrees + "deg");
+      }
+
+      function tick() {
+        updateUI();
+
+        if (remaining <= 0) {
+          clearInterval(intervalId);
+          window.location.href = REDIRECT_URL;
+          return;
+        }
+
+        remaining -= 1;
+      }
+
+      // Initial paint
+      updateUI();
+
+      // Start countdown (1-second interval)
+      const intervalId = setInterval(tick, 1000);
+    })();
+  </script>
 </body>
 </html>
