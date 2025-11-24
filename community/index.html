@@ -1,335 +1,3352 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>KenFolios – New Homepage Coming Soon</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex,nofollow" />
+ <!-- =========================================================
+   KENFOLIOS BUSINESS COMMUNITY — /community PAGE
+   COMPLETE HEAD: SEO + GA4 + META PIXEL + STRUCTURED DATA
+   Assets stored in: https://kenfolios.com/assets/
+   Updated: 07 Nov 2025
+========================================================= -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KenFolios Business Community — Join</title>
+<meta name="theme-color" content="#E11D2E" />
+
+<!-- ================== BASIC SEO ================== -->
+<meta name="description" content="KenFolios Business Community is India’s largest online business network connecting entrepreneurs and professionals with the right people for their growth. Founded by Suhas Naik and managed by KenFolios Media Private Limited, the platform builds trusted business connections across India.">
+<meta name="keywords" content="KenFolios, KenFolios Business Community, Business Network India, Entrepreneurs Network, Professional Growth, Indian Startups, Business Networking, Suhas Naik, KenFolios Media, Online Business Community">
+<link rel="canonical" href="https://kenfolios.com/community">
+<meta name="robots" content="index,follow">
+<meta name="author" content="KenFolios Media Private Limited">
+
+<!-- ================== OPEN GRAPH ================== -->
+<meta property="og:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
+<meta property="og:description" content="KenFolios Business Community connects entrepreneurs and professionals to build meaningful business growth opportunities across India.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kenfolios.com/community">
+<meta property="og:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
+<meta property="og:site_name" content="KenFolios Business Community">
+<meta property="article:publisher" content="https://www.facebook.com/KenFolios">
+
+<!-- ================== TWITTER CARD ================== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Join KenFolios Business Community — India’s Largest Online Business Network">
+<meta name="twitter:description" content="India’s largest online business network empowering entrepreneurs and professionals through trusted connections.">
+<meta name="twitter:image" content="https://kenfolios.com/assets/og-kenfolios-community-1200x630.png">
+<meta name="twitter:site" content="@KenFolios">
+
+<!-- ================== FAVICON ================== -->
+<link rel="icon" href="https://kenfolios.com/assets/favicon-kenfolios-64x64.png" type="image/png">
+
+<!-- =========================================================
+   GOOGLE ANALYTICS 4 (GA4)
+   Measurement ID: G-8M691HC7BX
+========================================================= -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M691HC7BX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-8M691HC7BX', { 'send_page_view': true });
+
+  function ga4Event(name, params) {
+    try { gtag('event', name, params || {}); } catch(e){ console.warn('GA4 event error', e); }
+  }
+</script>
+
+<!-- =========================================================
+   META PIXEL (Facebook / Meta)
+   Pixel ID: 2897024127219193
+========================================================= -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '2897024127219193'); 
+  fbq('track', 'PageView');
+  function metaEvent(name, params) {
+    try { fbq('track', name, params || {}); } catch(e) { console.warn('Meta Pixel error', e); }
+  }
+</script>
+<noscript>
+  <img height="1" width="1" style="display:none"
+       src="https://www.facebook.com/tr?id=2897024127219193&ev=PageView&noscript=1"/>
+</noscript>
+
+<!-- =========================================================
+   STRUCTURED DATA (SAFE JSON-LD INJECTOR)
+========================================================= -->
+<script>
+(function(){
+  var ld = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://kenfolios.com/#organization",
+        "name": "KenFolios Business Community",
+        "url": "https://kenfolios.com",
+        "logo": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
+        "description": "KenFolios Business Community is India’s largest online business network connecting entrepreneurs, professionals, and organizations for trusted growth and collaboration.",
+        "foundingDate": "2021-03",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "KenFolios Media Private Limited",
+          "foundingDate": "2013-01",
+          "url": "https://kenfolios.com"
+        },
+        "sameAs": [
+          "https://www.facebook.com/KenFolios",
+          "https://www.instagram.com/KenFoliosHQ",
+          "https://twitter.com/KenFolios",
+          "https://www.linkedin.com/company/KenFolios"
+        ],
+        "founder": { "@id": "https://kenfolios.com/#founder" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://kenfolios.com/#founder",
+        "name": "Suhas Naik",
+        "jobTitle": "Founder",
+        "description": "Suhas Naik is an Indian entrepreneur and founder of KenFolios, India’s largest online business community and media network. With over two decades of experience, he has led KenFolios Media Private Limited to publish 5,000+ stories in English and Hindi, reaching over 100 million readers.",
+        "url": "https://socialsuhas.in",
+        "image": "https://kenfolios.com/assets/logo-kenfolios-500x500.png",
+        "nationality": "Indian",
+        "sameAs": [
+          "https://www.facebook.com/socialsuhas",
+          "https://www.instagram.com/socialsuhas",
+          "https://twitter.com/socialsuhas",
+          "https://www.linkedin.com/in/socialsuhas",
+          "https://www.youtube.com/@socialsuhasHQ",
+          "https://socialsuhas.in"
+        ],
+        "worksFor": { "@id": "https://kenfolios.com/#organization" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://kenfolios.com/community/#webpage",
+        "url": "https://kenfolios.com/community",
+        "name": "KenFolios Business Community",
+        "isPartOf": { "@id": "https://kenfolios.com/#organization" },
+        "about": { "@id": "https://kenfolios.com/#organization" },
+        "inLanguage": "en",
+        "datePublished": "2021-03-15",
+        "dateModified": "2025-11-07",
+        "primaryImageOfPage": "https://kenfolios.com/assets/og-kenfolios-community-1200x630.png"
+      }
+    ]
+  };
+
+  var s = document.createElement('script');
+  s.type = 'application/ld+json';
+  s.text = JSON.stringify(ld);
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- =========================================================
+   END HEAD BLOCK
+========================================================= -->
+
+
+
+
   <style>
-    :root {
-      --kf-red: #E11D2E;
-      --kf-dark: #0f172a;
-      --kf-bg: #020617;
-      --kf-text: #f9fafb;
-    }
+  :root{
+    --kf-red:#E11D2E;
+    --border:#e5e7eb;
+    --bg:#f8fafc;
+    --text:#0f172a;
+    --muted:#64748b;
+    --left-width:360px;
+    --backdrop:rgba(15,23,42,0.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
+    color:var(--text);
+    background:var(--bg);
+    font-size:17px;
+  }
+  .shell{
+    max-width:1400px;height:100vh;margin:0 auto;display:flex;
+    background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border);
+    position:relative
+  }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+  /* ===== Backdrop ===== */
+  .backdrop{
+    position:fixed;inset:0;background:var(--backdrop);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  .shell.left-open .backdrop,
+  .shell.profile-open .backdrop{opacity:1;pointer-events:auto}
+  @media (min-width:1024px){
+    .backdrop{display:none}
+  }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
-      color: var(--kf-text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+  /* ===== Left pane ===== */
+  .left{
+    width:var(--left-width);flex:0 0 var(--left-width);
+    border-right:1px solid var(--border);background:#fff;display:none;
+  }
+  @media (min-width: 1024px){
+    .left{display:block;position:relative;transform:none!important;box-shadow:none!important}
+  }
+  @media (max-width:1023.98px){
+    .left{
+      position:fixed;top:0;left:0;height:100vh;display:block;
+      width:min(86vw, var(--left-width));
+      transform:translateX(-100%);transition:transform .25s ease;
+      z-index:30;box-shadow:0 10px 30px rgba(2,6,23,.25);
     }
+    .shell.left-open .left{transform:translateX(0)}
+  }
+  .left .search-box{
+    padding:.5rem 1rem;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:.5rem
+  }
+  .left input[type="text"]{
+    width:100%;padding:.5rem .75rem;border:1px solid var(--border);
+    border-radius:8px;font-size:15px
+  }
+  .left input::placeholder{color:var(--muted)}
+  .left .body{height:calc(100% - 57px);overflow:auto;padding:.5rem;display:flex;flex-direction:column}
+  .disclaimer{position:sticky;bottom:0;background:#f8fafc;font-size:12px;color:var(--muted);padding:.5rem 1rem;border-top:1px solid var(--border);text-align:center}
+  .member{display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:12px;cursor:default}
+  .member:hover{background:#f8fafc}
+  .avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .m-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    .wrapper {
-      max-width: 720px;
-      width: 100%;
-      padding: 24px;
-    }
+  /* ===== Buttons ===== */
+  .arrow-btn{
+    border:0;background:#fff;border:1px solid var(--border);
+    width:36px;height:36px;border-radius:999px;
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer
+  }
+  .arrow-btn:hover{background:#f8fafc}
+  @media (min-width:1024px){ #openLeft{display:none!important} }
+  .shell.left-open #openLeft{display:none!important}
 
-    .card {
-      background: rgba(15, 23, 42, 0.95);
-      border-radius: 24px;
-      border: 1px solid rgba(248, 250, 252, 0.06);
-      box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(15, 23, 42, 0.8);
-      padding: 32px 24px 28px;
-      position: relative;
-      overflow: hidden;
-    }
+  .icon-btn{
+    border:0;background:transparent;width:36px;height:36px;
+    border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer
+  }
+  .icon-btn:hover{background:#f1f5f9}
+  .i{width:20px;height:20px}
+  @media (min-width:1024px){ #closeLeft{display:none!important} }
 
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: -120px;
-      background: radial-gradient(circle at top left, rgba(225, 29, 46, 0.25), transparent 60%);
-      opacity: 0.9;
-      pointer-events: none;
-    }
+  /* ===== Middle (chat) ===== */
+  .mid{flex:1;min-width:0;display:flex;flex-direction:column}
+  .chat-header{
+    display:flex;align-items:center;gap:.75rem;
+    padding:1rem;background:#fff;color:var(--text);border-bottom:1px solid var(--border)
+  }
+  .kf{
+    width:44px;height:44px;border-radius:999px;background:var(--kf-red);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-weight:900;cursor:pointer
+  }
+  .title{min-width:0}
+  .title button{
+    background:none;border:0;color:var(--text);font-weight:700;
+    font-size:17px;padding:0;cursor:pointer;display:block;text-align:left
+  }
+  .meta{font-size:13px;color:var(--muted);cursor:pointer}
 
-    .card-inner {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      gap: 24px;
-    }
+  /* ===== Header CTA buttons ===== */
+  .header-actions{
+    margin-left:auto; display:flex; align-items:center; gap:.5rem;
+  }
+  .cta-btn{
+    border:1px solid var(--border); background:#fff; color:var(--text);
+    padding:.4rem .9rem; font-size:15px; border-radius:999px; cursor:pointer;
+    transition:background .2s ease;
+  }
+  .cta-btn:hover{ background:#f8fafc; }
+  .cta-btn.primary{ background:var(--kf-red); color:#fff; border-color:var(--kf-red); }
+  .cta-btn.primary:hover{ opacity:.9; }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(248, 250, 252, 0.08);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(248, 250, 252, 0.8);
-    }
+  /* ===== Chat area ===== */
+  .chat-area{
+    flex:1; overflow:auto;
+    background-color:hsl(356, 70%, 96%);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:repeat; background-size:70px 70px;
+  }
 
-    .badge-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--kf-red);
-      box-shadow: 0 0 0 0 rgba(225, 29, 46, 0.65);
-      animation: ping 1.4s infinite;
-    }
+  /* ===== Chat bubbles ===== */
+  .chat-msg{ display:flex; align-items:flex-end; gap:.5rem; margin:1rem; max-width:80%; }
+  .chat-msg.admin{ flex-direction:row; }
+  .chat-msg.member{ flex-direction:row-reverse; margin-left:auto; }
+  .chat-msg .avatar{
+    width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;background:var(--kf-red);color:#fff;flex-shrink:0;
+  }
+  .chat-msg.member .avatar{ background:hsl(210 70% 92%); color:hsl(210 60% 28%); }
+  .chat-msg .bubble{
+    background:#fff; padding:.6rem .9rem; border-radius:16px; border:1px solid var(--border);
+    display:grid; grid-template-columns: 1fr auto; row-gap:.65rem; column-gap:.75rem;
+    max-width:600px; width:fit-content; position:relative; overflow-wrap:break-word; word-break:break-word;
+  }
+  @media (max-width: 639.98px) {
+    .chat-msg .bubble { max-width:85%; row-gap:.5rem; }
+  }
+  .chat-msg.admin .bubble::before{
+    content:""; position:absolute; left:-8px; bottom:8px; width:0;height:0;
+    border:8px solid transparent; border-right-color:#fff;
+  }
+  .chat-msg.member .bubble::before{
+    content:""; position:absolute; right:-8px; bottom:8px; width:0;height:0;
+    border:8px solid transparent; border-left-color:#fff;
+  }
+  .chat-msg .bubble .name, .chat-msg .bubble .text{ grid-column: 1 / -1; }
+  .chat-msg .name{ font-size:14px; font-weight:700; color:var(--muted); }
+  .chat-msg .text{ font-size:15px; line-height:1.4; color:var(--text); }
 
-    @keyframes ping {
-      0% {
-        transform: scale(1);
-        opacity: 1;
-      }
-      75% {
-        transform: scale(2.2);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(2.2);
-        opacity: 0;
-      }
-    }
+  .bubble .reactions{
+    grid-column: 1 / 2; justify-self: start; align-self: end;
+    font-size:12px; color:var(--muted); display:flex; align-items:center; gap:.5rem; line-height:1; flex-wrap:wrap; white-space:nowrap;
+  }
+  .bubble .pinned-label, .bubble .time{
+    grid-column: 2 / 3; justify-self: end; align-self: end;
+    font-size:12px; color:var(--muted); display:flex; align-items:center; gap:.35rem; line-height:1; white-space:nowrap; font-weight:600;
+  }
+  .bubble .reactions .r{ display:flex; align-items:center; gap:2px; }
+  .bubble .reactions .icon{ font-size:13px; }
+  .bubble .reactions .count{ min-width:18px; text-align:right; }
+  @media (max-width:360px){
+    .bubble .reactions, .bubble .pinned-label, .bubble .time{ font-size:11px; }
+    .bubble .reactions .icon{ font-size:12px; }
+  }
 
-    h1 {
-      font-size: clamp(1.9rem, 3vw, 2.3rem);
-      line-height: 1.1;
-      font-weight: 700;
-    }
+  /* ===== Centered notifications between chats ===== */
+  .chat-notes{
+    display:flex; flex-direction:column; align-items:center; gap:6px; margin:.75rem 1rem;
+  }
+  .chat-note{ display:flex; justify-content:center; width:100%; }
+  .chat-note .note{
+    background:#fff; border:1px solid var(--border); border-radius:14px; padding:.35rem .75rem;
+    font-size:13px; color:var(--muted); display:inline-flex; align-items:center; gap:.5rem; box-shadow:0 2px 10px rgba(2,6,23,.04);
+  }
 
-    h1 span.highlight {
-      color: var(--kf-red);
-    }
+  /* ===== Composer ===== */
+  .composer{
+    display:flex;align-items:center;gap:.5rem; padding:.75rem 1rem;background:#fff;border-top:1px solid var(--border);
+  }
+  .composer .pill{
+    display:flex;align-items:center;flex:1;gap:.5rem;
+    border:1px solid var(--border);border-radius:999px;padding:.5rem .75rem; background:#fff
+  }
+  .composer input[type="text"]{ flex:1;border:0;outline:0;font-size:15px;min-width:0 }
+  .composer .lefty,.composer .righty{display:flex;align-items:center;gap:.25rem}
+  .composer .action{border:0;background:transparent;width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  .composer .action:hover{background:#f1f5f9}
+  .composer .send-guard{cursor:text}
 
-    .subtext {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: rgba(248, 250, 252, 0.78);
-      max-width: 34rem;
-    }
+  /* ===== Global disclaimer (below composer) ===== */
+  .global-disclaimer{
+    font-size:11px; color:var(--muted); text-align:center; padding:.5rem 1rem; background:#fff; border-top:1px solid var(--border);
+  }
 
-    .timer-section {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: center;
-      justify-content: space-between;
-    }
+  /* ===== Right (profile) ===== */
+  .right{
+    width:0;flex:0 0 0;border-left:0 solid var(--border);background:#fff;
+    overflow:auto; /* scrollable profile pane */
+    transition:width .25s ease, border-left-width .25s ease;z-index:20
+  }
+  @media (max-width:1023.98px){
+    .shell.profile-open .right{width:100%;flex:0 0 100%;border-left-width:1px}
+    .shell.profile-open .mid{display:none}
+    .shell.profile-open .left{display:none}
+  }
+  @media (min-width:1024px) and (max-width:1279.98px){
+    .shell.profile-open .right{width:50%;flex:0 0 50%;border-left-width:1px}
+    .shell.profile-open .left{display:none}
+  }
+  @media (min-width:1280px) and (max-width:1535.98px){
+    .shell.profile-open .right{width:640px;flex:0 0 640px;border-left-width:1px}
+    .shell.profile-open .left{display:none}
+  }
+  @media (min-width:1536px){
+    .shell.profile-open .right{width:720px;flex:0 0 720px;border-left-width:1px}
+    .shell.profile-open .left{display:none}
+  }
 
-    .timer-circle {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at 30% 0, rgba(248, 250, 252, 0.16), transparent 55%),
-        conic-gradient(
-          from 270deg,
-          var(--kf-red) var(--progress, 0deg),
-          rgba(51, 65, 85, 0.9) var(--progress, 0deg)
-        );
-      padding: 3px;
-      transition: background 0.25s ease-out;
-    }
+  /* ===== Messenger-style profile (right pane) ===== */
+  .p-body { padding:1rem; position:relative; }
+  .p-close{ display:none !important; } /* hide old bar if any */
 
-    .timer-inner {
-      width: 86%;
-      height: 86%;
-      border-radius: 50%;
-      background: rgba(15, 23, 42, 0.98);
-      display: grid;
-      place-items: center;
-      box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.9);
-    }
+  /* ==== Sticky hero card + close button in-card ==== */
+  .profile-hero{
+    position: sticky; top: 0; z-index: 5;
+    display:flex; align-items:flex-start; gap:.75rem;
+    padding:.75rem 2.5rem .75rem .75rem; /* tighter height + room for close */
+    border:1px solid var(--border); border-radius:14px; background:#fff;
+    box-shadow:0 6px 18px rgba(2,6,23,.06); backdrop-filter:saturate(115%) blur(0px);
+  }
+  .profile-hero .close-in-card{
+    position:absolute; top:8px; right:8px; width:36px; height:36px; border-radius:999px;
+    display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border);
+    background:#fff; cursor:pointer;
+  }
+  .profile-hero .close-in-card:hover{ background:#f8fafc; }
 
-    .timer-value {
-      font-size: 2.4rem;
-      font-weight: 700;
-      line-height: 1;
-    }
+  .profile-ava{
+    width:72px; height:72px; border-radius:999px; background:var(--kf-red); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:26px; flex-shrink:0; margin-top:.1rem;
+  }
+  .profile-main{ min-width:0; display:flex; flex-direction:column; gap:.45rem; }
+  .profile-name{ font-weight:800; font-size:18px; line-height:1.2; }
+  .profile-username{ font-size:13px; color:var(--muted); }
 
-    .timer-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: rgba(148, 163, 184, 0.95);
-      margin-top: 4px;
-    }
+  .identity{ min-width:0; }
+  .identity .titleline{ display:flex; align-items:baseline; gap:.5rem; min-width:0; }
+  .identity .subline{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+  .identity .dot{ opacity:.6 }
 
-    .timer-text-block {
-      flex: 1;
-      min-width: 220px;
-    }
+  /* High-activity pill with green tick + subtle pulse */
+  @keyframes kfPulse {
+    0% { box-shadow:0 0 0 0 rgba(16,185,129,.35); }
+    70%{ box-shadow:0 0 0 8px rgba(16,185,129,0); }
+    100%{ box-shadow:0 0 0 0 rgba(16,185,129,0); }
+  }
+  .profile-meta{
+    margin-top:0; display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; font-size:13px; color:var(--muted);
+  }
+  .profile-status{
+    display:inline-flex; align-items:center; gap:.4rem; font-size:12px; color:#065f46;
+    background:linear-gradient(0deg,#ecfdf5,#f0fdf4); border:1px solid #a7f3d0; padding:.3rem .6rem; border-radius:999px; font-weight:700;
+  }
+  .profile-status .tick{
+    width:16px;height:16px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+    background:#10b981; color:#fff; box-shadow:0 0 0 0 rgba(16,185,129,.35); animation:kfPulse 2.5s ease-out infinite;
+  }
 
-    .timer-heading {
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(248, 250, 252, 0.7);
-      margin-bottom: 8px;
-    }
+  /* Chips / labels */
+  .profile-tags{
+    display:flex; flex-wrap:wrap; gap:.35rem .45rem; margin-top:.25rem;
+  }
+  .profile-tags .tag{
+    font-size:11.5px; font-weight:700; color:#334155; background:#f8fafc; border:1px solid var(--border);
+    padding:.22rem .5rem; border-radius:999px; white-space:nowrap;
+  }
+  .trusted-badge{
+    display:inline-flex; align-items:center; gap:.4rem; font-size:11.5px; font-weight:800; color:#1f2937;
+    background:linear-gradient(180deg,#ffffff,#f8fafc); border:1px solid #e2e8f0; border-radius:999px; padding:.24rem .52rem;
+  }
+  .trusted-badge .shield{ width:16px;height:16px; display:inline-block; }
+  .trusted-badge .shield svg{ width:100%;height:100%; }
 
-    .timer-description {
-      font-size: 0.9rem;
-      color: rgba(209, 213, 219, 0.9);
-      margin-bottom: 12px;
-    }
+  /* Social links grid */
+  .profile-actions{ display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; margin-top:.75rem; }
+  .p-social{
+    border:1px solid var(--border); background:#fff; border-radius:12px; padding:.6rem .7rem;
+    display:flex; align-items:center; gap:.6rem; text-decoration:none; color:inherit;
+  }
+  .p-social:hover{ background:#f8fafc; }
+  .p-social .i{ width:18px; height:18px; }
+  .p-social .label{ font-size:14px; font-weight:600; }
+  .p-social .handle{ margin-left:auto; font-size:12px; color:var(--muted); }
 
-    .progress-track {
-      width: 100%;
-      height: 5px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(15, 23, 42, 0.9);
-    }
+  .profile-sect{ margin-top:1rem; }
+  .profile-sect .h{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.5rem; }
+  .kv{ border:1px solid var(--border); background:#fff; border-radius:12px; overflow:hidden; }
+  .kv .row{ display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; padding:.65rem .75rem; border-bottom:1px solid var(--border); }
+  .kv .row:last-child{ border-bottom:0; }
+  .kv .l{ font-size:13px; color:var(--muted); min-width:120px; }
+  .kv .r{ font-size:14px; font-weight:600; }
+  .kv .r .mono{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-weight:700;
+  }
 
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #fecaca, var(--kf-red));
-      transition: width 0.28s ease-out;
-    }
+  /* Mobile tweaks */
+  @media (max-width: 639.98px){
+    .profile-actions{ grid-template-columns:1fr; }
+  }
 
-    .redirect-note {
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: rgba(148, 163, 184, 0.9);
+  /* ===== Mobile header actions below title ===== */
+  @media (max-width: 639.98px){
+    .chat-header{ flex-wrap: wrap; }
+    .header-actions{
+      order: 3; width:100%; margin-left:0; margin-top:.5rem;
+      display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem;
     }
+    .header-actions .cta-btn{ width:100%; }
+  }
 
-    .redirect-note a {
-      color: #fca5a5;
-      text-decoration: none;
-      border-bottom: 1px dotted rgba(252, 165, 165, 0.5);
-    }
+  /* =========================================================
+     ADDITION: Learn More Lightbox (non-breaking, opt-in)
+     ---------------------------------------------------------
+     JS will toggle .shell.lightbox-open and populate markup.
+     ========================================================= */
+  .lightbox-overlay{
+    position:fixed; inset:0;
+    background:rgba(15,23,42,.55);
+    backdrop-filter:saturate(110%) blur(2px);
+    display:none; align-items:center; justify-content:center;
+    z-index:60; /* above left(30) & right(20) */
+  }
+  .shell.lightbox-open .lightbox-overlay{ display:flex; }
 
-    .redirect-note a:hover {
-      text-decoration: underline;
-    }
+  .lightbox-card{
+    width:min(820px, 92vw);
+    max-height:80vh;
+    overflow:auto;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:0 20px 60px rgba(2,6,23,.35);
+    padding:1rem;
+    animation:lbIn .18s ease-out;
+  }
+  @keyframes lbIn{
+    from{ transform:translateY(6px) scale(.98); opacity:.0 }
+    to{ transform:translateY(0) scale(1); opacity:1 }
+  }
+  .lightbox-head{
+    display:flex; align-items:center; gap:.75rem; margin-bottom:.5rem;
+    position:sticky; top:0; background:#fff; padding-bottom:.5rem;
+    border-bottom:1px solid var(--border); z-index:1;
+  }
+  .lightbox-title{
+    font-size:15px; font-weight:800; color:#0f172a;
+  }
+  .lightbox-close{
+    margin-left:auto; width:36px; height:36px; border-radius:999px;
+    border:1px solid var(--border); background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .lightbox-close:hover{ background:#f8fafc; }
+  .lightbox-body{ padding:.75rem .25rem 0 .25rem; }
 
-    @media (max-width: 640px) {
-      .card {
-        padding: 24px 18px 22px;
-      }
-      .timer-section {
-        gap: 16px;
-      }
-      .timer-circle {
-        width: 100px;
-        height: 100px;
-      }
-      .timer-value {
-        font-size: 2rem;
-      }
-    }
+  /* Highlighted pinned bubble presentation inside lightbox */
+  .lightbox-body .bubble{
+    max-width:unset; width:100%;
+    border-color:#e2e8f0;
+    box-shadow:0 2px 14px rgba(2,6,23,.06);
+  }
+  .lightbox-body .pinned-label{
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:999px;
+    padding:.2rem .5rem;
+  }
+
+  /* Small helper note at bottom */
+  .lightbox-foot{
+    margin-top:.75rem; font-size:12px; color:var(--muted); text-align:center;
+  }
+
+  /* Accessibility / reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    .lightbox-card{ animation:none }
+  }
+  
+ /* === Ultra-small header layout with drawer + KF icon + 2-line title === */
+/* Expanded to 400px so 398–391px are covered */
+@media (max-width: 400px){
+  .chat-header{
+    display:grid;
+    grid-template-columns:auto auto 1fr; /* drawer | KF icon | title */
+    grid-template-rows:auto auto;        /* row1: header, row2: actions */
+    align-items:center;
+    column-gap:.4rem;
+    row-gap:.5rem;
+  }
+
+  /* Drawer icon (left) */
+  #openLeft{
+    grid-column:1;
+    grid-row:1;
+    width:36px; height:36px;
+    flex-shrink:0;
+  }
+
+  /* KF logo (center) */
+  .kf{
+    grid-column:2;
+    grid-row:1;
+    width:40px; height:40px;
+    flex:0 0 auto;
+  }
+
+  /* Title (right, 2-line clamp) */
+  .title{
+    grid-column:3;
+    grid-row:1;
+    min-width:0;
+  }
+  .title button{
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    white-space:normal;
+    text-overflow:ellipsis;
+    line-height:1.15;
+    max-height:calc(1.15em * 2);
+  }
+  .title .meta{ display:none; }
+
+  /* Actions on row 2 */
+  .header-actions{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+  }
+}
+
+/* Optional extra-tightening below 360px */
+@media (max-width: 360px){
+  .title button{ font-size:15px; }
+  .kf{ width:38px; height:38px; }
+  #openLeft{ width:34px; height:34px; }
+}
+
+/* === Keep header buttons tidy on very small screens === */
+
+/* 1) Compress labels so "Learn More" doesn't wrap, keep equal heights */
+@media (max-width: 373px){
+  .header-actions{
+    display:grid;                /* already grid on small, make explicit */
+    grid-template-columns:repeat(3,1fr);
+    gap:.4rem;
+  }
+  .header-actions .cta-btn{
+    display:flex; align-items:center; justify-content:center;
+    padding:.35rem .5rem;        /* tighter */
+    font-size:14px;              /* slightly smaller */
+    line-height:1.05;
+    white-space:nowrap;          /* no wrapping */
+    min-height:36px;             /* equal heights */
+  }
+  /* Nudge "Learn More" to fit without wrap */
+  #learnBtn{ letter-spacing:-0.1px; }
+}
+
+/* 2) Ultra-narrow fallback: icon-only buttons so the row stays one line */
+@media (max-width: 340px){
+  .header-actions .cta-btn{
+    position:relative;
+    padding:.45rem;              /* square-ish */
+    min-height:36px;
+    font-size:0;                 /* hide text, show icon via ::before */
+  }
+  #aboutBtn::before,
+  #learnBtn::before,
+  #joinBtn::before{
+    font-size:16px;
+    line-height:1;
+  }
+  #aboutBtn::before{ content:"ℹ️"; }
+  #learnBtn::before{ content:"📖"; }
+  #joinBtn::before{ content:"➕"; }
+}
+/* === Notification truncation + small-font handling on screens ≤ 400px === */
+@media (max-width: 400px){
+  .chat-notes .note{
+    display:flex;
+    align-items:center;
+    gap:.35rem;
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:13px;        /* slightly smaller to help fit */
+    padding:.3rem .6rem;   /* tighter padding for compactness */
+  }
+
+  .chat-notes .note span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    max-width:140px;       /* truncation width — tweak as needed */
+    vertical-align:middle;
+  }
+}
+
+/* === Additional tightening for ultra-small screens (≤ 360px) === */
+@media (max-width: 360px){
+  .chat-notes .note{
+    font-size:12px;
+    padding:.25rem .5rem;
+  }
+
+  .chat-notes .note span{
+    max-width:120px;       /* slightly narrower truncation on very small screens */
+  }
+}
+
+/* === Lightbox message body — slightly more upward === */
+#learnLightbox .bubble {
+  row-gap: 0.3rem;
+  padding-top: 0.65rem;        /* pulled up a bit more */
+  padding-bottom: 0.7rem;
+}
+
+#learnLightbox .bubble .text {
+  margin-top: -0.7rem;         /* slightly stronger upward shift */
+  line-height: 1.4;
+}
+
+#learnLightbox .bubble .reactions {
+  margin-top: 0.65rem;         /* maintain balanced spacing below */
+}
+
+/* === Chat-only loading skeleton === */
+#chatArea.loading{ position:relative; }
+#chatArea.loading .chat-msg,
+#chatArea.loading .chat-notes{ opacity:0; pointer-events:none; transition:opacity .22s ease; }
+#chatArea.chats-ready .chat-msg,
+#chatArea.chats-ready .chat-notes{ opacity:1; }
+
+/* Skeleton block */
+.chat-skeleton{
+  position:absolute; inset:0 0 auto 0;
+  padding:1rem .75rem 1.25rem .75rem;
+  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
+  border-bottom:1px solid var(--border);
+  z-index:1;
+}
+
+/* Skeleton rows: avatar + two lines */
+.sk-row{ display:flex; align-items:center; gap:.6rem; margin:.6rem .25rem; }
+.sk-ava{ width:36px; height:36px; border-radius:999px; background:#e5e7eb; position:relative; overflow:hidden; }
+.sk-line{ height:10px; border-radius:6px; background:#e5e7eb; position:relative; overflow:hidden; }
+.sk-w1{ width:55% } .sk-w2{ width:40% } .sk-w3{ width:70% } .sk-w4{ width:48% }
+
+/* Shimmer */
+.sk-ava::after, .sk-line::after{
+  content:""; position:absolute; inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation:skShimmer 1.2s infinite;
+}
+@keyframes skShimmer{ 100% { transform:translateX(100%); } }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .sk-ava::after, .sk-line::after{ animation:none }
+  #chatArea.loading .chat-msg, #chatArea.loading .chat-notes{ transition:none }
+}
+/* === Left list loading skeleton + on-scroll load (scoped to .left .body) === */
+.left .body { position: relative; }
+
+/* Hide the list while skeleton is active — search box stays visible */
+.left .body.skel-on #memberList { opacity: 0; pointer-events: none; }
+
+/* Top skeleton (initial load) */
+#leftSkeleton{
+  position: absolute; inset: 0;
+  padding: .6rem .5rem 1rem .5rem;
+  background: linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.92));
+  border-bottom: 1px solid var(--border);
+  display: none; z-index: 2;
+}
+.left .body.skel-on #leftSkeleton { display: block; }
+
+/* Bottom skeleton (loading more on scroll) */
+#leftBottomSkeleton{
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: none;
+  padding: .5rem .5rem .7rem .5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(248,250,252,.96));
+  border-top: 1px solid var(--border);
+  z-index: 2;
+}
+.left .body.loading-more #leftBottomSkeleton { display: block; }
+
+/* Skeleton row parts (top & bottom) */
+.lk-row, .lkb-row { display: flex; align-items: center; gap: .6rem; }
+.lk-row { margin: .5rem .25rem; }
+.lkb-row { margin: .35rem .25rem; }
+
+.lk-ava, .lkb-ava {
+  width: 40px; height: 40px; border-radius: 999px;
+  background: #e5e7eb; position: relative; overflow: hidden;
+}
+.lkb-ava { width: 36px; height: 36px; }
+
+.lk-line, .lkb-line {
+  height: 11px; border-radius: 6px; background: #e5e7eb;
+  position: relative; overflow: hidden;
+}
+.lkb-line { height: 10px; }
+
+.lk-w1 { width: 62%; } .lk-w2 { width: 46%; } .lk-w3 { width: 58%; } .lk-w4 { width: 52%; } .lk-w5 { width: 40%; }
+.lkb-w1 { width: 58%; } .lkb-w2 { width: 42%; } .lkb-w3 { width: 50%; }
+
+/* Shimmer animation */
+.lk-ava::after, .lk-line::after, .lkb-ava::after, .lkb-line::after{
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 100%);
+  animation: lkShimmer 1.15s infinite;
+}
+@keyframes lkShimmer { 100% { transform: translateX(100%); } }
+
+/* Staggered reveal of real members */
+.member.stagger { opacity: 0; transform: translateY(4px); }
+.member.stagger.show {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .22s ease, transform .22s ease;
+  transition-delay: var(--d, 0ms);
+}
+
+/* Newly appended members held invisible during 'loading-more' */
+.member.await { opacity: 0; transform: translateY(2px); }
+.member.await.show {
+  opacity: 1; transform: translateY(0);
+  transition: opacity .22s ease, transform .22s ease;
+  transition-delay: var(--d, 0ms);
+}
+
+/* Safety: when skeletons are off, list is visible */
+.left .body:not(.skel-on) #memberList { opacity: 1; pointer-events: auto; }
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce){
+  .lk-ava::after, .lk-line::after, .lkb-ava::after, .lkb-line::after { animation: none; }
+  .member.stagger.show, .member.await.show { transition: none; }
+}
+
+/* =========================================================
+   JOIN FORM (scoped to #finalJoinInfo) + LIGHTBOX FIX
+   ========================================================= */
+
+/* --- Lightbox visibility: only show the active one --- */
+.shell.lightbox-open .lightbox-overlay{ display:none !important; }
+.shell.lightbox-open #learnLightbox[aria-hidden="false"]{ display:flex !important; }
+.shell.lightbox-open #legalLightbox[aria-hidden="false"]{ display:flex !important; }
+
+/* --- Final Join Form bubble (scoped; won’t affect other bubbles) --- */
+#finalJoinInfo{
+  display:flex; align-items:flex-start; gap:.5rem; margin:1rem; max-width:90%;
+}
+#finalJoinInfo .avatar{
+  width:36px;height:36px;border-radius:999px;background:var(--kf-red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;
+}
+#finalJoinInfo .bubble{
+  background:#fff;border:1px solid var(--border);border-radius:18px;
+  padding:1.2rem 1.4rem; box-shadow:0 3px 12px rgba(2,6,23,.06);
+  width:100%; max-width:640px;
+}
+#finalJoinInfo .name{ font-weight:700;color:var(--muted);margin-bottom:.4rem; }
+
+/* Keep grid even if kf-rowgap is on form */
+#finalJoinInfo .kf-form{ display:grid !important; gap:.75rem; width:100%; max-width:640px; }
+#finalJoinInfo .kf-form .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+@media (max-width:479.98px){ #finalJoinInfo .kf-form .grid2{ grid-template-columns:1fr; } }
+
+#finalJoinInfo .kf-field{ display:flex; flex-direction:column; gap:.3rem; }
+#finalJoinInfo .kf-label{ font-size:13px; font-weight:700; color:var(--muted); }
+#finalJoinInfo .kf-input, #finalJoinInfo .kf-select, #finalJoinInfo .kf-date{
+  border:1px solid var(--border); border-radius:10px; padding:.55rem .7rem; font-size:15px; background:#fff; color:var(--text);
+}
+
+/* Expectations checklist */
+#finalJoinInfo .kf-checklist{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:.45rem .8rem; margin-top:.25rem;
+}
+@media (max-width:639.98px){ #finalJoinInfo .kf-checklist{ grid-template-columns:1fr; } }
+#finalJoinInfo .kf-check{ display:flex; align-items:flex-start; gap:.5rem; font-size:14px; }
+#finalJoinInfo .kf-check input{ margin-top:.2rem; accent-color:var(--kf-red); }
+
+/* Legal row + links */
+#finalJoinInfo .kf-legal{ display:flex; align-items:flex-start; gap:.5rem; font-size:13px; color:var(--muted); }
+#finalJoinInfo .kf-legal a{ color:var(--text); text-decoration:underline; }
+
+/* Confidential note */
+#finalJoinInfo .kf-note{
+  font-size:12.5px; color:var(--muted); margin-top:.25rem;
+  background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:.5rem .6rem;
+}
+
+/* Center the submit row */
+#finalJoinInfo .kf-form .kf-rowgap{ display:flex; justify-content:center; }
+
+/* Submit button */
+#finalJoinInfo .kf-submit{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:48px; min-width:220px; padding:0 1.25rem;
+  border-radius:11px; border:1px solid var(--kf-red);
+  background:var(--kf-red); color:#fff; font-weight:800; font-size:15px; cursor:pointer;
+  transition:opacity .2s ease; margin-bottom:22px;
+}
+#finalJoinInfo .kf-submit:hover{ opacity:.92; }
+
+/* Extra breathing space below form in the bubble */
+#finalJoinInfo .bubble form{ margin-bottom:1.5rem; }
+
+/* === Extra spacing above and below the join form === */
+#finalJoinInfo .kf-form {
+  margin-top: 1.75rem;        /* space between intro text and form fields */
+}
+
+#finalJoinInfo .kf-legal {
+  margin-bottom: 1.75rem;     /* space between terms row and the note / button */
+}
+
+/* ===============================
+   FORM SUBMIT AREA — CLEAN SPACING
+   =============================== */
+
+/* Tighter spacing for the submit row itself */
+#kfJoinInfoForm .actions {
+  gap: 8px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Ensure elements in the submit row don’t add their own bottom spacing */
+#kfJoinInfoForm .actions > * {
+  margin-bottom: 0 !important;
+}
+
+/* Submit button should not push anything downward */
+#kfJoinInfoForm button[type="submit"],
+#kfJoinInfoForm input[type="submit"] {
+  margin: 0 !important;
+}
+
+/* Progress panel spacing is handled via JS, but keep a fallback */
+#kfSubmitStatus {
+  margin-top: 4px;  /* fallback spacing in case JS doesn’t override */
+}
+
+#kfSubmitStatus > div {
+  padding: 8px 12px;
+}
+
+/* Optional: ensure Pay Now button doesn't get extra spacing from browser styles */
+#kfPayNowBtn {
+  display: inline-block;
+  margin: 0; /* spacing is handled in JS */
+}
+
+/* =========================================================
+   SUBMIT BUTTON — SUCCESS STATE (Tick on LEFT)
+   ---------------------------------------------------------
+   • Places the animated tick just before the "Saved" text.
+   • Keeps the whole label centered.
+   • No layout jump or floating icon on the right.
+   ========================================================= */
+
+#kfJoinInfoForm .kf-submit.success,
+#kfJoinInfoForm button[type="submit"].success,
+#kfJoinInfoForm input[type="submit"].success {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+  cursor: default;
+  pointer-events: none;
+  position: relative;
+  display: inline-flex;          /* so text and tick align neatly */
+  align-items: center;
+  justify-content: center;      /* keeps content centered */
+  gap: 0.4rem;                  /* space between tick and text */
+  transition: background .3s ease;
+}
+
+#kfJoinInfoForm .kf-submit.success::before,
+#kfJoinInfoForm button[type="submit"].success::before,
+#kfJoinInfoForm input[type="submit"].success::before {
+  content: '✔';
+  font-size: 1.2em;
+  opacity: 0;
+  transform: scale(0.6);
+  animation: tick-appear .3s forwards ease-in;
+}
+
+@keyframes tick-appear {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Fix: Join form bubble overflow between 530px–482px ===== */
+@media (max-width: 530px) and (min-width: 482px) {
+  #finalJoinInfo {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  #finalJoinInfo .bubble {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  /* Collapse two-column grid to single column cleanly */
+  #finalJoinInfo .kf-form,
+  #finalJoinInfo .kf-form .grid2 {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 10px !important;
+  }
+
+  /* Remove any residual min-width constraints */
+  #finalJoinInfo .kf-field { min-width: 0 !important; }
+
+  /* Inputs and selects stretch fluidly */
+  #finalJoinInfo .kf-input,
+  #finalJoinInfo .kf-select,
+  #finalJoinInfo .kf-date {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Submit button stacks properly, no overflow */
+  #finalJoinInfo .kf-rowgap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #finalJoinInfo .kf-submit {
+    width: 100% !important;
+    max-width: 420px;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Payment & bottom containers remain fluid */
+  #kfBottomContainer,
+  #kfRazorpayContainer {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+
+/* ===== Font Awesome "check-circle" replica (pure CSS) ===== */
+.verified-badge {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  vertical-align: middle;
+  color: #1e90ff; /* Dodger blue */
+}
+
+/* The blue check-circle icon (SVG mask identical to Font Awesome fa-check-circle) */
+.verified-badge::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
+  -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-277.1 99.1l184-184c9.4-9.4 9.4-24.6 0-33.9l-22.6-22.6c-9.4-9.4-24.6-9.4-33.9 0L216 284.1l-70.1-70.1c-9.4-9.4-24.6-9.4-33.9 0l-22.6 22.6c-9.4 9.4-9.4 24.6 0 33.9l104 104c9.4 9.5 24.6 9.5 34 .1z"/></svg>') center / contain no-repeat;
+}
+
+/* Prevent vertical clipping of the blue tick on very narrow screens */
+@media (max-width: 370px) {
+  .verified-badge {
+    position: relative;
+    top: 0.5px;                 /* subtle vertical nudge */
+    flex-shrink: 0;             /* don’t let it collapse */
+    line-height: 1 !important;  /* fix inline clipping */
+    transform: scale(0.9);      /* tiny scale so it fits visually */
+  }
+  /* ensure the button text wraps cleanly next to the icon */
+  #openProfile2 {
+    flex-wrap: wrap;
+    line-height: 1.2;
+    align-items: center;
+  }
+}
+
+/* =========================================================
+   KenFolios Pay-Once Membership (Chat Bubble Integration)
+   ---------------------------------------------------------
+   - Independent styles (prefix: .kfplan-)
+   - Does not affect global buttons or CTA styles
+   - Red theme, responsive, bubble-safe
+   ========================================================= */
+
+:root {
+  --kf-accent: #E11D2E; /* KenFolios red */
+  --kf-card-bg: #fff;
+  --kf-card-border: rgba(0, 0, 0, 0.06);
+  --kf-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.kfplan-card {
+  border-radius: 12px;
+  border: 1px solid var(--kf-card-border);
+  background: var(--kf-card-bg);
+  padding: 12px 14px;
+  max-width: 620px;
+  box-shadow: var(--kf-shadow);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin-top: 4px;
+}
+
+.kfplan-head .kfplan-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kfplan-head .kfplan-sub {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.kfplan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.kfplan-price .amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--kf-accent);
+}
+
+.kfplan-price .freq {
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.kfplan-features {
+  margin: 8px 0 12px 0;
+  padding-left: 18px;
+  color: #0f172a;
+  list-style-type: disc;
+}
+
+.kfplan-features li {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* Highlighted first feature */
+.kfplan-features li.highlight {
+  background: rgba(225, 29, 46, 0.06);
+  border-left: 3px solid var(--kf-accent);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #b91c1c;
+  list-style-type: none;
+}
+
+.kfplan-features li em {
+  color: var(--kf-accent);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* CTA */
+.kfplan-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kfplan-btn {
+  background: var(--kf-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  min-width: 170px;
+}
+
+.kfplan-btn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  transition: all 0.12s ease;
+}
+
+.kfplan-btn:focus {
+  outline: 3px solid rgba(225, 29, 46, 0.12);
+  outline-offset: 2px;
+}
+
+.kfplan-note {
+  font-size: 0.82rem;
+  color: #475569;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .kfplan-card { padding: 12px; }
+  .kfplan-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .kfplan-price .amount { font-size: 1.35rem; }
+  .kfplan-features {
+    padding-left: 16px;
+    margin-bottom: 12px;
+  }
+  .kfplan-cta { width: 100%; gap: 6px; }
+  .kfplan-btn {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 10px;
+  }
+}
+
+
   </style>
 </head>
 <body>
-  <main class="wrapper">
-    <section class="card" aria-labelledby="headline">
-      <div class="card-inner">
-        <div>
-          <div class="badge">
-            <span class="badge-dot"></span>
-            KenFolios Update
-          </div>
-          <h1 id="headline">
-            Our homepage is <span class="highlight">getting a new look.</span>
-          </h1>
-          <p class="subtext">
-            We’re refreshing the KenFolios experience. In just a moment, you’ll be taken to our
-            community space where the action continues as usual.
-          </p>
+  <div id="shell" class="shell">
+    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+
+    <!-- Left -->
+    <aside class="left" aria-label="List">
+      <div class="search-box">
+        <input type="text" placeholder="Join now to find members..." />
+        <button id="closeLeft" class="icon-btn" aria-label="Close members" title="Close">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="body">
+      <!-- Top skeleton (initial load) -->
+<div id="leftSkeleton" aria-hidden="true">
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w2"></div>
+    </div>
+  </div>
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w3"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w4"></div>
+    </div>
+  </div>
+  <div class="lk-row">
+    <div class="lk-ava"></div>
+    <div style="flex:1">
+      <div class="lk-line lk-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lk-line lk-w5"></div>
+    </div>
+  </div>
+</div>
+ <!-- Top skeleton (initial load) -->
+        <div id="memberList" role="list"></div>
+        <!-- (hidden left disclaimer)
+        <div class="disclaimer">
+          This member list is auto-generated for demonstration purposes. Actual community members may differ.
+        </div>
+        -->
+      </div>
+      <!-- Bottom skeleton (loading more on scroll) -->
+<div id="leftBottomSkeleton" aria-hidden="true">
+  <div class="lkb-row">
+    <div class="lkb-ava"></div>
+    <div style="flex:1">
+      <div class="lkb-line lkb-w1"></div>
+      <div style="height:6px"></div>
+      <div class="lkb-line lkb-w2"></div>
+    </div>
+  </div>
+  <div class="lkb-row">
+    <div class="lkb-ava"></div>
+    <div style="flex:1">
+      <div class="lkb-line lkb-w3"></div>
+      <div style="height:6px"></div>
+      <div class="lkb-line lkb-w2"></div>
+    </div>
+  </div> <!-- Bottom skeleton (loading more on scroll) -->
+</div>
+    </aside>
+
+    <!-- Middle -->
+    <main class="mid" role="main">
+      <header class="chat-header">
+        <button id="openLeft" class="arrow-btn" title="Open members" aria-label="Open members">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+
+        <div class="kf" id="openProfile" title="Open profile">KF</div>
+
+        <div class="title">
+  <button id="openProfile2">
+    KenFolios Business Community
+    <span class="verified-badge" title="Verified"></span>
+  </button>
+  <div class="meta" id="openProfile3">23,000 members</div>
+</div>
+
+
+        <div class="header-actions">
+          <button class="cta-btn" id="aboutBtn">About</button>
+          <button class="cta-btn" id="learnBtn">Learn More</button>
+          <!-- Header CTA -->
+<button class="cta-btn primary" id="joinBtn" >Join Now</button>
+        </div>
+      </header>
+
+<section class="chat-area" id="chatArea">
+  <!-- Chat skeleton placeholder -->
+  <div id="chatSkeleton" class="chat-skeleton" aria-hidden="true">
+    <div class="sk-row">
+      <div class="sk-ava"></div>
+      <div style="flex:1">
+        <div class="sk-line sk-w1"></div>
+        <div style="height:6px"></div>
+        <div class="sk-line sk-w2"></div>
+      </div>
+    </div>
+    <div class="sk-row">
+      <div class="sk-ava"></div>
+      <div style="flex:1">
+        <div class="sk-line sk-w3"></div>
+        <div style="height:6px"></div>
+        <div class="sk-line sk-w4"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-note-slot" data-above-pinned="true"></div>
+
+  <!-- PINNED: Welcome -->
+  <div class="chat-msg admin" id="welcomeMsg">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+      👋 Welcome to <strong>KenFolios Business Community</strong> — India’s largest online business network with 
+      <span id="welcomeMembers"><span class="member-count">23,338</span> members</span>.<br/><br/>
+      This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
+    </div>
+
+      <div class="pinned-label">📌 Pinned</div>
+    </div>
+  </div>
+
+  <div class="chat-note-slot"></div>
+
+  <!-- Q1 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Thanks! Happy to be here. How does this community actually work?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        The community maintains a <strong>PAN-India group of paid-only members</strong> where every new member is introduced.<br/><br/>
+        From there members can:<br/>
+        ✅ Join <strong>city</strong>, <strong>industry</strong>, and <strong>interest</strong> sub-groups.<br/>
+        ✅ Access <strong>20+ community features</strong> designed for professionals and entrepreneurs.<br/>
+        ✅ Create or join focused sub-groups that match their goals and needs.<br/><br/>
+        This keeps the network high-quality, focused, and spam-free.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">You mentioned 20+ features — what exactly are those?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+<div class="chat-msg admin">
+  <div class="avatar">KF</div>
+  <div class="bubble">
+    <div class="name">Community Admin</div>
+    <div class="text">
+
+      <div class="kfplan-card" role="region" aria-label="KenFolios pay-once membership plan">
+        <div class="kfplan-head">
+          <div class="kfplan-title">KenFolios Pay-Once Membership</div>
+          <div class="kfplan-sub">One-time membership — full access</div>
         </div>
 
-        <div class="timer-section">
-          <div class="timer-circle" id="timerCircle">
-            <div class="timer-inner">
-              <div style="text-align:center;">
-                <div class="timer-value" id="countdownValue">10</div>
-                <div class="timer-label">seconds</div>
-              </div>
-            </div>
-          </div>
+        <div class="kfplan-price">
+          <div class="amount">₹1,999</div>
+          <div class="freq">One-time — <small>inclusive of GST</small></div>
+        </div>
 
-          <div class="timer-text-block">
-            <div class="timer-heading">Auto redirect in progress</div>
-            <div class="timer-description">
-              Please wait while we redirect you to the KenFolios Community.  
-              Your content, stories, and connections remain fully accessible.
-            </div>
-            <div class="progress-track" aria-hidden="true">
-              <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <p class="redirect-note">
-              If you’re not redirected automatically, 
-              <a href="https://kenfolios.com/community/" id="manualLink">click here to continue</a>.
-            </p>
+        <ul class="kfplan-features">
+          <li class="highlight">
+            <strong>VStreet Member Status</strong> — core inclusion that automatically unlocks all VStreet primary membership benefits.
+          </li>
+          <li>Business development & professional reputation management</li>
+          <li>Lead generation and business collaboration programs</li>
+          <li>Founder roundtables and exclusive networking meets</li>
+          <li>Funding access and investor introductions</li>
+          <li>Mentorship and business strategy guidance</li>
+          <li>Cofounder and partnership search support</li>
+          <li>Hiring & recruitment assistance for startups and SMEs</li>
+          <li>Internship and learning opportunities via KenFolios partners</li>
+          <li>Access to business tools and curated founder resources</li>
+          <li>Media exposure and founder story publishing support</li>
+          <li>Brand identity and online presence enhancement</li>
+          <li><strong>Recurring Membership Eligibility</strong> — future access to renewal and upgrade options with continuity benefits</li>
+          <li>Priority access to KenFolios Events & Founder Summits</li>
+          <li>Business listing in the KenFolios Member Directory</li>
+          <li>Exclusive community offers and collaboration deals</li>
+          <li>Access to learning sessions, courses, and workshops</li>
+          <li>Deal Room access for founders and professionals</li>
+          <li>Dedicated member support and onboarding assistance</li>
+          <li>Personalized growth and business reputation roadmap</li>
+          <li><em>...and dozens of additional value-added features as the network expands.</em></li>
+        </ul>
+
+        <div class="kfplan-cta">
+          <button class="kfplan-btn" type="button"
+                  onclick="document.getElementById('joinBtn')?.click()"
+                  aria-label="Pay Now to join KenFolios">
+            Pay ₹1,999 — Join Now
+          </button>
+          <div class="kfplan-note">
+            One-time fee. Membership activation and onboarding follow after payment.
           </div>
         </div>
       </div>
-    </section>
-  </main>
+
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- Q3 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">What is VStreet and how does it benefit me?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+  VStreet is a <strong>virtual ecosystem for India</strong> that promotes 
+  <em>clean, transparent, and ethical</em> business practices.<br/><br/>
+  It grows through thoughtful, direct outreach and aims to build a culture 
+  of trust and professionalism.<br/>
+  While <strong>VStreet Club</strong> is invite-only, 
+  <strong>KenFolios members</strong> receive VStreet Member status and the 
+  associated brand benefits.
+</div>
+
+    </div>
+  </div>
+
+  <!-- SINGLE INLINE CTA (appears after Q3) -->
+  <div class="chat-msg admin single-cta" data-stage="3">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <!-- text will be injected by JS based on stage -->
+        <span class="cta-text">Ready to join?</span>
+        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
+      </div>
+      <div class="time">Just now</div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Has the community organised meetups in reality?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Yes — launched in <strong>March 2021</strong> (started online), and later expanded offline.<br/>
+        To date: <strong>250+ online meetups</strong> and <strong>30+ offline meetups</strong> connecting founders, operators and leaders.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Are there any real user testimonials?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Absolutely — we have hundreds of genuine testimonials. See video testimonials and event photos on Instagram: <strong>@KenFoliosHQ</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Do you offer trial memberships?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        No — we do not offer trial memberships. This is a <strong>business community for serious professionals</strong> and we keep a low entry fee so members are genuinely committed.
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE INLINE CTA (appears after Q6) -->
+  <div class="chat-msg admin single-cta" data-stage="6">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <span class="cta-text">Ready to join?</span>
+        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
+      </div>
+      <div class="time">Just now</div>
+    </div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Is the community regulated?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Yes — we grow organically, and our admins actively monitor activities in the background to keep conversations professional and respectful.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Can I organise events or create community groups?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Yes — since the <strong>VStreet launch (Aug 2025)</strong>, members may create <strong>KenFolios Groups</strong> for cities or interests and host local events under the community banner.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">How can I get mentorship and funding for my business?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Post your requirement in the relevant groups — mentors and investors often reach out directly. Also join mentoring and fundraising events organised by the community.
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE INLINE CTA (appears after Q9) -->
+  <div class="chat-msg admin single-cta" data-stage="9">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <span class="cta-text">Ready to join?</span>
+        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
+      </div>
+      <div class="time">Just now</div>
+    </div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">How can I grow my business here?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Use business development services and lead-generation tools inside the community. Join city, interest and industry groups to directly connect with relevant members.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q11 -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">How do I become a member?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Fill the joining form below and you will be redirected to the secure payment page. After payment complete the activation form; moderators will then activate your access to the core Telegram group and other features.
+      </div>
+    </div>
+  </div>
+
+  <!-- Q12: Recurring membership (modified as optional) -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Do you also offer recurring memberships with extra benefits?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Yes — recurring membership is <strong>optional</strong>. It provides extra benefits such as a dedicated community manager, early invites and premium visibility. You may upgrade anytime after activating the primary membership.
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE INLINE CTA (appears after Q12) -->
+  <div class="chat-msg admin single-cta" data-stage="12">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <span class="cta-text">Ready to join?</span>
+        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
+      </div>
+      <div class="time">Just now</div>
+    </div>
+  </div>
+
+  <!-- Q13: Extra payments after membership -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">Do I have to pay anything extra after taking this membership for community benefits?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        No — you do not have to pay anything extra unless you choose to: take recurring memberships, attend paid events, enroll in paid courses, or opt for other paid services or premium offerings.
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL CLOSING MESSAGE (appears only after the last answer) -->
+  <div class="chat-msg admin" id="closingMsg">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        You’ve now seen everything that <strong>high-quality members</strong> usually want to know before joining. Most professionals decide to join at this stage because the network is practical, credible and built for serious growth.<br/><br/>
+        If you’re ready, please fill the form below to join and start your onboarding.
+      </div>
+    </div>
+  </div>
+
+  <!-- Final form (canonical Join trigger lives here) -->
+  <div class="chat-msg admin" id="finalJoinInfo">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">
+        Before you proceed, share a few details so we can fast-track your access. Submitting this will continue your join flow.
+        <form id="kfJoinInfoForm" class="kf-form kf-rowgap" novalidate>
+          <div class="grid2">
+            <div class="kf-field">
+              <label class="kf-label" for="fi_name">Full Name*</label>
+              <input class="kf-input" id="fi_name" name="name" type="text" required />
+            </div>
+            <div class="kf-field">
+              <label class="kf-label" for="fi_dob">Date of Birth*</label>
+              <input class="kf-date" id="fi_dob" name="dob" type="date" required />
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="kf-field">
+              <label class="kf-label" for="fi_gender">Gender*</label>
+              <select class="kf-select" id="fi_gender" name="gender" required>
+                <option value="" disabled selected>Select</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Non-binary</option>
+                <option>Prefer not to say</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="kf-field">
+              <label class="kf-label" for="fi_city">City*</label>
+              <input class="kf-input" id="fi_city" name="city" type="text" required />
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="kf-field">
+              <label class="kf-label" for="fi_email">Email*</label>
+              <input class="kf-input" id="fi_email" name="email" type="email" required />
+            </div>
+            <div class="kf-field">
+              <label class="kf-label" for="fi_phone">Phone*</label>
+              <input class="kf-input" id="fi_phone" name="phone" type="tel" inputmode="tel" required />
+            </div>
+          </div>
+
+          <div class="kf-field">
+            <label class="kf-label">What are your expectations from the community?*</label>
+            <div class="kf-checklist" role="group" aria-label="Expectations">
+              <label class="kf-check"><input type="checkbox" name="expectations" value="WhatsApp Groups"> WhatsApp/Telegram Groups</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Business Leads"> Business Leads</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Brand Building"> Brand Building</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Starting a business"> Starting a business</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Growing a business"> Growing a business</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Mentorship"> Mentorship</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Funding"> Funding</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Learning & Skill Development"> Learning & Skill Development</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Events & Meetups"> Events & Meetups</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Meeting Professional Singles"> Meeting Professional Singles</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Investment Opportunities"> Investment Opportunities</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Hiring & Team Building"> Hiring & Team Building</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Internship Openings"> Internship Openings</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Job Openings"> Job Openings</label>
+              <label class="kf-check"><input type="checkbox" name="expectations" value="Other"> Other</label>
+            </div>
+          </div>
+
+          <div class="kf-legal">
+            <label style="display:flex; gap:.5rem; align-items:flex-start;">
+              <input id="fi_accept" type="checkbox" required checked />
+              <span>
+                I accept the <a href="#" data-legal="terms">Terms</a> and <a href="#" data-legal="privacy">Privacy Policy</a> of KenFolios Business Community.
+              </span>
+            </label>
+          </div>
+
+          <div class="kf-note">
+            The information shared here is <strong>strictly confidential</strong> and used only for community onboarding and verification.
+          </div>
+
+          <div class="kf-rowgap">
+            <!-- canonical join trigger button (kept once) -->
+            <button type="submit" class="kf-submit">Submit Details & Continue</button>
+            <button type="button" id="joinBtn" style="display:none">Join Now (canonical)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <script>
-    (function () {
-      const REDIRECT_URL = "https://kenfolios.com/community/";
-      const TOTAL_SECONDS = 10;
+    /*
+      CTA behaviour:
+      - Inserts stage-specific, encouraging one-liners into each .single-cta .cta-text.
+      - Lines are chosen randomly from a small set that is relevant to the Q&A upto that stage.
+      - The Join Now button triggers the canonical #joinBtn (kept hidden in the final form) so all CTAs have a single payment/join flow.
+    */
+    document.addEventListener('DOMContentLoaded', function(){
+      const ctaMap = {
+        '3': [
+          'Become part of VStreet — amplify your brand across India.',
+          'Join now to claim your VStreet member status and early visibility.',
+          'Want the VStreet edge? Get verified and start building your brand.'
+        ],
+        '6': [
+          'Get verified access to 20+ features — join now.',
+          'Serious professionals join here. Ready to level up?',
+          'No trials — just focused benefits. Join the verified group.'
+        ],
+        '9': [
+          'Looking for mentors or funding? Join and post your ask to the network.',
+          'Connect with investors and mentors — get started by joining.',
+          'Post your mentorship request to a community that replies.'
+        ],
+        '12': [
+          'Enjoy premium visibility — upgrade anytime after joining.',
+          'Prefer hands-on support? Recurring members get a dedicated manager.',
+          'Upgrade when you want — primary membership gives core access today.'
+        ]
+      };
 
-      const countdownEl = document.getElementById("countdownValue");
-      const progressBarEl = document.getElementById("progressBar");
-      const timerCircleEl = document.getElementById("timerCircle");
-      const manualLinkEl = document.getElementById("manualLink");
-
-      let remaining = TOTAL_SECONDS;
-
-      manualLinkEl.addEventListener("click", function (e) {
-        // allow normal navigation, but clear interval so we don't double-fire
-        clearInterval(intervalId);
+      document.querySelectorAll('.single-cta').forEach(function(node){
+        const stage = node.getAttribute('data-stage');
+        const pool = ctaMap[stage] || ['Ready to join?'];
+        const choice = pool[Math.floor(Math.random()*pool.length)];
+        const textEl = node.querySelector('.cta-text');
+        if(textEl) textEl.textContent = choice;
       });
 
-      function updateUI() {
-        countdownEl.textContent = remaining.toString();
+      // UX: scroll to first CTA if desired (commented out by default)
+      // const firstCta = document.querySelector('.single-cta'); if(firstCta) firstCta.scrollIntoView({behavior:'smooth'});
+    });
+  </script>
 
-        const progressRatio = (TOTAL_SECONDS - remaining) / TOTAL_SECONDS;
-        progressBarEl.style.width = (progressRatio * 100).toFixed(2) + "%";
+</section>
 
-        const degrees = 360 * progressRatio;
-        timerCircleEl.style.setProperty("--progress", degrees + "deg");
+
+
+
+      <!-- Composer -->
+      <footer class="composer" role="group" aria-label="Message composer">
+        <div class="lefty">
+          <button class="action" id="emojiBtn" title="Emoji" aria-label="Emoji picker">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="9" cy="10" r="1"/>
+              <circle cx="15" cy="10" r="1"/>
+              <path d="M8 14c1.5 2 6.5 2 8 0"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="pill send-guard" id="composerPill" title="Join to start interacting with members">
+          <input id="msgInput" type="text" placeholder="Join to start interacting with members" readonly />
+        </div>
+
+        <div class="righty">
+          <button class="action" id="attachBtn" title="Attach" aria-label="Attach a file">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15.5V8a5 5 0 0 0-10 0v8a3 3 0 0 0 6 0V9"/>
+            </svg>
+          </button>
+          <button class="action" id="voiceBtn" title="Voice message" aria-label="Record voice">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="2" width="6" height="12" rx="3"/>
+              <path d="M5 10v2a7 7 0 0 0 14 0v-2"/>
+              <path d="M12 19v3"/>
+            </svg>
+          </button>
+        </div>
+      </footer>
+
+      <!-- Global Disclaimer -->
+      <div class="global-disclaimer" role="note" aria-label="Demo disclaimer">
+        The UI and users shown here are for demonstration purposes and may differ in actual usage.
+        &copy; <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
+      </div>
+    </main>
+
+    <!-- Right -->
+    <aside id="profile" class="right" role="complementary" aria-label="Profile panel">
+      <div class="p-body">
+        <!-- Sticky Hero Card (with close button inside, top-right) -->
+        <div class="profile-hero">
+          <button id="closeProfile" class="close-in-card" aria-label="Close profile" title="Close">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+
+          <!-- Left: logo -->
+          <div class="profile-ava">KF</div>
+
+          <!-- Right: identity (name + handle + members), then status, then chips -->
+          <div class="profile-main">
+            <div class="identity">
+              <div class="titleline">
+                <span class="profile-name">KenFolios Business Community</span>
+                <span class="verified-badge" title="Verified"></span>
+              </div>
+              <div class="subline">
+                <span class="profile-username">@kenfolios</span>
+                <span class="dot" aria-hidden="true">•</span>
+                <span id="profileMembers">23,338 members</span>
+              </div>
+            </div>
+
+            <div class="profile-meta">
+              <!-- High-activity pill with green tick + pulse -->
+              <span class="profile-status" title="Community is very active">
+                <span class="tick" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </span>
+                Very Active — requests typically approved within 24 hours
+              </span>
+            </div>
+
+            <!-- Stat chips / labels -->
+            <div class="profile-tags" aria-label="Key stats">
+              <span class="tag">Founded 2013</span>
+              <span class="tag">1M+ Followers</span>
+              <span class="tag">PAN India</span>
+              <span class="tag">5000+ Features</span>
+              <span class="tag">100M+ Reach</span>
+
+              <span class="trusted-badge" title="Trusted brand">
+                <span class="shield" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l7 3v6c0 5-3.5 9-7 11-3.5-2-7-6-7-11V5l7-3z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                  </svg>
+                </span>
+                Trusted
+              </span>
+            </div>
+          </div>
+        </div>
+<!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
+<div class="profile-cta" role="group" aria-label="Join actions">
+  <button class="cta-btn primary" id="joinBtnProfile"
+    onclick="
+      // 🧹 Close side panes
+      document.getElementById('shell')?.classList.remove('left-open','profile-open');
+      
+      // 🪄 Scroll smoothly to the join form chat bubble
+      document.getElementById('finalJoinInfo')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    ">
+    Join Now
+  </button>
+</div>
+
+
+        <!-- Social links -->
+        <div class="profile-actions" aria-label="Social profiles">
+          <a class="p-social" href="https://www.facebook.com/KenFolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            <span class="label">Facebook</span>
+            <span class="handle">KenFolios</span>
+          </a>
+          <a class="p-social" href="https://www.instagram.com/KenFoliosHQ" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/>
+            </svg>
+            <span class="label">Instagram</span>
+            <span class="handle">KenFoliosHQ</span>
+          </a>
+          <a class="p-social" href="https://www.linkedin.com/company/kenfolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+            </svg>
+            <span class="label">LinkedIn</span>
+            <span class="handle">KenFolios</span>
+          </a>
+          <a class="p-social" href="https://twitter.com/KenFolios" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 5.8c-.7.3-1.4.5-2.2.6.8-.5 1.3-1.1 1.6-2-.8.5-1.6.8-2.5 1-1.6-1.7-4.4-.8-5.1 1.5-.2.6-.2 1.2-.1 1.8-3.5-.2-6.7-1.8-8.8-4.6-1 1.7-.5 3.9 1.2 5-.6 0-1.2-.2-1.7-.5 0 1.9 1.4 3.6 3.3 4-.6.2-1.2.2-1.8.1.5 1.6 2 2.7 3.7 2.7-1.4 1.1-3.2 1.7-5 1.5 1.8 1.2 3.9 1.9 6.1 1.9 7.4 0 11.6-6.3 11.3-11.9.8-.5 1.4-1.1 1.9-1.8z"/>
+            </svg>
+            <span class="label">Twitter</span>
+            <span class="handle">@KenFolios</span>
+          </a>
+        </div>
+
+        <!-- About / Company details -->
+        <div class="profile-sect">
+          <div class="h">About</div>
+          <div class="kv">
+            <div class="row">
+              <div class="l">Bio</div>
+              <div class="r">
+  A growing ecosystem connecting entrepreneurs, mentors, investors, and professionals to collaborate, innovate, and lead India’s next wave of business growth.
+</div>
+
+            </div>
+            <div class="row">
+              <div class="l">Company</div>
+              <div class="r">KenFolios Media Private Limited</div>
+            </div>
+            <div class="row">
+              <div class="l">Email</div>
+              <div class="r"><a href="mailto:hello@kenfolios.com">hello@kenfolios.com</a></div>
+            </div>
+            <div class="row">
+              <div class="l">Address</div>
+              <div class="r">
+                Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030
+              </div>
+            </div>
+            <div class="row">
+              <div class="l">CIN</div>
+              <div class="r"><span class="mono">U72900DL2017PTC321788</span></div>
+            </div>
+            <div class="row">
+              <div class="l">GSTIN</div>
+              <div class="r"><span class="mono">07AAGCK7129K1Z7</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- =========================================
+         ADDITION: Learn More Lightbox container
+         (hidden by default; populated via JS)
+         ========================================= -->
+    <div id="learnLightbox" class="lightbox-overlay" aria-hidden="true">
+      <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+        <div class="lightbox-head">
+          <div class="lightbox-title" id="lbTitle">Learn more</div>
+          <button id="lbClose" class="lightbox-close" aria-label="Close">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="lightbox-body">
+          <!-- JS will clone #welcomeMsg .bubble into this host -->
+          <div id="lbBubbleHost" aria-live="polite"></div>
+        </div>
+        <div class="lightbox-foot">
+          Tip: Close to return. When ready, tap <strong>Join Now</strong> at the top to start.
+        </div>
+      </div>
+    </div>
+    <!-- /Learn More Lightbox -->
+    <!-- === LEGAL LIGHTBOX (Terms & Privacy) === -->
+<div id="legalLightbox" class="lightbox-overlay" aria-hidden="true">
+  <div class="lightbox-card" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="lightbox-head">
+      <div class="lightbox-title" id="legalTitle">Terms & Privacy</div>
+      <button id="legalClose" class="lightbox-close" aria-label="Close">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="lightbox-body" id="legalBody" style="display:grid; gap:.8rem;">
+      <section id="legalTerms" aria-label="Terms" style="display:none">
+        <div class="bubble">
+          <div class="name">KenFolios — Terms of Membership</div>
+          <div class="text" style="font-size:14px">
+  <strong>Terms of Membership — key points</strong><br/>
+  • <strong>Eligibility:</strong> membership is for paid, real-identity individuals who agree to platform rules and applicable law.<br/>
+  • <strong>Fees & payments:</strong> the Pay-Once fee grants access to the features listed; fees are collected via our payment provider and processed securely.<br/>
+  • <strong>No refunds:</strong> membership fees are generally non-refundable except as required by applicable law. In cases of policy breach by a member, fees may be non-refundable. For exceptional circumstances, contact support and provide evidence; refunds are issued at KenFolios' discretion only after review.<br/>
+  • <strong>Member conduct:</strong> respectful, value-first behaviour is required. No spam, scraping, unsolicited prospecting, illegal, abusive or fraudulent activity. Moderators may warn, suspend or remove members for violations.<br/>
+  • <strong>Content & confidentiality:</strong> members are responsible for content they post. Do not share confidential internal materials without permission; redistribution of private content is prohibited.<br/>
+  • <strong>Termination:</strong> KenFolios may suspend or terminate access for breaches, fraud, or misconduct; termination does not automatically trigger a refund unless required by law.<br/>
+  • <strong>Limitation of liability:</strong> services are provided "as-is"; to the maximum extent permitted by law KenFolios' liability for indirect/consequential damages is limited.<br/>
+  • <strong>Changes to terms:</strong> KenFolios may update terms. Material changes will be communicated; continued use after changes indicates acceptance.<br/>
+  • <strong>Governing law & disputes:</strong> disputes will be governed by the jurisdiction specified in the full Terms of Service; see the full text for details on dispute resolution.<br/>
+  • <strong>Full terms:</strong> read the complete Terms of Service, including detailed refund, dispute resolution and limiting clauses, at
+  <a href="https://kenfolios.com/terms-of-service" target="_blank" rel="noopener">kenfolios.com/terms-of-service</a>. Last updated: <em>Oct 2025</em>.
+</div>
+
+        </div>
+      </section>
+      <section id="legalPrivacy" aria-label="Privacy" style="display:none">
+        <div class="bubble">
+          <div class="name">KenFolios — Privacy Policy (Summary)</div>
+          <div class="text" style="font-size:14px">
+  <strong>Terms of Membership — key points</strong><br/>
+  • <strong>Eligibility:</strong> membership is for paid, real-identity individuals who agree to platform rules and applicable law.<br/>
+  • <strong>Fees & payments:</strong> the Pay-Once fee grants access to the features listed; fees are collected via our payment provider and processed securely.<br/>
+  • <strong>No refunds:</strong> membership fees are generally non-refundable except as required by applicable law. In cases of policy breach by a member, fees may be non-refundable. For exceptional circumstances, contact support and provide evidence; refunds are issued at KenFolios' discretion only after review.<br/>
+  • <strong>Member conduct:</strong> respectful, value-first behaviour is required. No spam, scraping, unsolicited prospecting, illegal, abusive or fraudulent activity. Moderators may warn, suspend or remove members for violations.<br/>
+  • <strong>Content & confidentiality:</strong> members are responsible for content they post. Do not share confidential internal materials without permission; redistribution of private content is prohibited.<br/>
+  • <strong>Termination:</strong> KenFolios may suspend or terminate access for breaches, fraud, or misconduct; termination does not automatically trigger a refund unless required by law.<br/>
+  • <strong>Limitation of liability:</strong> services are provided "as-is"; to the maximum extent permitted by law KenFolios' liability for indirect/consequential damages is limited.<br/>
+  • <strong>Changes to terms:</strong> KenFolios may update terms. Material changes will be communicated; continued use after changes indicates acceptance.<br/>
+  • <strong>Governing law & disputes:</strong> disputes will be governed by the jurisdiction specified in the full Terms of Service; see the full text for details on dispute resolution.<br/>
+  • <strong>Full terms:</strong> read the complete Terms of Service, including detailed refund, dispute resolution and limiting clauses, at
+  <a href="https://kenfolios.com/terms-of-service" target="_blank" rel="noopener">kenfolios.com/terms-of-service</a>. Last updated: <em>Oct 2025</em>.
+</div>
+
+        </div>
+      </section>
+    </div>
+    <div class="lightbox-foot">Use the back button or close to return to the form.</div>
+  </div>
+</div>
+
+  </div>
+
+  <!-- Part 3 (Scripts) will be provided next and should be pasted here, just before the closing tags. -->
+  <!-- </body></html> will also be included with Part 3 -->
+<script>
+/* ===== Shell & panels ===== */
+(function(){
+  var shell = document.getElementById('shell');
+  var backdrop = document.getElementById('backdrop');
+  var openLeftBtn = document.getElementById('openLeft');
+  var closeLeftBtn = document.getElementById('closeLeft');
+
+  function openProfile(){
+    shell.classList.remove('left-open');
+    shell.classList.add('profile-open');
+  }
+  function closeProfile(){
+    shell.classList.remove('profile-open');
+  }
+  function openLeft(){
+    shell.classList.remove('profile-open');
+    shell.classList.add('left-open');
+    lockScroll(true);
+  }
+  function closeLeft(){
+    shell.classList.remove('left-open');
+    lockScroll(false);
+  }
+  function lockScroll(lock){
+    if (window.matchMedia('(max-width:1023.98px)').matches) {
+      document.documentElement.style.overflow = lock ? 'hidden' : '';
+      document.body.style.overflow = lock ? 'hidden' : '';
+    } else {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.getElementById('openProfile').addEventListener('click', openProfile);
+  document.getElementById('openProfile2').addEventListener('click', openProfile);
+  document.getElementById('openProfile3').addEventListener('click', openProfile);
+  document.getElementById('closeProfile').addEventListener('click', closeProfile);
+  openLeftBtn.addEventListener('click', openLeft);
+  closeLeftBtn.addEventListener('click', closeLeft);
+
+  backdrop.addEventListener('click', function(){
+    if (shell.classList.contains('left-open')) closeLeft();
+    if (shell.classList.contains('profile-open')) closeProfile();
+  });
+
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){
+      closeLeft();
+      closeProfile();
+    }
+  });
+
+  window.addEventListener('resize', function(){
+    if (window.matchMedia('(min-width:1024px)').matches) lockScroll(false);
+  });
+
+  function openJoinProvision(){
+    console.log('Join flow placeholder');
+    openProfile();
+  }
+
+  ['composerPill','msgInput','emojiBtn','attachBtn','voiceBtn']
+.forEach(function(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click', function(e){
+    e.preventDefault();
+    openJoinProvision();
+  });
+  el.addEventListener('focus', function(){
+    openJoinProvision();
+  });
+});
+
+document.getElementById('joinBtn')?.addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('finalJoinInfo')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+});
+
+
+  // About opens profile (unchanged)
+  document.getElementById('aboutBtn')?.addEventListener('click', openProfile);
+
+  // Learn More -> open lightbox (falls back to scroll if module not loaded)
+  document.getElementById('learnBtn')?.addEventListener('click', function(){
+    if (typeof window.KF_openLearnLightbox === 'function') {
+      window.KF_openLearnLightbox();
+    } else {
+      var target = document.getElementById('welcomeMsg');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+})();
+
+/* ===== Learn More Lightbox (new) ===== */
+(function(){
+  var shell = document.getElementById('shell');
+  var overlay = document.getElementById('learnLightbox');
+  if(!overlay) return;
+
+  var host = document.getElementById('lbBubbleHost');
+  var closeBtn = document.getElementById('lbClose');
+
+  function lockPage(lock){
+    document.documentElement.style.overflow = lock ? 'hidden' : '';
+    document.body.style.overflow = lock ? 'hidden' : '';
+  }
+
+  function open(){
+    // Populate with a fresh clone of the pinned bubble
+    if (host){
+      host.innerHTML = '';
+      var pinnedBubble = document.querySelector('#welcomeMsg .bubble');
+      if (pinnedBubble){
+        var clone = pinnedBubble.cloneNode(true);
+        // Ensure any auto-generated reaction counts remain visible and layout-friendly
+        host.appendChild(clone);
+      } else {
+        var fallback = document.createElement('div');
+        fallback.className = 'bubble';
+        fallback.innerHTML = '<div class="name">Community Admin</div><div class="text">👋 Welcome to KenFolios Business Community!</div><div class="pinned-label">📌 Pinned</div>';
+        host.appendChild(fallback);
       }
+    }
+    shell.classList.add('lightbox-open');
+    overlay.setAttribute('aria-hidden','false');
+    lockPage(true);
+    closeBtn && closeBtn.focus();
+  }
 
-      function tick() {
-        updateUI();
+  function close(){
+    shell.classList.remove('lightbox-open');
+    overlay.setAttribute('aria-hidden','true');
+    lockPage(false);
+  }
 
-        if (remaining <= 0) {
-          clearInterval(intervalId);
-          window.location.href = REDIRECT_URL;
+  // Click outside card closes
+  overlay.addEventListener('click', function(e){
+    if (e.target === overlay) close();
+  });
+  // Close button
+  closeBtn && closeBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    close();
+  });
+  // ESC closes
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && shell.classList.contains('lightbox-open')) close();
+  });
+
+  // Expose API for the Learn More button handler
+  window.KF_openLearnLightbox = open;
+  window.KF_closeLearnLightbox = close;
+})();
+
+document.getElementById('learnBtn')?.addEventListener('click', function(){
+  const pinnedMsg = document.getElementById('welcomeMsg');
+  if (!pinnedMsg) return;
+
+  // === 1) Update the lightbox header text ===
+  // Assuming your lightbox is using the pinned message or a dedicated header element
+  const nameEl = pinnedMsg.querySelector('.name');
+  if (nameEl) nameEl.textContent = 'Message From Community Admin';
+
+  // === 2) Remove the name line from the message bubble ===
+  // This makes the body just show the welcome message itself
+  const bubbleName = pinnedMsg.querySelector('.bubble .name');
+  if (bubbleName) bubbleName.remove();
+
+  // === 3) Scroll into view or trigger your lightbox ===
+  pinnedMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // (Optional: add highlight effect or open your modal/lightbox)
+});
+
+
+/* ===== Names pool (shared) ===== */
+(function(){
+  window.KF_FIRST = [
+    "Aarav","Aaryan","Abhay","Abhinav","Aditya","Advait","Ahaan","Aisha","Akanksha","Akshay",
+    "Amit","Amrita","Ananya","Aniket","Anil","Anisha","Ankit","Ankita","Anmol","Ansh",
+    "Arjun","Arnav","Arvind","Asha","Ashish","Ayush","Bhavana","Chirag","Darshan","Dev",
+    "Dhruv","Divya","Faizan","Farhan","Gaurav","Harsh","Harsha","Ishaan","Jai","Jatin",
+    "Kajal","Kamal","Karan","Kartik","Kavya","Khushi","Kiran","Krishna","Lakshmi","Madhuri",
+    "Mahesh","Mansi","Manish","Meera","Megha","Mohit","Namrata","Navin","Neha","Nikita",
+    "Nilesh","Nirav","Nisha","Nitin","Pankaj","Parth","Payal","Pooja","Pranav","Prashant",
+    "Pratik","Preeti","Priya","Rachna","Rahul","Raj","Rajan","Rajesh","Rakesh","Rishi",
+    "Ritika","Rohan","Rohit","Sakshi","Salman","Sameer","Sana","Sandeep","Sanjana","Sanjay",
+    "Sanket","Sarthak","Sarita","Seema","Shalini","Shambhavi","Shashank","Shekhar","Shivani",
+    "Shraddha","Shubham","Shweta","Sneha","Sonia","Soumya","Sumit","Sunil","Suresh","Sushant",
+    "Tanay","Tanvi","Tarun","Trisha","Uday","Uma","Urvashi","Vaibhav","Varun","Vasu",
+    "Vedant","Vibha","Vidya","Vikram","Vimal","Vinay","Vinita","Viplav","Viraj","Vishal",
+    "Yash","Yuvraj"
+  ];
+
+  window.KF_LAST = [
+    "Agrawal","Ahluwalia","Anand","Babu","Bajaj","Balakrishnan","Banerjee","Bansal","Basu",
+    "Bhagat","Bhandari","Bharadwaj","Bhat","Bhatia","Bhatnagar","Bhattacharya","Bose",
+    "Chandra","Chaudhary","Chawla","Chopra","Das","Desai","Devi","Dixit","Dubey","Gandhi",
+    "Ganesh","Garg","Ghosh","Gill","Goel","Gopal","Gopinath","Gupta","Iyer","Jain","Jha",
+    "Joshi","Kadam","Kapoor","Kashyap","Kaur","Khanna","Khatri","Kohli","Kulkarni","Kumar",
+    "Mahajan","Malhotra","Mehta","Menon","Mishra","Modi","Mukherjee","Murthy","Nair",
+    "Naidu","Namboodiri","Nanda","Narayan","Natarajan","Navlakha","Pandey","Pandit",
+    "Parikh","Pillai","Prasad","Raghavan","Rai","Rajput","Raman","Ramaswamy","Rana",
+    "Rani","Rao","Reddy","Sachdeva","Saha","Sahu","Saini","Saksena","Salvi","Saran",
+    "Sarkar","Saxena","Sen","Sengupta","Sethi","Shah","Shankar","Sharma","Shetty",
+    "Shinde","Singh","Sinha","Srinivasan","Subramanian","Tandon","Trivedi","Tyagi",
+    "Upadhyay","Varma","Vashisht","Verma","Vyas","Yadav","Zaveri"
+  ];
+})();
+
+/* ===== Member list demo ===== */
+(function(){
+  var listEl = document.getElementById('memberList');
+  if(!listEl) return;
+
+  var count = 0;
+  function pastel(seed){
+    var h=(seed*47)%360;
+    return {bg: 'hsl('+h+' 70% 92%)', fg:'hsl('+h+' 60% 28%)'};
+  }
+  function makeMember(idx){
+    var f = KF_FIRST[Math.floor(Math.random() * KF_FIRST.length)];
+    var l = KF_LAST[Math.floor(Math.random() * KF_LAST.length)];
+    var initials = (f[0]||'') + (l[0]||'');
+    var minutesAgo = idx * 2 + 1;
+    var ago = minutesAgo < 60 ? minutesAgo + ' min' : Math.floor(minutesAgo/60) + ' hr';
+    var colors = pastel(idx+1);
+    var item = document.createElement('div');
+    item.className = 'member';
+    item.setAttribute('role','listitem');
+    item.innerHTML =
+      '<div class="avatar" style="background:'+colors.bg+';color:'+colors.fg+'">'+initials+'</div>'+
+      '<div style="min-width:0">'+
+        '<div class="m-name">'+f+' '+l+'</div>'+
+        '<div class="m-sub">'+f+' joined KenFolios · '+ago+' ago</div>'+
+      '</div>';
+    return item;
+  }
+
+  var loading = false;
+  function loadMore(n){
+    if(loading) return;
+    loading = true;
+    var frag = document.createDocumentFragment();
+    for(var i=0;i<n;i++) frag.appendChild(makeMember(count++));
+    listEl.appendChild(frag);
+    loading = false;
+  }
+
+  loadMore(40);
+
+  var bodyEl = listEl.parentElement;
+  bodyEl.addEventListener('scroll', function(){
+    if(bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 40){
+      loadMore(30);
+    }
+  });
+})();
+
+/* ===== Centered notifications population ===== */
+(function(){
+  function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function fullName(){ return rand(KF_FIRST) + ' ' + rand(KF_LAST); }
+  function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function singleNoteHTML(name){
+    return '<div class="chat-note"><div class="note">✅ <span>'+name+ '</span> was approved to join the group</div></div>';
+  }
+  var slots = document.querySelectorAll('.chat-note-slot');
+  for(var i=0;i<slots.length;i++){
+    var slot = slots[i];
+    var isAbovePinned = slot.hasAttribute('data-above-pinned');
+    var howMany = isAbovePinned ? 1 : randInt(1,5);
+    var buf = '';
+    for(var j=0;j<howMany;j++){ buf += singleNoteHTML(fullName()); }
+    var container = document.createElement('div');
+    container.className = 'chat-notes';
+    container.innerHTML = buf;
+    slot.parentNode.replaceChild(container, slot);
+  }
+})();
+
+/* ===== Reactions + timestamp logic ===== */
+(function(){
+  function compact(n){
+    if(n >= 1000000) return (n/1000000).toFixed(n % 1000000 ? 1 : 0)+'m';
+    if(n >= 1000) return (n/1000).toFixed(n % 1000 ? 1 : 0)+'k';
+    return String(n);
+  }
+  var bubbles = Array.from(document.querySelectorAll('.chat-area .chat-msg .bubble'));
+  if(!bubbles.length) return;
+
+  var pinnedIndex = -1;
+  for(var pi=0; pi<bubbles.length; pi++){
+    if(bubbles[pi].querySelector('.pinned-label')){ pinnedIndex = pi; break; }
+  }
+
+  var baseStart = 80, baseStep = 7, adminBonus = 45, memberBonus = 15, pinnedPeakBoost = 400;
+
+  var metas = bubbles.map(function(b, idx){
+    var msg = b.closest('.chat-msg');
+    var isAdmin = msg && msg.classList.contains('admin');
+    var isPinned = (idx === pinnedIndex && pinnedIndex !== -1);
+    var orderBias = baseStart + (idx * baseStep);
+    var roleBias = isAdmin ? adminBonus : memberBonus;
+    var base = orderBias + roleBias;
+    return { idx: idx, el: b, isAdmin: isAdmin, isPinned: isPinned, base: base };
+  });
+
+  if(pinnedIndex !== -1){
+    var maxNonPinned = 0;
+    for(var m=0;m<metas.length;m++){
+      if(!metas[m].isPinned) maxNonPinned = Math.max(maxNonPinned, metas[m].base);
+    }
+    metas[pinnedIndex].base = Math.max(metas[pinnedIndex].base, maxNonPinned + pinnedPeakBoost);
+  }
+
+  var todayStr = new Date().toISOString().slice(0,10);
+
+  for(var i=0;i<metas.length;i++){
+    var meta = metas[i];
+    var r = meta.el.querySelector('.reactions');
+    if(!r){
+      r = document.createElement('div');
+      r.className = 'reactions';
+      [{key:'like',icon:'👍'},{key:'love',icon:'❤️'},{key:'celebrate',icon:'🎉'}].forEach(function(rt){
+        var span = document.createElement('span');
+        span.className = 'r r-'+rt.key;
+        span.innerHTML = '<span class="icon">'+rt.icon+'</span><span class="count">0</span>';
+        r.appendChild(span);
+      });
+      var pinOrTime = meta.el.querySelector('.pinned-label, .time');
+      if(pinOrTime){ meta.el.insertBefore(r, pinOrTime); }
+      else { meta.el.appendChild(r); }
+    }
+
+    var key = 'kf_react_v7_ord_'+i;
+    var stored = null;
+    try{ stored = JSON.parse(localStorage.getItem(key) || 'null'); }catch(e){ stored = null; }
+
+    function enforceOrder(counts){
+      var like = counts.like|0, love = counts.love|0, cel = counts.celebrate|0;
+      if(love < cel){ var d = cel-love; cel-=d; love+=d; }
+      if(like < love){ var d2 = love-like; love-=d2; like+=d2; }
+      like = Math.max(0, like);
+      love = Math.max(0, Math.min(love, like));
+      cel = Math.max(0, Math.min(cel, love));
+      var total = (counts.like|0)+(counts.love|0)+(counts.celebrate|0);
+      var now = like+love+cel;
+      if(now !== total){
+        like += (total - now);
+        if(like < love){ var d3 = love-like; love-=d3; like+=d3; }
+        if(love < cel){ var d4 = cel-love; cel-=d4; love+=d4; }
+      }
+      counts.like = like; counts.love = love; counts.celebrate = cel; return counts;
+    }
+    function splitTotalOrdered(total){
+      if(total <= 0) return { like:0, love:0, celebrate:0 };
+      var celBase = Math.floor(total * (0.18 + Math.random()*0.08));
+      var loveExtra = Math.floor(total * (0.00 + Math.random()*0.08));
+      var loveBase = celBase + loveExtra;
+      var likeBase = total - (loveBase + celBase);
+      return enforceOrder({ like: likeBase, love: loveBase, celebrate: celBase });
+    }
+    function incrementOrdered(counts, n){
+      var pat2 = [{like:2,love:0,celebrate:0},{like:1,love:1,celebrate:0}];
+      var pat3 = [{like:3,love:0,celebrate:0},{like:2,love:1,celebrate:0},{like:1,love:1,celebrate:1}];
+      if(n <= 0) return counts;
+      if(n === 1){ counts.like += 1; return counts; }
+      if(n === 2){
+        var p = pat2[Math.floor(Math.random()*pat2.length)];
+        counts.like+=p.like; counts.love+=p.love; counts.celebrate+=p.celebrate; return counts;
+      }
+      if(n >= 3){
+        var p3 = pat3[Math.floor(Math.random()*pat3.length)];
+        counts.like+=p3.like; counts.love+=p3.love; counts.celebrate+=p3.celebrate;
+        if(n>3) counts.like += (n-3);
+        return counts;
+      }
+      return counts;
+    }
+
+    if(!stored){
+      var total = Math.max(1, Math.round(metas[i].base + Math.floor(Math.random()*11)-5));
+      stored = { counts: splitTotalOrdered(total), lastDay: todayStr };
+      localStorage.setItem(key, JSON.stringify(stored));
+    }else{
+      var last = new Date(stored.lastDay);
+      var today = new Date(todayStr);
+      var diffDays = Math.floor((today - last)/(1000*60*60*24));
+      if(diffDays > 0){
+        for(var d=0; d<diffDays; d++){
+          var inc = Math.floor(Math.random()*(3-2+1))+2;
+          stored.counts = enforceOrder(incrementOrdered(stored.counts, inc));
+        }
+        stored.lastDay = todayStr;
+        localStorage.setItem(key, JSON.stringify(stored));
+      }else{
+        stored.counts = enforceOrder(stored.counts);
+        localStorage.setItem(key, JSON.stringify(stored));
+      }
+    }
+
+    r.querySelector('.r-like .count').textContent = compact(stored.counts.like);
+    r.querySelector('.r-love .count').textContent = compact(stored.counts.love);
+    r.querySelector('.r-celebrate .count').textContent = compact(stored.counts.celebrate);
+  }
+
+  // Timestamps (pinned shows "Just now", others count down)
+  var minuteBudget = 5;
+  var bubbles2 = Array.from(document.querySelectorAll('.chat-area .chat-msg .bubble'));
+  var pinnedIndex2 = bubbles2.findIndex(function(b){ return !!b.querySelector('.pinned-label'); });
+  for(var b=0;b<bubbles2.length;b++){
+    if(b === pinnedIndex2) continue;
+    var timeEl = bubbles2[b].querySelector('.time');
+    if(!timeEl) continue;
+    var minutes = Math.max(0, minuteBudget);
+    if(minutes <= 0) timeEl.textContent = 'Just now';
+    else if(minutes === 1) timeEl.textContent = '1 min ago';
+    else timeEl.textContent = minutes + ' min ago';
+    minuteBudget = Math.max(0, minuteBudget - 1);
+  }
+})();
+
+/* ===== Minimal profile interactions (social only) ===== */
+(function(){
+  var openProfile = function(){
+    document.getElementById('openProfile')?.click();
+  };
+  document.getElementById('openProfile2')?.addEventListener('click', openProfile);
+})();
+
+/* ===== Dynamic year for disclaimer ===== */
+(function(){
+  var y = document.getElementById('kfYear');
+  if (y) y.textContent = new Date().getFullYear();
+})();
+
+/* Override: ensure lightbox shows custom title + no name in body */
+(function(){
+  function prepareLightboxBody(){
+    var lbTitle = document.getElementById('lbTitle');
+    if (lbTitle) lbTitle.textContent = 'Message From Community Admin';
+
+    var host = document.getElementById('lbBubbleHost');
+    var src  = document.querySelector('#welcomeMsg .bubble');
+    if (host){
+      host.innerHTML = '';
+      if (src){
+        var clone = src.cloneNode(true);
+        var n = clone.querySelector('.name'); if (n) n.remove(); // remove "Community Admin"
+        host.appendChild(clone);
+      }
+    }
+  }
+
+  // If an old KF_openLearnLightbox exists, wrap it; else, create a basic opener
+  var oldOpen = window.KF_openLearnLightbox;
+  window.KF_openLearnLightbox = function(){
+    prepareLightboxBody();
+    if (typeof oldOpen === 'function'){
+      oldOpen();                       // use existing open (backdrop/lock/etc.)
+    } else {
+      // minimal open if old one isn't defined
+      var shell = document.getElementById('shell');
+      var overlay = document.getElementById('learnLightbox');
+      if (shell) shell.classList.add('lightbox-open');
+      if (overlay) overlay.setAttribute('aria-hidden','false');
+    }
+  };
+
+  // Ensure the Learn button calls our overridden function
+  var learnBtn = document.getElementById('learnBtn');
+  if (learnBtn){
+    // Remove prior listeners by resetting onclick; then add ours
+    learnBtn.onclick = function(e){
+      e.preventDefault();
+      window.KF_openLearnLightbox();
+    };
+  }
+})();
+
+/* Chat-only loader: delays chat render without touching other UI */
+(function(){
+  var chat = document.getElementById('chatArea');
+  if(!chat) return;
+
+  // Mark chat as loading immediately
+  chat.classList.add('loading');
+
+  function revealChats(){
+    chat.classList.remove('loading');
+    chat.classList.add('chats-ready');
+    var sk = document.getElementById('chatSkeleton');
+    if (sk) sk.remove();
+  }
+
+  // Reveal after page load + small random delay (400–1000ms)
+  window.addEventListener('load', function(){
+  // Delay between 1200 ms and 2200 ms (1.2s – 2.2s)
+var delay = 1200 + Math.floor(Math.random()*1000);
+    // two RAFs ensure initial paint before hiding skeleton
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      setTimeout(revealChats, delay);
+    });});
+  });
+})();
+
+
+
+/* === Left pane skeletons: initial + on-scroll loading (safe & scoped) === */
+(function(){
+  var left     = document.querySelector('.left');
+  var leftBody = left ? left.querySelector('.body') : null;
+  var list     = document.getElementById('memberList');
+  var skelTop  = document.getElementById('leftSkeleton');       // initial skeleton (top)
+  var skelBot  = document.getElementById('leftBottomSkeleton');  // bottom skeleton (load more)
+  if (!left || !leftBody || !list || !skelTop || !skelBot) return;
+
+  var started     = false;   // initial skeleton started
+  var revealed    = false;   // initial list revealed
+  var failSafeT   = null;
+  var moreTimer   = null;    // timer for 'loading-more' window
+  var loadingMore = false;   // state for bottom skeleton
+
+  function addStaggerTo(nodeList, baseDelay){
+    baseDelay = baseDelay || 0;
+    nodeList.forEach(function(el, i){
+      if (el.classList.contains('show')) return;
+      el.classList.add('stagger');                     // ensure transition props exist
+      el.style.setProperty('--d', (baseDelay + i*45) + 'ms'); // stagger per item
+      requestAnimationFrame(function(){ el.classList.add('show'); });
+    });
+  }
+
+  /* ===== Initial reveal (desktop & first mobile open) ===== */
+  function revealNow(){
+    if (failSafeT){ clearTimeout(failSafeT); failSafeT = null; }
+
+    leftBody.classList.remove('skel-on');
+    revealed = true;
+
+    // mark & reveal all current members
+    var items = [].slice.call(list.querySelectorAll('.member'));
+    addStaggerTo(items, 0);
+
+    // Safety: ensure fully visible even if CSS got overridden
+    list.style.removeProperty('opacity');
+    list.style.removeProperty('pointer-events');
+
+    // remove top skeleton from DOM
+    if (skelTop.parentNode) skelTop.parentNode.removeChild(skelTop);
+  }
+
+  function runSkeletonIntro(){
+    if (revealed || started) return;
+    started = true;
+
+    // Activate skeleton only for the list area (search box remains visible)
+    leftBody.classList.add('skel-on');
+
+    // Fail-safe: never keep it hidden > 3s
+    failSafeT = setTimeout(revealNow, 3000);
+
+    // Realistic delay (adjust to taste)
+    var delay = 1200 + Math.floor(Math.random() * 1200); // 1.2s – 2.4s
+    setTimeout(revealNow, delay);
+  }
+
+  // --- DESKTOP: auto-start skeleton immediately (pane visible by default) ---
+  if (window.matchMedia('(min-width:1024px)').matches){
+    leftBody.classList.add('skel-on');
+    requestAnimationFrame(runSkeletonIntro);
+  }
+
+  // --- MOBILE: play skeleton on first drawer open ---
+  var openLeftBtn = document.getElementById('openLeft');
+  if (openLeftBtn){
+    openLeftBtn.addEventListener('click', function(){
+      if (!revealed && !started) runSkeletonIntro();
+    });
+  }
+
+  /* ===== On-scroll "load more" skeleton =====
+     - When near bottom, enter 'loading-more' for ~0.6–1.0s (or until new items arrive).
+     - Newly appended members are held as .await then revealed with a quick stagger.
+  */
+  function startLoadingMore(){
+    if (loadingMore) return;
+    loadingMore = true;
+    leftBody.classList.add('loading-more');
+
+    // Auto-stop after a short, realistic window (600–1000ms)
+    var windowMs = 600 + Math.floor(Math.random()*400);
+    moreTimer = setTimeout(stopLoadingMore, windowMs);
+  }
+
+  function stopLoadingMore(){
+    if (!loadingMore) return;
+    loadingMore = false;
+    leftBody.classList.remove('loading-more');
+
+    // Any items marked 'await' are now revealed with a fast stagger
+    var awaiting = [].slice.call(list.querySelectorAll('.member.await'));
+    awaiting.forEach(function(el, i){
+      el.classList.add('stagger');
+      el.style.setProperty('--d', (i*35)+'ms');
+      requestAnimationFrame(function(){
+        el.classList.add('show');
+        el.classList.remove('await');
+      });
+    });
+  }
+
+  function nearBottom(el){
+    return el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  }
+
+  function onScroll(){
+    if (!revealed) return;             // only after first reveal
+    if (nearBottom(leftBody)) startLoadingMore();
+  }
+  leftBody.addEventListener('scroll', onScroll);
+
+  // Observe newly appended members (by your existing loader) and integrate with our effect
+  var obs = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if (!(n && n.classList && n.classList.contains('member'))) return;
+
+        if (loadingMore){
+          // Hold invisible until stopLoadingMore()
+          n.classList.add('await');
+          // If the loader appends immediately, reveal shortly after to sync with skeleton
+          setTimeout(stopLoadingMore, 50);
+        } else {
+          // Immediate fade-in (no bottom skeleton active)
+          n.classList.add('stagger');
+          n.style.setProperty('--d', '0ms');
+          requestAnimationFrame(function(){ n.classList.add('show'); });
+        }
+      });
+    });
+  });
+  obs.observe(list, { childList:true });
+
+  // Expose (optional manual trigger for debugging)
+  window.runLeftSkeletonIntro = runSkeletonIntro;
+})();
+/* =========================================================
+   LIGHTBOX CONTROL — ensure only ONE overlay is visible
+   ========================================================= */
+(function(){
+  var shell = document.getElementById('shell');
+  var learn = document.getElementById('learnLightbox');
+  var legal = document.getElementById('legalLightbox');
+  if (!shell) return;
+
+  function hideAll(){
+    if (learn) learn.setAttribute('aria-hidden','true');
+    if (legal) legal.setAttribute('aria-hidden','true');
+  }
+  function openOverlay(overlay){
+    hideAll();
+    if (!overlay) return;
+    overlay.setAttribute('aria-hidden','false');
+    shell.classList.add('lightbox-open');
+  }
+  function closeAll(){
+    hideAll();
+    shell.classList.remove('lightbox-open');
+  }
+
+  // Wrap Learn open
+  var oldLearn = window.KF_openLearnLightbox;
+  window.KF_openLearnLightbox = function(){
+    openOverlay(learn);
+    if (typeof oldLearn === 'function'){ try{ oldLearn(); }catch(e){} }
+  };
+
+  // Legal open helpers
+  window.KF_openTerms   = function(){ openOverlay(legal); showLegal('terms'); };
+  window.KF_openPrivacy = function(){ openOverlay(legal); showLegal('privacy'); };
+
+  // Toggle Terms vs Privacy inside legal overlay
+  function showLegal(which){
+    var t = document.getElementById('legalTerms');
+    var p = document.getElementById('legalPrivacy');
+    var ttl = document.getElementById('legalTitle');
+    if (t && p){
+      t.style.display = (which==='terms') ? '' : 'none';
+      p.style.display = (which==='privacy') ? '' : 'none';
+    }
+    if (ttl){ ttl.textContent = (which==='terms') ? 'Terms of Membership' : 'Privacy Policy'; }
+  }
+
+  // Close interactions
+  var legalOverlay = document.getElementById('legalLightbox');
+  var legalClose = document.getElementById('legalClose');
+  if (legalOverlay){
+    legalOverlay.addEventListener('click', function(e){ if (e.target === legalOverlay) closeAll(); });
+  }
+  if (legalClose){ legalClose.addEventListener('click', function(e){ e.preventDefault(); closeAll(); }); }
+  window.addEventListener('keydown', function(e){ if (e.key === 'Escape' && shell.classList.contains('lightbox-open')) closeAll(); });
+
+  // Inline links in the form (Terms/Privacy)
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-legal]');
+    if (!a) return;
+    e.preventDefault();
+    var which = a.getAttribute('data-legal') === 'privacy' ? 'privacy' : 'terms';
+    openOverlay(legal); showLegal(which);
+  });
+})();
+/* -------------------------------
+   Member Counter (final version)
+   BASE_OFFSET added manually here
+---------------------------------*/
+
+(function(){
+  // ===== MANUAL BASE NUMBER (update this anytime) =====
+  const BASE_OFFSET = 23338;   // <--- UPDATE THIS NUMBER WHEN HISTORICAL COUNT CHANGES
+
+  // ===== CONFIG =====
+  const ENDPOINT = 'https://kf-members-count-x9r4z-worker.ksn-nvl.workers.dev/api/members';
+  const POLL_MS = 60 * 1000;   // match worker edge cache
+  const ELEMENT_IDS = ['openProfile3','profileMembers','welcomeMembers'];
+  const ENABLE_ANIMATE = true;
+  const ANIMATE_MS = 700;
+
+  // ===== HELPERS =====
+  function fmt(n){
+    try { return new Intl.NumberFormat('en-IN').format(n); }
+    catch { return String(n); }
+  }
+
+  function extractNumber(txt){
+    if (!txt) return 0;
+    const m = txt.replace(/,/g,'').match(/(\d+)/);
+    return m ? Number(m[1]) : 0;
+  }
+
+  // Smooth animation
+  function animateNumber(node, from, to, duration, onFrame){
+    if (!ENABLE_ANIMATE) { onFrame(to); return; }
+    const start = performance.now();
+    const diff = to - from;
+    function easeOut(t){ return 1 - Math.pow(1 - t, 3); }
+    function step(now){
+      const t = Math.min(1, (now - start) / duration);
+      const val = Math.round(from + diff * easeOut(t));
+      onFrame(val);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function renderTotal(total, animate){
+    ELEMENT_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      if (id === 'welcomeMembers') {
+        let span = el.querySelector('.member-count');
+        if (!span) {
+          el.innerHTML = `<span class="member-count">${fmt(total)}</span> members`;
           return;
         }
+        const prev = extractNumber(span.textContent);
+        if (animate){
+          animateNumber(span, prev, total, ANIMATE_MS, v => span.textContent = fmt(v));
+        } else {
+          span.textContent = fmt(total);
+        }
+      } else {
+        const prev = extractNumber(el.textContent);
+        if (animate){
+          animateNumber(el, prev, total, ANIMATE_MS, v => el.textContent = `${fmt(v)} members`);
+        } else {
+          el.textContent = `${fmt(total)} members`;
+        }
+      }
+    });
+  }
 
-        remaining -= 1;
+  // Parse worker response
+  async function parseResponse(resp){
+    const ct = resp.headers.get('content-type') || '';
+    if (ct.includes('application/json')){
+      const j = await resp.json();
+      if ('computedCount' in j) return Number(j.computedCount) || 0;
+    }
+    // fallback: plain text or unusual header
+    const txt = (await resp.text()).trim();
+    const n = Number(txt);
+    if (!isNaN(n)) return n;
+    try {
+      const j = JSON.parse(txt);
+      if ('computedCount' in j) return Number(j.computedCount) || 0;
+    } catch {}
+    throw new Error('Invalid response format');
+  }
+
+  // Fetch DB-only count from Worker
+  async function fetchDbCount(){
+    try {
+      const resp = await fetch(ENDPOINT, { cache:'no-store', credentials:'omit' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const dbCount = await parseResponse(resp);
+      localStorage.setItem('kf_last_count_db', String(dbCount));
+
+      const total = BASE_OFFSET + dbCount;
+      localStorage.setItem('kf_last_count_total', String(total));
+
+      renderTotal(total, true);
+      return total;
+    } catch(err){
+      console.warn('[MemberCounter] failed:', err);
+      const lastDb = Number(localStorage.getItem('kf_last_count_db')) || 0;
+      const total = BASE_OFFSET + lastDb;
+      renderTotal(total, false);
+      return total;
+    }
+  }
+
+  // Init
+  (function init(){
+    // Render quickly from localStorage
+    const lastTotal = Number(localStorage.getItem('kf_last_count_total'));
+    if (lastTotal && !isNaN(lastTotal)){
+      renderTotal(lastTotal, false);
+    } else {
+      renderTotal(BASE_OFFSET, false);
+    }
+
+    // Fetch fresh immediately, then poll
+    fetchDbCount();
+    setInterval(fetchDbCount, POLL_MS);
+
+    // Expose manual trigger
+    window.KF_refreshMemberCount = fetchDbCount;
+  })();
+
+})();
+/**
+ * KenFolios — JOIN FORM submit (Worker)
+ * Adds human-readable reference ID to success notice:
+ *   format: AAA1111-000009
+ *   (3 letters)(4 digits)-(db id zero-padded to 6)
+ */
+(function(){
+
+  // GLOBAL INIT GUARD
+  // Prevents this script from initializing twice if included multiple times on the page.
+  if (window.__KF_JOINFORM_INIT) {
+    console.warn("KF JOIN script already initialized — skipping duplicate.");
+    return;
+  }
+  window.__KF_JOINFORM_INIT = true;
+
+  var WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd"; // UPDATED & FINAL
+
+  var form = document.getElementById('kfJoinInfoForm');
+  if (!form) return;
+
+  function $id(id){ return document.getElementById(id); }
+  function val(id){ var el = $id(id); return el ? el.value.trim() : ""; }
+  function checkedValues(name){
+    var list = form.querySelectorAll('input[name="'+name+'"]:checked');
+    var arr = []; for (var i=0;i<list.length;i++) arr.push(list[i].value);
+    return arr;
+  }
+  function setFormEnabled(enabled){
+    var els = form.elements;
+    for (var i=0;i<els.length;i++){ els[i].disabled = !enabled; }
+  }
+
+  function ensureBottomContainer(){
+    var c = $id('kfBottomContainer');
+    if (!c) {
+      c = document.createElement('div');
+      c.id = 'kfBottomContainer';
+      c.style.marginTop = '10px';
+      c.style.textAlign = 'center';
+      form.insertAdjacentElement('afterend', c);
+    }
+    return c;
+  }
+
+  function createProgressPill(text){
+    var pill = document.createElement('div');
+    pill.className = 'kf-progress-pill';
+    pill.style.display = 'inline-flex';
+    pill.style.alignItems = 'center';
+    pill.style.gap = '8px';
+    pill.style.padding = '8px 12px';
+    pill.style.borderRadius = '999px';
+    pill.style.fontWeight = '600';
+    pill.style.fontSize = '0.95rem';
+    pill.style.background = '#e6f0ff';
+    pill.style.color = '#111';
+
+    var spin = document.createElement('span');
+    spin.style.width = '16px';
+    spin.style.height = '16px';
+    spin.style.borderRadius = '50%';
+    spin.style.border = '2px solid rgba(0,0,0,0.20)';
+    spin.style.borderTopColor = 'rgba(0,0,0,0.55)';
+    spin.style.animation = 'kf-spin 0.8s linear infinite';
+
+    var txt = document.createElement('span');
+    txt.className = 'kf-progress-text';
+    txt.textContent = text || "Processing…";
+
+    pill.appendChild(spin);
+    pill.appendChild(txt);
+
+    if (!$id('kf-spin-style')){
+      var style = document.createElement('style');
+      style.id = 'kf-spin-style';
+      style.textContent = "@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      document.head.appendChild(style);
+    }
+
+    return pill;
+  }
+
+  function showProgressReplacingButton(btn, text){
+    btn.dataset.orig_display = btn.style.display || '';
+    btn.style.display = 'none';
+    btn.setAttribute('aria-hidden','true');
+    var pill = createProgressPill(text);
+    btn.parentNode.insertBefore(pill, btn.nextSibling);
+    return pill;
+  }
+
+  function restoreSubmitButton(btn){
+    btn.style.display = btn.dataset.orig_display || '';
+    btn.removeAttribute('aria-hidden');
+  }
+
+  function removePill(p){
+    if (p && p.parentNode) p.parentNode.removeChild(p);
+  }
+
+  function makePrefix(){
+    var letters = '';
+    for (var i=0;i<3;i++){
+      letters += String.fromCharCode(65 + Math.floor(Math.random()*26));
+    }
+    var nums = '';
+    for (var j=0;j<4;j++){
+      nums += String(Math.floor(Math.random() * 10));
+    }
+    return letters + nums;
+  }
+
+  function padNumber(num, width){
+    var s = String(num || 0);
+    while (s.length < width) s = '0' + s;
+    return s;
+  }
+
+  function createSavedNoticeElementWithRef(ref){
+    var n = document.createElement('div');
+    n.className = 'kf-saved-notice';
+    n.textContent = "✅ Details saved. Ref ID: " + ref + " — use the Pay Now button below to activate membership and proceed to onboarding.";
+    n.style.display = 'block';
+    n.style.padding = '12px 16px';
+    n.style.borderRadius = '8px';
+    n.style.color = '#000';
+    n.style.fontWeight = '600';
+    n.style.marginBottom = '14px';
+    n.style.background = 'rgba(220,245,220,0.95)';
+    n.style.fontSize = '1rem';
+    return n;
+  }
+
+  function removeFormIntroMessage(){
+    var el1 = document.querySelector('.kf-form-intro');
+    var el2 = $id('kfFormIntro');
+    var el3 = form.previousElementSibling;
+    if (el1) el1.remove();
+    if (el2) el2.remove();
+    if (el3 && el3.textContent.toLowerCase().includes('before you proceed')) el3.remove();
+  }
+
+  function removeExtraWhitespaceAroundForm(){
+    if (!form || !form.parentNode) return;
+    var sib = form.previousSibling;
+    while (sib && sib.nodeType === 3){
+      var tmp = sib.previousSibling;
+      sib.remove();
+      sib = tmp;
+    }
+    sib = form.nextSibling;
+    while (sib && sib.nodeType === 3){
+      var tmp2 = sib.nextSibling;
+      sib.remove();
+      sib = tmp2;
+    }
+  }
+
+  /**
+   * Attach InitiateCheckout via a capturing click listener
+   * on the Razorpay form (robust against their internal DOM).
+   */
+  function injectRazorpayButtonInto(container, onReady, onError){
+    var wrap = document.createElement('div');
+    wrap.id = 'kfRazorpayContainer';
+    wrap.style.textAlign = 'center';
+    wrap.style.marginTop = '5px';
+
+    var rform = document.createElement('form');
+    rform.id = 'kfRazorpayForm';
+
+    var script = document.createElement('script');
+    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
+    script.async = true;
+    script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
+
+    // fire InitiateCheckout only once per page
+    var icFired = false;
+
+    // capture click anywhere in Razorpay form (even if they have their own handlers)
+    rform.addEventListener('click', function(){
+      if (icFired) return;
+      icFired = true;
+
+      try {
+        if (typeof fbq === "function"){
+          var ref = null;
+          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
+          var payload = { currency: "INR" };
+          if (ref) payload.ref_id = ref;
+          fbq('track', 'InitiateCheckout', payload);
+        }
+      } catch(e){
+        console.error("InitiateCheckout error", e);
+      }
+    }, true); // useCapture = true
+
+    script.onload = function(){
+      if (onReady){
+        setTimeout(function(){ onReady(); }, 300);
+      }
+    };
+
+    script.onerror = function(){
+      if (onError) onError();
+    };
+
+    rform.appendChild(script);
+    wrap.appendChild(rform);
+    container.appendChild(wrap);
+  }
+
+  function replaceFormWithSuccessUI(dbCount, memberId){
+    removeFormIntroMessage();
+    removeExtraWhitespaceAroundForm();
+
+    var ref = makePrefix() + '-' + padNumber(memberId, 6);
+    try {
+      if (dbCount != null) localStorage.setItem('kf_last_count_db', String(dbCount));
+      localStorage.setItem('kf_last_ref', ref);
+      if (typeof window.KF_BASE_OFFSET === 'number' && dbCount != null) {
+        localStorage.setItem('kf_last_count_total', String(Number(window.KF_BASE_OFFSET) + Number(dbCount)));
+      }
+    } catch(e){}
+
+    var wrapper = document.createElement('div');
+    wrapper.className = "kf-success-wrapper";
+    wrapper.style.textAlign = "center";
+
+    wrapper.appendChild(createSavedNoticeElementWithRef(ref));
+
+    var payBox = document.createElement('div');
+    payBox.id = "kfPaymentBox";
+    wrapper.appendChild(payBox);
+
+    form.replaceWith(wrapper);
+
+    injectRazorpayButtonInto(payBox, function(){
+      try{ payBox.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){}
+    }, function(){
+      var err = document.createElement('div');
+      err.style.color = "#b45309";
+      err.style.fontWeight = "600";
+      err.textContent = "Payment button failed. Please refresh.";
+      wrapper.appendChild(err);
+    });
+  }
+
+  function valid(){
+    return (
+      val('fi_name') &&
+      val('fi_dob') &&
+      val('fi_gender') &&
+      val('fi_email') &&
+      val('fi_phone') &&
+      val('fi_city') &&
+      $id('fi_accept').checked &&
+      checkedValues('expectations').length > 0
+    );
+  }
+
+  function buildJsonPayload(){
+    return {
+      name: val('fi_name'),
+      dob: val('fi_dob'),
+      gender: val('fi_gender'),
+      email: val('fi_email'),
+      phone: val('fi_phone'),
+      city: val('fi_city'),
+      expectations: checkedValues('expectations'),
+      accept: $id('fi_accept').checked,
+      source: "kenfolios-join-v2"
+    };
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+
+    if (!valid()){
+      alert("Please complete all fields and accept the Terms.");
+      return;
+    }
+
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var pill = showProgressReplacingButton(submitBtn, "Saving details…");
+    setFormEnabled(false);
+
+    fetch(WRITE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json;charset=utf-8" },
+      body: JSON.stringify(buildJsonPayload())
+    })
+    .then(r => r.json().catch(()=>({})).then(json => ({json, ok:r.ok, status:r.status})))
+    .then(({json, ok, status})=>{
+      removePill(pill);
+      if (!ok || !json?.ok){
+        throw new Error(json?.message || ("HTTP " + status));
       }
 
-      // Initial paint
-      updateUI();
+      var dbCount = typeof json.dbCount === "number" ? json.dbCount : null;
+      var memberId = json.member_id ?? null;
 
-      // Start countdown (1-second interval)
-      const intervalId = setInterval(tick, 1000);
-    })();
-  </script>
+      // Build success UI & store ref
+      replaceFormWithSuccessUI(dbCount, memberId);
+
+      // FIRE "SIGN-IN COMPLETE" / REGISTRATION COMPLETE EVENT
+      try {
+        if (typeof fbq === "function") {
+          var ref = null;
+          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
+          var payload = {
+            content_name: "KenFolios Join Form",
+            status: "success"
+          };
+          if (ref) payload.ref_id = ref;
+          fbq('track', 'CompleteRegistration', payload);
+        }
+      } catch(e){
+        console.error("CompleteRegistration error", e);
+      }
+
+    })
+    .catch(err=>{
+      console.error("Submit failed:", err);
+      removePill(pill);
+      restoreSubmitButton(submitBtn);
+      setFormEnabled(true);
+
+      var c = ensureBottomContainer();
+      var errEl = c.querySelector('.kf-save-error') || document.createElement('div');
+      errEl.className = 'kf-save-error';
+      errEl.style.color = "#f3c13a";
+      errEl.style.fontWeight = "600";
+      errEl.style.marginTop = "6px";
+      errEl.textContent = "Could not save right now. Please try again.";
+      if (!errEl.parentNode) c.appendChild(errEl);
+    });
+
+  });
+
+})();
+</script>
+
 </body>
 </html>
