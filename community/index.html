@@ -1967,12 +1967,27 @@
         </div>
 <!-- ✅ Minimal final version — closes pane and scrolls smoothly to the join form bubble -->
 <div class="profile-cta" role="group" aria-label="Join actions">
-  <button class="cta-btn primary" id="joinBtnProfile"
+  <button 
+    class="cta-btn profile-cta-medium"
+    style="
+      padding: 12px 24px;
+      background-color: #E11D2E;
+      border: none;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      width: 100%;
+      max-width: 220px;
+      height: 54px;
+    "
     onclick="
-      // 🧹 Close side panes
       document.getElementById('shell')?.classList.remove('left-open','profile-open');
-      
-      // 🪄 Scroll smoothly to the join form chat bubble
       document.getElementById('finalJoinInfo')?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
