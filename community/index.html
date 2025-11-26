@@ -1245,6 +1245,75 @@ body > .chat-skeleton {
   }
 }
 
+/* Wrap entire order UI (make sure wrapper has this class in HTML/JS) */
+.kf-order-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Member fields grid – responsive */
+.kf-order-wrapper .kf-member-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* desktop */
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .kf-order-wrapper .kf-member-box {
+    grid-template-columns: 1fr !important; /* mobile stack */
+  }
+}
+
+/* Inputs never overflow */
+.kf-order-wrapper .kf-input,
+.kf-order-wrapper input,
+.kf-order-wrapper select {
+  width: 100% !important;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* APPLY BUTTON CENTERING */
+.kf-order-wrapper .kf-apply-btn {
+  display: block;
+  margin: 8px auto 0 auto; /* center horizontally */
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 200px; /* stays smaller than main button */
+}
+
+/* Main confirm & pay button responsive */
+.kf-order-wrapper .kf-primary-btn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1rem;
+  background: var(--kf-red); /* your theme */
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+}
+@media (max-width: 640px) {
+  .kf-order-wrapper .kf-primary-btn {
+    width: 100% !important;
+  }
+}
+
+/* Tighten padding on very small screens */
+@media (max-width: 420px) {
+  .kf-order-wrapper {
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .kf-order-wrapper .kf-member-box {
+    gap: 6px;
+  }
+}
+
 
   </style>
 </head>
@@ -3183,349 +3252,441 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/**
- * KenFolios — JOIN FORM submit (Worker)
- * Adds human-readable reference ID to success notice:
- *   format: AAA1111-000009
- *   (3 letters)(4 digits)-(db id zero-padded to 6)
- */
+/* kf-join-frontend v5 — full drop-in with theme fix
+   - Submit button replaced by saving pill
+   - Confirm & Pay uses your theme: var(--kf-red)
+   - Apply coupon button smaller
+   - Auto-save edits before payment
+   - Responsive layout
+*/
+
 (function(){
+  if (window.__KF_JOINFORM_V5) return;
+  window.__KF_JOINFORM_V5 = true;
 
-  // GLOBAL INIT GUARD
-  // Prevents this script from initializing twice if included multiple times on the page.
-  if (window.__KF_JOINFORM_INIT) {
-    console.warn("KF JOIN script already initialized — skipping duplicate.");
-    return;
-  }
-  window.__KF_JOINFORM_INIT = true;
+  const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
+  const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
+  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
 
-  var WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
-  var RAZORPAY_PAYMENT_BUTTON_ID = "pl_RVIxwLZ12LJpBd"; // UPDATED & FINAL
+  // === Company details (final values requested) ===
+  const COMPANY_NAME = "KenFolios Media Private Limited";
+  const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
+  const COMPANY_CIN = "U72900DL2017PTC321788";
+  const COMPANY_GSTIN = "07AAGCK7129K1Z7";
+  // ==================================================
 
-  var form = document.getElementById('kfJoinInfoForm');
+  const form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
 
   function $id(id){ return document.getElementById(id); }
-  function val(id){ var el = $id(id); return el ? el.value.trim() : ""; }
+  function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
   function checkedValues(name){
-    var list = form.querySelectorAll('input[name="'+name+'"]:checked');
-    var arr = []; for (var i=0;i<list.length;i++) arr.push(list[i].value);
+    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
+    const arr = [];
+    for (let i=0;i<list.length;i++) arr.push(list[i].value);
     return arr;
-  }
-  function setFormEnabled(enabled){
-    var els = form.elements;
-    for (var i=0;i<els.length;i++){ els[i].disabled = !enabled; }
-  }
-
-  function ensureBottomContainer(){
-    var c = $id('kfBottomContainer');
-    if (!c) {
-      c = document.createElement('div');
-      c.id = 'kfBottomContainer';
-      c.style.marginTop = '10px';
-      c.style.textAlign = 'center';
-      form.insertAdjacentElement('afterend', c);
-    }
-    return c;
   }
 
   function createProgressPill(text){
-    var pill = document.createElement('div');
-    pill.className = 'kf-progress-pill';
-    pill.style.display = 'inline-flex';
-    pill.style.alignItems = 'center';
-    pill.style.gap = '8px';
-    pill.style.padding = '8px 12px';
-    pill.style.borderRadius = '999px';
-    pill.style.fontWeight = '600';
-    pill.style.fontSize = '0.95rem';
-    pill.style.background = '#e6f0ff';
-    pill.style.color = '#111';
+    const pill = document.createElement('div');
+    pill.style.display='inline-flex';
+    pill.style.alignItems='center';
+    pill.style.gap='8px';
+    pill.style.padding='8px 12px';
+    pill.style.borderRadius='999px';
+    pill.style.fontWeight='600';
+    pill.style.fontSize='0.95rem';
+    pill.style.background='#e6f0ff';
+    pill.style.color='#111';
 
-    var spin = document.createElement('span');
-    spin.style.width = '16px';
-    spin.style.height = '16px';
-    spin.style.borderRadius = '50%';
-    spin.style.border = '2px solid rgba(0,0,0,0.20)';
-    spin.style.borderTopColor = 'rgba(0,0,0,0.55)';
-    spin.style.animation = 'kf-spin 0.8s linear infinite';
+    const spin = document.createElement('span');
+    spin.style.width='16px';
+    spin.style.height='16px';
+    spin.style.borderRadius='50%';
+    spin.style.border='2px solid rgba(0,0,0,0.20)';
+    spin.style.borderTopColor='rgba(0,0,0,0.55)';
+    spin.style.animation='kf-spin 0.8s linear infinite';
 
-    var txt = document.createElement('span');
-    txt.className = 'kf-progress-text';
-    txt.textContent = text || "Processing…";
+    const txt = document.createElement('span');
+    txt.textContent = text || 'Processing…';
 
     pill.appendChild(spin);
     pill.appendChild(txt);
 
     if (!$id('kf-spin-style')){
-      var style = document.createElement('style');
-      style.id = 'kf-spin-style';
-      style.textContent = "@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      const style=document.createElement('style');
+      style.id='kf-spin-style';
+      style.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
       document.head.appendChild(style);
     }
-
     return pill;
   }
 
-  function showProgressReplacingButton(btn, text){
-    btn.dataset.orig_display = btn.style.display || '';
-    btn.style.display = 'none';
-    btn.setAttribute('aria-hidden','true');
-    var pill = createProgressPill(text);
-    btn.parentNode.insertBefore(pill, btn.nextSibling);
-    return pill;
+  function replaceSubmitWithPill(btn,pill){
+    btn.dataset._old = btn.style.display || '';
+    btn.style.display='none';
+    btn.parentNode.insertBefore(pill,btn.nextSibling);
   }
 
-  function restoreSubmitButton(btn){
-    btn.style.display = btn.dataset.orig_display || '';
-    btn.removeAttribute('aria-hidden');
-  }
-
-  function removePill(p){
-    if (p && p.parentNode) p.parentNode.removeChild(p);
-  }
-
-  function makePrefix(){
-    var letters = '';
-    for (var i=0;i<3;i++){
-      letters += String.fromCharCode(65 + Math.floor(Math.random()*26));
-    }
-    var nums = '';
-    for (var j=0;j<4;j++){
-      nums += String(Math.floor(Math.random() * 10));
-    }
-    return letters + nums;
-  }
-
-  function padNumber(num, width){
-    var s = String(num || 0);
-    while (s.length < width) s = '0' + s;
-    return s;
-  }
-
-  function createSavedNoticeElementWithRef(ref){
-    var n = document.createElement('div');
-    n.className = 'kf-saved-notice';
-    n.textContent = "✅ Details saved. Ref ID: " + ref + " — use the Pay Now button below to activate membership and proceed to onboarding.";
-    n.style.display = 'block';
-    n.style.padding = '12px 16px';
-    n.style.borderRadius = '8px';
-    n.style.color = '#000';
-    n.style.fontWeight = '600';
-    n.style.marginBottom = '14px';
-    n.style.background = 'rgba(220,245,220,0.95)';
-    n.style.fontSize = '1rem';
-    return n;
+  function restoreSubmitFromPill(btn,pill){
+    if (pill && pill.parentNode) pill.remove();
+    btn.style.display = btn.dataset._old || '';
   }
 
   function removeFormIntroMessage(){
-    var el1 = document.querySelector('.kf-form-intro');
-    var el2 = $id('kfFormIntro');
-    var el3 = form.previousElementSibling;
+    const el1=document.querySelector('.kf-form-intro');
+    const el2=$id('kfFormIntro');
+    const el3=form.previousElementSibling;
     if (el1) el1.remove();
     if (el2) el2.remove();
     if (el3 && el3.textContent.toLowerCase().includes('before you proceed')) el3.remove();
   }
 
   function removeExtraWhitespaceAroundForm(){
-    if (!form || !form.parentNode) return;
-    var sib = form.previousSibling;
-    while (sib && sib.nodeType === 3){
-      var tmp = sib.previousSibling;
-      sib.remove();
-      sib = tmp;
+    let sib=form.previousSibling;
+    while(sib && sib.nodeType===3){ let t=sib.previousSibling; sib.remove(); sib=t; }
+    sib=form.nextSibling;
+    while(sib && sib.nodeType===3){ let t=sib.nextSibling; sib.remove(); sib=t; }
+  }
+
+  /* -------------- ONLY THIS PART (saved notice text) -------------- */
+  function createSavedNotice(ref){
+    const n=document.createElement('div');
+    n.textContent=`✅ Details saved. Order ID: ${ref} — review and pay now to activate your membership.`; 
+    n.style.padding='12px';
+    n.style.borderRadius='8px';
+    n.style.background='rgba(220,245,220,0.95)';
+    n.style.fontWeight='600';
+    n.style.marginBottom='14px';
+    return n;
+  }
+  /* ------------------------------------------------------ */
+
+  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+
+  function stylePrimaryButton(btn){
+    btn.style.background='var(--kf-red)';
+    btn.style.color='#fff';
+    btn.style.border='none';
+  }
+
+  function showInlineError(el,msg){
+    el.style.display='block';
+    el.style.color='#b45309';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},6000);
+  }
+
+  function showInlineSuccess(el,msg){
+    el.style.display='block';
+    el.style.color='#166534';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},3000);
+  }
+
+  function buildOrderBox(order){
+    const wrap=document.createElement('div');
+    wrap.className='kf-order-wrapper';
+    wrap.style.width='100%';
+    wrap.style.maxWidth='100%';
+    wrap.style.padding='12px';
+    wrap.style.background='#fff';
+    wrap.style.border='1px solid #eee';
+    wrap.style.borderRadius='12px';
+    wrap.style.boxSizing='border-box';
+
+    const h=document.createElement('div');
+    h.style.display='flex';
+    h.style.justifyContent='space-between';
+    h.innerHTML=`<strong>Order Summary</strong><span style="color:#666">Order ID: ${order.order_ref}</span>`;
+    wrap.appendChild(h);
+
+    const c=document.createElement('div');
+    c.style.marginTop='10px';
+    c.innerHTML =
+      `<div style="font-weight:700">${COMPANY_NAME}</div>
+       <div style="color:#666">${COMPANY_ADDRESS}</div>
+       <div style="font-size:.85rem;color:#666;margin-top:4px">
+         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
+       </div>`;
+    wrap.appendChild(c);
+
+    const expl=document.createElement('div');
+    expl.style.marginTop='12px';
+    expl.textContent='Below are the details you submitted — edit if anything looks wrong.';
+    wrap.appendChild(expl);
+
+    const box=document.createElement('div');
+    box.className='kf-member-box';
+    box.style.display='grid';
+    box.style.gridTemplateColumns='1fr 1fr';
+    box.style.gap='10px';
+    box.style.marginTop='12px';
+
+    const editable=!!order.editable;
+
+    function mk(label,id,val){
+      const f=document.createElement('div');
+      const l=document.createElement('label');
+      l.textContent=label;
+      l.style.fontSize='.9rem';
+      f.appendChild(l);
+
+      if(editable){
+        const i=document.createElement('input');
+        i.id=id; i.value=val||'';
+        i.className='kf-input';
+        i.style.padding='8px';
+        f.appendChild(i);
+      }else{
+        const s=document.createElement('div');
+        s.textContent=val||'';
+        f.appendChild(s);
+      }
+      return f;
     }
-    sib = form.nextSibling;
-    while (sib && sib.nodeType === 3){
-      var tmp2 = sib.nextSibling;
-      sib.remove();
-      sib = tmp2;
+
+    box.appendChild(mk('Full Name','ord_full_name',order.member.full_name));
+    box.appendChild(mk('Email','ord_email',order.member.email));
+    box.appendChild(mk('Phone','ord_phone',order.member.phone));
+    box.appendChild(mk('City','ord_city',order.member.city));
+    wrap.appendChild(box);
+
+    const prod=document.createElement('div');
+    prod.style.marginTop='16px';
+    prod.innerHTML=
+      `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
+        <div><strong>${order.product.name}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
+        <div style="font-weight:700">${formatINR(order.product.base_price)}</div>
+      </div>`;
+    wrap.appendChild(prod);
+
+    const couponWrap=document.createElement('div');
+    couponWrap.style.marginTop='12px';
+
+    const couponInput=document.createElement('input');
+    couponInput.className='kf-input';
+    couponInput.placeholder='Coupon code';
+    couponInput.style.width='100%';
+    couponWrap.appendChild(couponInput);
+
+    const applyBtn=document.createElement('button');
+    applyBtn.textContent='Apply';
+    applyBtn.type='button';
+    applyBtn.className='kf-apply-btn';
+    applyBtn.style.margin='8px auto 0 auto';
+    applyBtn.style.display='block';
+    applyBtn.style.padding='8px 14px';
+    applyBtn.style.fontSize='.9rem';
+    applyBtn.style.border='1px solid #ddd';
+    applyBtn.style.borderRadius='6px';
+    couponWrap.appendChild(applyBtn);
+
+    wrap.appendChild(couponWrap);
+
+    const totals=document.createElement('div');
+    totals.style.marginTop='14px';
+    wrap.appendChild(totals);
+
+    function updateTotals(o){
+      totals.innerHTML=
+        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
+         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+           <span>Total</span><span>${formatINR(o.totals.total)}</span>
+         </div>`;
+    }
+
+    updateTotals(order);
+
+    const payBox=document.createElement('div');
+    payBox.style.marginTop='18px';
+    payBox.style.textAlign='center';
+
+    const payBtn=document.createElement('button');
+    payBtn.textContent='Confirm & Pay';
+    payBtn.className='kf-primary-btn';
+    payBtn.style.padding='12px 20px';
+    payBtn.style.borderRadius='8px';
+    payBtn.style.width='100%';
+    payBtn.style.fontSize='1rem';
+    payBtn.style.cursor='pointer';
+    stylePrimaryButton(payBtn);
+
+    payBox.appendChild(payBtn);
+
+    const payMsg=document.createElement('div');
+    payMsg.style.display='none';
+    payMsg.style.marginTop='10px';
+
+    wrap.appendChild(payBox);
+    wrap.appendChild(payMsg);
+
+    return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable};
+  }
+
+  async function patchMember(id,box){
+    const body={
+      name:$id('ord_full_name').value.trim(),
+      email:$id('ord_email').value.trim(),
+      phone:$id('ord_phone').value.trim(),
+      city:$id('ord_city').value.trim()
+    };
+    try{
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const j=await resp.json();
+      if(!resp.ok||!j.ok) return null;
+      return j.order;
+    }catch{return null;}
+  }
+
+  async function applyCoupon(id,code,box){
+    try{
+      box.applyBtn.disabled=true;
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id,coupon:code,simulate:true})
+      });
+      const j=await resp.json();
+      box.applyBtn.disabled=false;
+
+      if(!resp.ok||!j.ok){ showInlineError(box.payMsg,j.message); return; }
+
+      box.totalsBox.innerHTML='';
+      box.couponApplied=j.order.applied_coupon||null;
+
+      box.totalsBox.innerHTML=
+        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+           <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+         </div>`;
+
+      showInlineSuccess(box.payMsg,'Coupon applied');
+    }catch{
+      box.applyBtn.disabled=false;
+      showInlineError(box.payMsg,'Error applying coupon');
     }
   }
 
-  /**
-   * Attach InitiateCheckout via a capturing click listener
-   * on the Razorpay form (robust against their internal DOM).
-   */
-  function injectRazorpayButtonInto(container, onReady, onError){
-    var wrap = document.createElement('div');
-    wrap.id = 'kfRazorpayContainer';
-    wrap.style.textAlign = 'center';
-    wrap.style.marginTop = '5px';
+  async function confirmPay(id,box){
+    const saved=await patchMember(id,box);
+    if(!saved) return;
 
-    var rform = document.createElement('form');
-    rform.id = 'kfRazorpayForm';
+    const code = box.couponApplied || box.couponInput.value.trim() || null;
 
-    var script = document.createElement('script');
-    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-    script.async = true;
-    script.setAttribute('data-payment_button_id', RAZORPAY_PAYMENT_BUTTON_ID);
+    try{
+      box.payBtn.disabled=true;
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id,coupon:code})
+      });
+      const j=await resp.json();
+      box.payBtn.disabled=false;
 
-    // fire InitiateCheckout only once per page
-    var icFired = false;
+      if(!resp.ok||!j.ok){ showInlineError(box.payMsg,j.message); return; }
 
-    // capture click anywhere in Razorpay form (even if they have their own handlers)
-    rform.addEventListener('click', function(){
-      if (icFired) return;
-      icFired = true;
+      if(!j.razorpay_configured){
+        box.payMsg.style.display='block';
+        box.payMsg.textContent='Payment options will appear here soon.';
+        return;
+      }
 
-      try {
-        if (typeof fbq === "function"){
-          var ref = null;
-          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
-          var payload = { currency: "INR" };
-          if (ref) payload.ref_id = ref;
-          fbq('track', 'InitiateCheckout', payload);
+      const rp=j.razorpay_order;
+
+      const options={
+        key:rp.key_id,
+        amount:rp.amount,
+        currency:rp.currency,
+        order_id:rp.id,
+        handler: async function(res){
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              member_id:id,
+              razorpay_payment_id:res.razorpay_payment_id,
+              razorpay_order_id:res.razorpay_order_id,
+              razorpay_signature:res.razorpay_signature,
+              coupon:code
+            })
+          });
+          box.payBtn.disabled=true;
+          box.payBtn.textContent='Paid';
         }
-      } catch(e){
-        console.error("InitiateCheckout error", e);
-      }
-    }, true); // useCapture = true
+      };
 
-    script.onload = function(){
-      if (onReady){
-        setTimeout(function(){ onReady(); }, 300);
-      }
-    };
+      const rzp=new Razorpay(options);
+      rzp.open();
 
-    script.onerror = function(){
-      if (onError) onError();
-    };
-
-    rform.appendChild(script);
-    wrap.appendChild(rform);
-    container.appendChild(wrap);
+    }catch{
+      box.payBtn.disabled=false;
+      showInlineError(box.payMsg,'Cannot initiate payment');
+    }
   }
 
-  function replaceFormWithSuccessUI(dbCount, memberId){
-    removeFormIntroMessage();
-    removeExtraWhitespaceAroundForm();
-
-    var ref = makePrefix() + '-' + padNumber(memberId, 6);
-    try {
-      if (dbCount != null) localStorage.setItem('kf_last_count_db', String(dbCount));
-      localStorage.setItem('kf_last_ref', ref);
-      if (typeof window.KF_BASE_OFFSET === 'number' && dbCount != null) {
-        localStorage.setItem('kf_last_count_total', String(Number(window.KF_BASE_OFFSET) + Number(dbCount)));
-      }
-    } catch(e){}
-
-    var wrapper = document.createElement('div');
-    wrapper.className = "kf-success-wrapper";
-    wrapper.style.textAlign = "center";
-
-    wrapper.appendChild(createSavedNoticeElementWithRef(ref));
-
-    var payBox = document.createElement('div');
-    payBox.id = "kfPaymentBox";
-    wrapper.appendChild(payBox);
-
-    form.replaceWith(wrapper);
-
-    injectRazorpayButtonInto(payBox, function(){
-      try{ payBox.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){}
-    }, function(){
-      var err = document.createElement('div');
-      err.style.color = "#b45309";
-      err.style.fontWeight = "600";
-      err.textContent = "Payment button failed. Please refresh.";
-      wrapper.appendChild(err);
-    });
-  }
-
-  function valid(){
-    return (
-      val('fi_name') &&
-      val('fi_dob') &&
-      val('fi_gender') &&
-      val('fi_email') &&
-      val('fi_phone') &&
-      val('fi_city') &&
-      $id('fi_accept').checked &&
-      checkedValues('expectations').length > 0
-    );
-  }
-
-  function buildJsonPayload(){
-    return {
-      name: val('fi_name'),
-      dob: val('fi_dob'),
-      gender: val('fi_gender'),
-      email: val('fi_email'),
-      phone: val('fi_phone'),
-      city: val('fi_city'),
-      expectations: checkedValues('expectations'),
-      accept: $id('fi_accept').checked,
-      source: "kenfolios-join-v2"
-    };
-  }
-
-  form.addEventListener('submit', function(e){
+  form.addEventListener('submit',async function(e){
     e.preventDefault();
 
-    if (!valid()){
-      alert("Please complete all fields and accept the Terms.");
+    if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
+      alert('Complete all fields');
       return;
     }
 
-    var submitBtn = form.querySelector('button[type="submit"]');
-    var pill = showProgressReplacingButton(submitBtn, "Saving details…");
-    setFormEnabled(false);
+    const submitBtn=form.querySelector('button[type="submit"]');
+    const pill=createProgressPill('Saving…');
+    replaceSubmitWithPill(submitBtn,pill);
 
-    fetch(WRITE_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json;charset=utf-8" },
-      body: JSON.stringify(buildJsonPayload())
-    })
-    .then(r => r.json().catch(()=>({})).then(json => ({json, ok:r.ok, status:r.status})))
-    .then(({json, ok, status})=>{
-      removePill(pill);
-      if (!ok || !json?.ok){
-        throw new Error(json?.message || ("HTTP " + status));
+    const payload={
+      name:val('fi_name'),
+      dob:val('fi_dob'),
+      gender:val('fi_gender'),
+      email:val('fi_email'),
+      phone:val('fi_phone'),
+      city:val('fi_city'),
+      expectations:checkedValues('expectations'),
+      accept:true,
+      source:'kenfolios-join-v2'
+    };
+
+    try{
+      const resp=await fetch(WRITE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const j=await resp.json();
+
+      restoreSubmitFromPill(submitBtn,pill);
+
+      if(!resp.ok||!j.ok){
+        alert(j.message||"Could not save"); return;
       }
 
-      var dbCount = typeof json.dbCount === "number" ? json.dbCount : null;
-      var memberId = json.member_id ?? null;
+      removeFormIntroMessage();
+      removeExtraWhitespaceAroundForm();
 
-      // Build success UI & store ref
-      replaceFormWithSuccessUI(dbCount, memberId);
+      const wrap=document.createElement('div');
+      wrap.appendChild(createSavedNotice(j.order.order_ref));
 
-      // FIRE "SIGN-IN COMPLETE" / REGISTRATION COMPLETE EVENT
-      try {
-        if (typeof fbq === "function") {
-          var ref = null;
-          try { ref = localStorage.getItem('kf_last_ref') || null; } catch(e){}
-          var payload = {
-            content_name: "KenFolios Join Form",
-            status: "success"
-          };
-          if (ref) payload.ref_id = ref;
-          fbq('track', 'CompleteRegistration', payload);
-        }
-      } catch(e){
-        console.error("CompleteRegistration error", e);
-      }
+      const box=buildOrderBox(j.order);
+      wrap.appendChild(box.wrap);
 
-    })
-    .catch(err=>{
-      console.error("Submit failed:", err);
-      removePill(pill);
-      restoreSubmitButton(submitBtn);
-      setFormEnabled(true);
+      form.replaceWith(wrap);
 
-      var c = ensureBottomContainer();
-      var errEl = c.querySelector('.kf-save-error') || document.createElement('div');
-      errEl.className = 'kf-save-error';
-      errEl.style.color = "#f3c13a";
-      errEl.style.fontWeight = "600";
-      errEl.style.marginTop = "6px";
-      errEl.textContent = "Could not save right now. Please try again.";
-      if (!errEl.parentNode) c.appendChild(errEl);
-    });
+      box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
+      box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
 
+    }catch{
+      restoreSubmitFromPill(submitBtn,pill);
+      alert("Save failed");
+    }
   });
 
 })();
+
 </script>
 
 </body>
