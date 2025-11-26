@@ -3485,6 +3485,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     applyBtn.style.borderRadius='6px';
     couponWrap.appendChild(applyBtn);
 
+    // --- new coupon error element (centered under Apply) ---
+    const couponError=document.createElement('div');
+    couponError.style.display='none';
+    couponError.style.marginTop='6px';
+    couponError.style.textAlign='center';
+    couponError.style.color='#b91c1c';
+    couponError.style.fontWeight='600';
+    couponError.style.fontSize='0.95rem';
+    couponWrap.appendChild(couponError);
+    // -------------------------------------------------------
+
     wrap.appendChild(couponWrap);
 
     const totals=document.createElement('div');
@@ -3527,7 +3538,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     wrap.appendChild(payBox);
     wrap.appendChild(payMsg);
 
-    return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable};
+    return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable, couponError};
   }
 
   async function patchMember(id,box){
@@ -3547,6 +3558,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   async function applyCoupon(id,code,box){
     try{
+      // hide any previous coupon error when starting
+      if (box.couponError) { box.couponError.style.display = 'none'; box.couponError.textContent = ''; }
       box.applyBtn.disabled=true;
       const resp=await fetch(CREATE_ORDER_ENDPOINT,{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -3555,7 +3568,22 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       const j=await resp.json();
       box.applyBtn.disabled=false;
 
-      if(!resp.ok||!j.ok){ showInlineError(box.payMsg,j.message); return; }
+      if(!resp.ok||!j.ok){
+        // show centered invalid coupon directly under Apply
+        if (box.couponError){
+          box.couponError.textContent = j.message || 'Invalid coupon code.';
+          box.couponError.style.display = 'block';
+        } else {
+          showInlineError(box.payMsg, j.message);
+        }
+        return;
+      }
+
+      // success — hide coupon error if present
+      if (box.couponError){
+        box.couponError.style.display = 'none';
+        box.couponError.textContent = '';
+      }
 
       box.totalsBox.innerHTML='';
       box.couponApplied=j.order.applied_coupon||null;
@@ -3572,7 +3600,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       showInlineSuccess(box.payMsg,'Coupon applied');
     }catch{
       box.applyBtn.disabled=false;
-      showInlineError(box.payMsg,'Error applying coupon');
+      if (box.couponError){
+        box.couponError.textContent = 'Error applying coupon';
+        box.couponError.style.display = 'block';
+      } else {
+        showInlineError(box.payMsg,'Error applying coupon');
+      }
     }
   }
 
