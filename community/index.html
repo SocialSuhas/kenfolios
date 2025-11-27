@@ -3252,42 +3252,83 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v5 — full drop-in with theme fix
-   - Submit button replaced by saving pill
-   - Confirm & Pay uses your theme: var(--kf-red)
-   - Apply coupon button smaller
-   - Auto-save edits before payment
-   - Responsive layout
+/* kf-join-frontend v6.2 — final polished drop-in
+   - Order Summary left, Order ID right
+   - Order created timestamp BELOW Order ID, LEFT aligned
+   - Review-notice box
+   - Company separator
+   - Coupon separator
+   - GST-inclusive fee note (value comes from worker)
+   - Frontend does NOT compute totals (worker is authoritative)
+   - Consistent label placement (label above input) & input styling
+   - Removes "Before you proceed..." intro on successful save
 */
 
 (function(){
-  if (window.__KF_JOINFORM_V5) return;
-  window.__KF_JOINFORM_V5 = true;
+  if (window.__KF_JOINFORM_V6_2) return;
+  window.__KF_JOINFORM_V6_2 = true;
 
   const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
   const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
   const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
   const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
 
-  // === Company details (final values requested) ===
   const COMPANY_NAME = "KenFolios Media Private Limited";
   const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
   const COMPANY_CIN = "U72900DL2017PTC321788";
   const COMPANY_GSTIN = "07AAGCK7129K1Z7";
-  // ==================================================
 
   const form = document.getElementById('kfJoinInfoForm');
   if (!form) return;
+
+  /* -----------------------------------------------
+     REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
+     Restores old behavior from v5
+  ------------------------------------------------ */
+  function removeFormIntroMessage() {
+    const el1 = document.querySelector('.kf-form-intro');
+    if (el1) el1.remove();
+    const el2 = document.getElementById('kfFormIntro');
+    if (el2) el2.remove();
+    const prev = form.previousElementSibling;
+    if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
+      prev.remove();
+    }
+  }
+  function removeExtraWhitespaceAroundForm() {
+    let sib=form.previousSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.previousSibling;
+      sib.remove();
+      sib=t;
+    }
+    sib=form.nextSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.nextSibling;
+      sib.remove();
+      sib=t;
+    }
+  }
 
   function $id(id){ return document.getElementById(id); }
   function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
   function checkedValues(name){
     const list = form.querySelectorAll('input[name="'+name+'"]:checked');
-    const arr = [];
-    for (let i=0;i<list.length;i++) arr.push(list[i].value);
-    return arr;
+    return Array.from(list).map(i => i.value);
   }
 
+  /* small helper to style inputs consistently */
+  function styleInput(el){
+    el.style.width = '100%';
+    el.style.padding = '10px';
+    el.style.border = '1px solid #e6e6e6';
+    el.style.borderRadius = '8px';
+    el.style.background = '#fafafa';
+    el.style.boxSizing = 'border-box';
+    el.style.fontSize = '0.95rem';
+  }
+
+  /* ---------------- Spinner pill ---------------- */
   function createProgressPill(text){
     const pill = document.createElement('div');
     pill.style.display='inline-flex';
@@ -3334,34 +3375,40 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     btn.style.display = btn.dataset._old || '';
   }
 
-  function removeFormIntroMessage(){
-    const el1=document.querySelector('.kf-form-intro');
-    const el2=$id('kfFormIntro');
-    const el3=form.previousElementSibling;
-    if (el1) el1.remove();
-    if (el2) el2.remove();
-    if (el3 && el3.textContent.toLowerCase().includes('before you proceed')) el3.remove();
-  }
-
-  function removeExtraWhitespaceAroundForm(){
-    let sib=form.previousSibling;
-    while(sib && sib.nodeType===3){ let t=sib.previousSibling; sib.remove(); sib=t; }
-    sib=form.nextSibling;
-    while(sib && sib.nodeType===3){ let t=sib.nextSibling; sib.remove(); sib=t; }
-  }
-
-  /* -------------- ONLY THIS PART (saved notice text) -------------- */
-  function createSavedNotice(ref){
+  /* -------- Saved notice above order box -------- */
+  function createSavedNotice(ref, createdIso){
     const n=document.createElement('div');
-    n.textContent=`✅ Details saved. Order ID: ${ref} — review and pay now to activate your membership.`; 
     n.style.padding='12px';
     n.style.borderRadius='8px';
-    n.style.background='rgba(220,245,220,0.95)';
+    n.style.background='rgba(230,245,255,0.95)';
     n.style.fontWeight='600';
     n.style.marginBottom='14px';
+    n.style.display='flex';
+    n.style.flexDirection='column';
+    n.style.gap='6px';
+
+    const line1=document.createElement('div');
+    line1.textContent=`✅ Details saved. Order ID: ${ref}`;
+    n.appendChild(line1);
+
+    if (createdIso){
+      const d=new Date(createdIso);
+      const pretty = d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+      const dt=document.createElement('div');
+      dt.style.fontSize='.9rem';
+      dt.style.color='#444';
+      dt.textContent=`Order created: ${pretty}`;
+      n.appendChild(dt);
+    }
+
+    const sub=document.createElement('div');
+    sub.style.fontSize='.95rem';
+    sub.style.color='#111';
+    sub.textContent='Please review the order details below and complete payment to activate your membership.';
+    n.appendChild(sub);
+
     return n;
   }
-  /* ------------------------------------------------------ */
 
   function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
 
@@ -3387,26 +3434,57 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     setTimeout(()=>{el.style.display='none';},3000);
   }
 
+  /* ---------------- Order Box ---------------- */
   function buildOrderBox(order){
     const wrap=document.createElement('div');
-    wrap.className='kf-order-wrapper';
     wrap.style.width='100%';
-    wrap.style.maxWidth='100%';
     wrap.style.padding='12px';
     wrap.style.background='#fff';
     wrap.style.border='1px solid #eee';
     wrap.style.borderRadius='12px';
-    wrap.style.boxSizing='border-box';
 
-    const h=document.createElement('div');
-    h.style.display='flex';
-    h.style.justifyContent='space-between';
-    h.innerHTML=`<strong>Order Summary</strong><span style="color:#666">Order ID: ${order.order_ref}</span>`;
-    wrap.appendChild(h);
+    /* --- Header block --- */
+    const headerWrap = document.createElement('div');
+    headerWrap.style.display = 'flex';
+    headerWrap.style.flexDirection = 'column';
+    headerWrap.style.gap = '6px';
 
+    // Row 1: title left, ID right
+    const topRow=document.createElement('div');
+    topRow.style.display='flex';
+    topRow.style.justifyContent='space-between';
+
+    const left=document.createElement('div');
+    left.innerHTML='<strong>Order Summary</strong>';
+
+    const right=document.createElement('div');
+    right.style.color='#444';
+    right.style.fontWeight='600';
+    right.textContent=`Order ID: ${order.order_ref}`;
+
+    topRow.appendChild(left);
+    topRow.appendChild(right);
+    headerWrap.appendChild(topRow);
+
+    // Row 2: order created (LEFT ONLY)
+    if (order.order_created_at){
+      const r2=document.createElement('div');
+      r2.style.fontSize='.85rem';
+      r2.style.color='#666';
+
+      const d=new Date(order.order_created_at);
+      const pretty = d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+
+      r2.textContent = `Order created: ${pretty}`;
+      headerWrap.appendChild(r2);
+    }
+
+    wrap.appendChild(headerWrap);
+
+    /* --- Company block --- */
     const c=document.createElement('div');
-    c.style.marginTop='10px';
-    c.innerHTML =
+    c.style.marginTop='14px';
+    c.innerHTML=
       `<div style="font-weight:700">${COMPANY_NAME}</div>
        <div style="color:#666">${COMPANY_ADDRESS}</div>
        <div style="font-size:.85rem;color:#666;margin-top:4px">
@@ -3414,37 +3492,57 @@ var delay = 1200 + Math.floor(Math.random()*1000);
        </div>`;
     wrap.appendChild(c);
 
-    const expl=document.createElement('div');
-    expl.style.marginTop='12px';
-    expl.textContent='Below are the details you submitted — edit if anything looks wrong.';
-    wrap.appendChild(expl);
+    // Thin separator
+    const compSep=document.createElement('div');
+    compSep.style.borderTop='1px solid #e6e6e6';
+    compSep.style.marginTop='12px';
+    compSep.style.paddingTop='12px';
+    wrap.appendChild(compSep);
 
+    /* --- Review Notice --- */
+    const notice=document.createElement('div');
+    notice.style.background='rgba(249,250,251,0.9)';
+    notice.style.border='1px solid #f1f5f9';
+    notice.style.padding='10px';
+    notice.style.borderRadius='8px';
+    notice.style.color='#334155';
+    notice.style.fontWeight='600';
+    notice.style.fontSize='.95rem';
+    notice.textContent="We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
+    wrap.appendChild(notice);
+
+    /* --- Editable fields --- */
     const box=document.createElement('div');
-    box.className='kf-member-box';
     box.style.display='grid';
     box.style.gridTemplateColumns='1fr 1fr';
     box.style.gap='10px';
     box.style.marginTop='12px';
 
-    const editable=!!order.editable;
+    const editable = order.editable;
 
     function mk(label,id,val){
       const f=document.createElement('div');
+
       const l=document.createElement('label');
       l.textContent=label;
       l.style.fontSize='.9rem';
+      l.style.display='block';
+      l.style.marginBottom='6px';
       f.appendChild(l);
 
-      if(editable){
+      if (editable){
         const i=document.createElement('input');
         i.id=id; i.value=val||'';
-        i.className='kf-input';
-        i.style.padding='8px';
+        styleInput(i);
         f.appendChild(i);
-      }else{
-        const s=document.createElement('div');
-        s.textContent=val||'';
-        f.appendChild(s);
+      } else {
+        const t=document.createElement('div');
+        t.textContent=val||'';
+        t.style.padding='10px';
+        t.style.borderRadius='8px';
+        t.style.background='#fafafa';
+        t.style.border='1px solid #e6e6e6';
+        f.appendChild(t);
       }
       return f;
     }
@@ -3455,49 +3553,67 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     box.appendChild(mk('City','ord_city',order.member.city));
     wrap.appendChild(box);
 
+    /* --- Activation Fee block --- */
     const prod=document.createElement('div');
-    prod.style.marginTop='16px';
+    prod.style.marginTop='14px';
+    const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
     prod.innerHTML=
       `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
-        <div><strong>${order.product.name}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
-        <div style="font-weight:700">${formatINR(order.product.base_price)}</div>
+        <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
+        <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
       </div>`;
     wrap.appendChild(prod);
 
+    const feeNote=document.createElement('div');
+    feeNote.style.fontSize='.85rem';
+    feeNote.style.color='#555';
+    feeNote.style.marginTop='6px';
+    feeNote.textContent=
+      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. `+
+      `This fee is the current prevailing rate and may change if you opt to pay later.`;
+    wrap.appendChild(feeNote);
+
+    /* --- Coupon separator --- */
+    const couponSep=document.createElement('div');
+    couponSep.style.borderTop='1px dashed #ddd';
+    couponSep.style.marginTop='14px';
+    couponSep.style.paddingTop='10px';
+    wrap.appendChild(couponSep);
+
+    /* --- Coupon input --- */
     const couponWrap=document.createElement('div');
-    couponWrap.style.marginTop='12px';
 
     const couponInput=document.createElement('input');
-    couponInput.className='kf-input';
     couponInput.placeholder='Coupon code';
-    couponInput.style.width='100%';
+    styleInput(couponInput);
+    couponInput.style.maxWidth = '300px';
     couponWrap.appendChild(couponInput);
 
     const applyBtn=document.createElement('button');
     applyBtn.textContent='Apply';
     applyBtn.type='button';
-    applyBtn.className='kf-apply-btn';
-    applyBtn.style.margin='8px auto 0 auto';
-    applyBtn.style.display='block';
+    applyBtn.style.margin='8px 0 0 12px';
     applyBtn.style.padding='8px 14px';
     applyBtn.style.fontSize='.9rem';
     applyBtn.style.border='1px solid #ddd';
-    applyBtn.style.borderRadius='6px';
+    applyBtn.style.borderRadius='8px';
+    applyBtn.style.background='#fff';
+    applyBtn.style.cursor='pointer';
+    couponWrap.style.display = 'flex';
+    couponWrap.style.alignItems = 'center';
     couponWrap.appendChild(applyBtn);
 
-    // --- new coupon error element (centered under Apply) ---
     const couponError=document.createElement('div');
-    couponError.style.display='none';
+    couponError.style.color='#b91c1c';
     couponError.style.marginTop='6px';
     couponError.style.textAlign='center';
-    couponError.style.color='#b91c1c';
     couponError.style.fontWeight='600';
-    couponError.style.fontSize='0.95rem';
+    couponError.style.display='none';
     couponWrap.appendChild(couponError);
-    // -------------------------------------------------------
 
     wrap.appendChild(couponWrap);
 
+    /* --- Totals --- */
     const totals=document.createElement('div');
     totals.style.marginTop='14px';
     wrap.appendChild(totals);
@@ -3512,23 +3628,20 @@ var delay = 1200 + Math.floor(Math.random()*1000);
            <span>Total</span><span>${formatINR(o.totals.total)}</span>
          </div>`;
     }
-
     updateTotals(order);
 
+    /* --- Pay Button --- */
     const payBox=document.createElement('div');
     payBox.style.marginTop='18px';
-    payBox.style.textAlign='center';
 
     const payBtn=document.createElement('button');
     payBtn.textContent='Confirm & Pay';
-    payBtn.className='kf-primary-btn';
+    payBtn.style.width='100%';
     payBtn.style.padding='12px 20px';
     payBtn.style.borderRadius='8px';
-    payBtn.style.width='100%';
     payBtn.style.fontSize='1rem';
     payBtn.style.cursor='pointer';
     stylePrimaryButton(payBtn);
-
     payBox.appendChild(payBtn);
 
     const payMsg=document.createElement('div');
@@ -3541,6 +3654,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable, couponError};
   }
 
+  /* ---------------- PATCH Member ---------------- */
   async function patchMember(id,box){
     const body={
       name:$id('ord_full_name').value.trim(),
@@ -3549,44 +3663,44 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       city:$id('ord_city').value.trim()
     };
     try{
-      const resp=await fetch(PATCH_MEMBER_BASE+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
       const j=await resp.json();
       if(!resp.ok||!j.ok) return null;
       return j.order;
     }catch{return null;}
   }
 
+  /* ---------------- Apply Coupon ---------------- */
   async function applyCoupon(id,code,box){
     try{
-      // hide any previous coupon error when starting
-      if (box.couponError) { box.couponError.style.display = 'none'; box.couponError.textContent = ''; }
+      if (box.couponError){
+        box.couponError.style.display='none';
+        box.couponError.textContent='';
+      }
       box.applyBtn.disabled=true;
+
       const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id,coupon:code,simulate:true})
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:code, simulate:true})
       });
       const j=await resp.json();
+
       box.applyBtn.disabled=false;
 
       if(!resp.ok||!j.ok){
-        // show centered invalid coupon directly under Apply
-        if (box.couponError){
-          box.couponError.textContent = j.message || 'Invalid coupon code.';
-          box.couponError.style.display = 'block';
-        } else {
-          showInlineError(box.payMsg, j.message);
+        if(box.couponError){
+          box.couponError.textContent=j.message || 'Invalid coupon';
+          box.couponError.style.display='block';
         }
         return;
       }
 
-      // success — hide coupon error if present
-      if (box.couponError){
-        box.couponError.style.display = 'none';
-        box.couponError.textContent = '';
-      }
-
-      box.totalsBox.innerHTML='';
-      box.couponApplied=j.order.applied_coupon||null;
+      box.couponApplied=j.order.applied_coupon || null;
 
       box.totalsBox.innerHTML=
         `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
@@ -3600,31 +3714,34 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       showInlineSuccess(box.payMsg,'Coupon applied');
     }catch{
       box.applyBtn.disabled=false;
-      if (box.couponError){
-        box.couponError.textContent = 'Error applying coupon';
-        box.couponError.style.display = 'block';
-      } else {
-        showInlineError(box.payMsg,'Error applying coupon');
-      }
+      box.couponError.textContent='Error applying coupon';
+      box.couponError.style.display='block';
     }
   }
 
+  /* ---------------- Confirm Pay ---------------- */
   async function confirmPay(id,box){
-    const saved=await patchMember(id,box);
+    const saved = await patchMember(id,box);
     if(!saved) return;
 
     const code = box.couponApplied || box.couponInput.value.trim() || null;
 
     try{
       box.payBtn.disabled=true;
+
       const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id,coupon:code})
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:code})
       });
       const j=await resp.json();
+
       box.payBtn.disabled=false;
 
-      if(!resp.ok||!j.ok){ showInlineError(box.payMsg,j.message); return; }
+      if(!resp.ok||!j.ok){
+        showInlineError(box.payMsg,j.message);
+        return;
+      }
 
       if(!j.razorpay_configured){
         box.payMsg.style.display='block';
@@ -3641,7 +3758,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         order_id:rp.id,
         handler: async function(res){
           await fetch(PAYMENT_CONFIRM_ENDPOINT,{
-            method:'POST',headers:{'Content-Type':'application/json'},
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
               member_id:id,
               razorpay_payment_id:res.razorpay_payment_id,
@@ -3664,6 +3782,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
+  /* ---------------- Form Submit ---------------- */
   form.addEventListener('submit',async function(e){
     e.preventDefault();
 
@@ -3689,20 +3808,26 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     };
 
     try{
-      const resp=await fetch(WRITE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const resp=await fetch(WRITE_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
       const j=await resp.json();
 
       restoreSubmitFromPill(submitBtn,pill);
 
       if(!resp.ok||!j.ok){
-        alert(j.message||"Could not save"); return;
+        alert(j.message||"Could not save");
+        return;
       }
 
+      // Remove intro message / whitespace before replacing form
       removeFormIntroMessage();
       removeExtraWhitespaceAroundForm();
 
       const wrap=document.createElement('div');
-      wrap.appendChild(createSavedNotice(j.order.order_ref));
+      wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at));
 
       const box=buildOrderBox(j.order);
       wrap.appendChild(box.wrap);
@@ -3714,11 +3839,13 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
     }catch{
       restoreSubmitFromPill(submitBtn,pill);
-      alert("Save failed");
+      alert('Save failed');
     }
   });
 
 })();
+
+
 
 </script>
 
