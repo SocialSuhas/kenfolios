@@ -286,83 +286,153 @@
   </main>
 <script>
 /*
-  ------------------------------------------------------------
-  KEN/VStreet — Order Loader Script
-  ------------------------------------------------------------
-  Purpose:
-    • Detect /community/order/<ref_id> URLs when user opens page directly
-    • Fetch the order from backend
-    • Render the same order UI (Saved Notice + Order Box)
-    • Replace/skip the join form if present
-
-  Notes:
-    • Requires: createSavedNotice(), buildOrderBox(), applyCoupon(),
-                confirmPay() from main frontend script.
-    • Backend must expose POST /api/order/by-ref to fetch order.
-  ------------------------------------------------------------
+  Homepage Order Loader
+  - Detects /community/order/<ref_id>
+  - POSTs to your worker: /api/order/by-ref
+  - Renders Saved Notice + Order Box using existing frontend helpers
+  - Shows friendly error & retry on failure
 */
 (function () {
+  const WORKER_URL = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
 
-  // Match URLs like /community/order/ABC123-000456
-  const path = window.location.pathname;
-  const match = path.match(/\/community\/order\/([A-Za-z0-9\-_.]+)/);
+  // match /community/order/<ref>
+  const path = window.location.pathname || "";
+  const m = path.match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
+  if (!m) return; // not an order page
 
-  if (!match) return;  // Not an order page → do nothing
+  const refId = m[1];
 
-  const refId = match[1];
-
-  // Remove join form if it exists on homepage
+  // Remove join form if present
   const joinForm = document.getElementById("kfJoinInfoForm");
   if (joinForm) joinForm.remove();
 
-  // Create a container to show loading + final UI
+  // Create container at top of body
   const container = document.createElement("div");
+  container.id = "kf-order-loader";
   container.style.padding = "20px";
-  container.style.fontSize = "1.1rem";
-  container.style.fontWeight = "600";
+  container.style.maxWidth = "980px";
+  container.style.margin = "18px auto";
+  container.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
+  container.style.fontSize = "1rem";
+  container.style.boxSizing = "border-box";
   container.textContent = "Loading order…";
   document.body.prepend(container);
 
-  // Fetch order using ref_id
-  fetch("https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ref_id: refId })
-  })
-  .then(r => r.json())
-  .then(j => {
-    if (!j.ok) {
-      container.textContent = "Order not found.";
-      return;
+  function showError(msg, details) {
+    container.innerHTML = "";
+    const h = document.createElement("div");
+    h.style.color = "#b91c1c";
+    h.style.fontWeight = 700;
+    h.style.marginBottom = "8px";
+    h.textContent = msg;
+    container.appendChild(h);
+
+    if (details) {
+      const pre = document.createElement("pre");
+      pre.style.whiteSpace = "pre-wrap";
+      pre.style.fontSize = ".9rem";
+      pre.style.color = "#444";
+      pre.textContent = details;
+      container.appendChild(pre);
     }
 
-    const order = j.order;
-    container.innerHTML = ""; // Clear loading state
+    const tryBtn = document.createElement("button");
+    tryBtn.textContent = "Try again";
+    tryBtn.style.marginTop = "12px";
+    tryBtn.style.padding = "8px 12px";
+    tryBtn.style.borderRadius = "6px";
+    tryBtn.style.border = "1px solid #ddd";
+    tryBtn.style.background = "#fff";
+    tryBtn.style.cursor = "pointer";
+    tryBtn.onclick = () => { container.textContent = "Loading order…"; load(); };
+    container.appendChild(tryBtn);
 
-    // Show top "Saved" notice (same as post-submit)
-    container.appendChild(
-      createSavedNotice(order.order_ref, order.order_created_at, order.order_url, false)
-    );
+    const sup = document.createElement("div");
+    sup.style.marginTop = "12px";
+    sup.style.color = "#444";
+    sup.style.fontSize = ".9rem";
+    sup.textContent = "If this persists, contact support with Order ID: " + refId;
+    container.appendChild(sup);
+  }
 
-    // Build full order summary UI
-    const box = buildOrderBox(order);
-    container.appendChild(box.wrap);
+  async function load() {
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref_id: refId })
+      });
 
-    // Wire events (coupon + pay)
-    box.applyBtn.addEventListener("click", () =>
-      applyCoupon(order.member.id, box.couponInput.value.trim(), box)
-    );
+      console.log("kf-order-loader: fetch status", res.status);
 
-    box.payBtn.addEventListener("click", () =>
-      confirmPay(order.member.id, box)
-    );
-  })
-  .catch(() => {
-    container.textContent = "Unable to load order.";
-  });
+      const text = await res.text();
+      let json;
+      try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }
+
+      if (res.status === 200 && json && json.ok) {
+        const order = json.order;
+        container.innerHTML = "";
+
+        // Saved notice (uses your frontend function)
+        if (typeof createSavedNotice === "function") {
+          container.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+        } else {
+          const h = document.createElement("div");
+          h.style.fontWeight = 700;
+          h.textContent = `Order: ${order.order_ref}`;
+          container.appendChild(h);
+        }
+
+        // Build order UI (uses your frontend function)
+        if (typeof buildOrderBox === "function") {
+          const box = buildOrderBox(order);
+          container.appendChild(box.wrap);
+
+          // Wire up coupon & pay using the order.member.id
+          if (box.applyBtn) {
+            box.applyBtn.addEventListener("click", function () {
+              if (typeof applyCoupon === "function") {
+                applyCoupon(order.member.id, box.couponInput.value.trim(), box);
+              } else {
+                console.warn("applyCoupon() not defined");
+              }
+            });
+          }
+          if (box.payBtn) {
+            box.payBtn.addEventListener("click", function () {
+              if (typeof confirmPay === "function") {
+                confirmPay(order.member.id, box);
+              } else {
+                console.warn("confirmPay() not defined");
+              }
+            });
+          }
+        } else {
+          // fallback plain rendering if helpers missing
+          const msg = document.createElement("div");
+          msg.textContent = "Order loaded but UI helpers are not present on this page.";
+          container.appendChild(msg);
+        }
+
+        return;
+      }
+
+      // Not ok — show friendly error with backend message if available
+      const details = (json && json.message) ? json.message : (text || "No details");
+      showError("Order not found or cannot be loaded.", details);
+
+    } catch (err) {
+      console.error("kf-order-loader error:", err);
+      showError("Network error while fetching order.", String(err));
+    }
+  }
+
+  // Kick off load
+  load();
 
 })();
 </script>
+
 
   <script>
     (function () {
