@@ -3894,7 +3894,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
-  /* ---------------- Form Submit (updated to change URL) ---------------- */
+  /* ---------------- Form Submit (updated to change URL to query-style) ---------------- */
   form.addEventListener('submit',async function(e){
     e.preventDefault();
 
@@ -3938,13 +3938,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       removeFormIntroMessage();
       removeExtraWhitespaceAroundForm();
 
-      // If order_url present, change browser URL (replaceState), and set document.title
-      if (j.order && j.order.order_url) {
+      // If order_ref present, change browser URL to query-style and set document.title
+      if (j.order && j.order.order_ref) {
         try {
-          history.replaceState({}, '', j.order.order_url);
-          if (j.order.order_ref) {
-            document.title = `${j.order.order_ref} — KenFolios`;
-          }
+          const qUrl = `/community?order=${encodeURIComponent(j.order.order_ref)}`;
+          history.replaceState({}, '', qUrl);
+          document.title = `${j.order.order_ref} — KenFolios`;
         } catch (e) {
           // ignore if history API not allowed
         }
@@ -3970,8 +3969,92 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   });
 
-})();
+  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order ---------------- */
+  (function orderLoader(){
+    function detectOrderRef() {
+      try {
+        const sp = new URLSearchParams(window.location.search || '');
+        const q = sp.get('order');
+        if (q && q.trim()) return q.trim();
+        // legacy path: /community/order/REF
+        const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
+        if (m && m[1]) return m[1];
+      } catch (e) { /* ignore */ }
+      return null;
+    }
 
+    const ref = detectOrderRef();
+    if (!ref) return;
+
+    (async function loadOrder() {
+      // Worker endpoint that returns an order object by ref_id
+      const WORKER_URL = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
+
+      // Create a mount point for the order UI (if one not present)
+      let container = document.getElementById('kf-order-loader');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'kf-order-loader';
+        container.style.maxWidth = '980px';
+        container.style.margin = '18px auto';
+        // Prefer injecting into a main community container if exists
+        const main = document.querySelector('#main, .main, #content, .content') || document.body;
+        main.prepend(container);
+      }
+
+      container.textContent = 'Loading order…';
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref_id: ref })
+        });
+        const j = await res.json();
+
+        if (!res.ok || !j.ok) {
+          container.textContent = 'Order not found.';
+          return;
+        }
+
+        const order = j.order;
+
+        // If the UI helpers (from your join frontend) are present, use them
+        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
+          container.innerHTML = '';
+          // We intentionally pass null for orderUrl here so saved notice doesn't show the url
+          container.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+          const box = buildOrderBox(order);
+          container.appendChild(box.wrap);
+
+          // Wire up apply & pay using existing helpers.
+          const memberId = (order.member && order.member.id) ? order.member.id : null;
+
+          if (box.applyBtn && memberId) {
+            box.applyBtn.addEventListener('click', function(){
+              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            });
+          }
+
+          if (box.payBtn && memberId) {
+            box.payBtn.addEventListener('click', function(){
+              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
+            });
+          }
+
+        } else {
+          // Fallback minimal render if helpers missing
+          container.innerHTML = '<div style="padding:12px;background:#fff;border:1px solid #eee;border-radius:8px">Order: ' + order.order_ref + ' — Total ' + (order.totals ? ('₹' + order.totals.total) : '—') + '</div>';
+        }
+
+      } catch (err) {
+        container.textContent = 'Network error loading order.';
+        console.error('Order loader error:', err);
+      }
+    })();
+  })();
+
+})();
 
 </script>
 
