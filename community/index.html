@@ -3252,21 +3252,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v6.2 — final polished drop-in
-   - Order Summary left, Order ID right
-   - Order created timestamp BELOW Order ID, LEFT aligned
-   - Review-notice box
-   - Company separator
-   - Coupon separator
-   - GST-inclusive fee note (value comes from worker)
-   - Frontend does NOT compute totals (worker is authoritative)
-   - Consistent label placement (label above input) & input styling
-   - Removes "Before you proceed..." intro on successful save
+/* kf-join-frontend v6.3 — adds visible unique order URL (pushState) & clickable link
+   - When an order is created and response returned (j.order), the browser URL is updated to j.order.order_url (history.replaceState)
+   - The saved notice shows a clickable link to the order_url
+   - Optionally shows "We've emailed this URL" if the backend sends a flag (not required)
 */
 
 (function(){
-  if (window.__KF_JOINFORM_V6_2) return;
-  window.__KF_JOINFORM_V6_2 = true;
+  if (window.__KF_JOINFORM_V6_3) return;
+  window.__KF_JOINFORM_V6_3 = true;
 
   const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
   const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
@@ -3283,7 +3277,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   /* -----------------------------------------------
      REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
-     Restores old behavior from v5
   ------------------------------------------------ */
   function removeFormIntroMessage() {
     const el1 = document.querySelector('.kf-form-intro');
@@ -3317,7 +3310,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return Array.from(list).map(i => i.value);
   }
 
-  /* small helper to style inputs consistently */
   function styleInput(el){
     el.style.width = '100%';
     el.style.padding = '10px';
@@ -3328,7 +3320,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     el.style.fontSize = '0.95rem';
   }
 
-  /* ---------------- Spinner pill ---------------- */
   function createProgressPill(text){
     const pill = document.createElement('div');
     pill.style.display='inline-flex';
@@ -3375,8 +3366,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     btn.style.display = btn.dataset._old || '';
   }
 
-  /* -------- Saved notice above order box -------- */
-  function createSavedNotice(ref, createdIso){
+  /* -------- Saved notice above order box (now shows clickable URL) -------- */
+  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
     const n=document.createElement('div');
     n.style.padding='12px';
     n.style.borderRadius='8px';
@@ -3401,11 +3392,40 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       n.appendChild(dt);
     }
 
-    const sub=document.createElement('div');
-    sub.style.fontSize='.95rem';
-    sub.style.color='#111';
-    sub.textContent='Please review the order details below and complete payment to activate your membership.';
-    n.appendChild(sub);
+    if (orderUrl){
+      const linkWrap=document.createElement('div');
+      linkWrap.style.fontSize='.95rem';
+      linkWrap.style.color='#0b63ce';
+      linkWrap.style.fontWeight='600';
+      const a=document.createElement('a');
+      a.href = orderUrl;
+      a.textContent = orderUrl.replace(/^https?:\/\//,'');
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      linkWrap.appendChild(a);
+      n.appendChild(linkWrap);
+
+      if (emailed) {
+        const em=document.createElement('div');
+        em.style.fontSize='.9rem';
+        em.style.color='#444';
+        em.style.fontWeight='500';
+        em.textContent = 'We have also emailed this link to you — use it to edit or complete payment later.';
+        n.appendChild(em);
+      } else {
+        const em2=document.createElement('div');
+        em2.style.fontSize='.9rem';
+        em2.style.color='#666';
+        em2.textContent = 'You can copy this link to access or complete the order later.';
+        n.appendChild(em2);
+      }
+    } else {
+      const sub=document.createElement('div');
+      sub.style.fontSize='.95rem';
+      sub.style.color='#111';
+      sub.textContent='Please review the order details below and complete payment to activate your membership.';
+      n.appendChild(sub);
+    }
 
     return n;
   }
@@ -3434,7 +3454,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     setTimeout(()=>{el.style.display='none';},3000);
   }
 
-  /* ---------------- Order Box ---------------- */
+  /* ---------------- Order Box (same as v6.2 styling) ---------------- */
   function buildOrderBox(order){
     const wrap=document.createElement('div');
     wrap.style.width='100%';
@@ -3443,13 +3463,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     wrap.style.border='1px solid #eee';
     wrap.style.borderRadius='12px';
 
-    /* --- Header block --- */
     const headerWrap = document.createElement('div');
     headerWrap.style.display = 'flex';
     headerWrap.style.flexDirection = 'column';
     headerWrap.style.gap = '6px';
 
-    // Row 1: title left, ID right
     const topRow=document.createElement('div');
     topRow.style.display='flex';
     topRow.style.justifyContent='space-between';
@@ -3466,22 +3484,18 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     topRow.appendChild(right);
     headerWrap.appendChild(topRow);
 
-    // Row 2: order created (LEFT ONLY)
     if (order.order_created_at){
       const r2=document.createElement('div');
       r2.style.fontSize='.85rem';
       r2.style.color='#666';
-
       const d=new Date(order.order_created_at);
       const pretty = d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
-
       r2.textContent = `Order created: ${pretty}`;
       headerWrap.appendChild(r2);
     }
 
     wrap.appendChild(headerWrap);
 
-    /* --- Company block --- */
     const c=document.createElement('div');
     c.style.marginTop='14px';
     c.innerHTML=
@@ -3492,14 +3506,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
        </div>`;
     wrap.appendChild(c);
 
-    // Thin separator
     const compSep=document.createElement('div');
     compSep.style.borderTop='1px solid #e6e6e6';
     compSep.style.marginTop='12px';
     compSep.style.paddingTop='12px';
     wrap.appendChild(compSep);
 
-    /* --- Review Notice --- */
     const notice=document.createElement('div');
     notice.style.background='rgba(249,250,251,0.9)';
     notice.style.border='1px solid #f1f5f9';
@@ -3511,7 +3523,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     notice.textContent="We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
     wrap.appendChild(notice);
 
-    /* --- Editable fields --- */
     const box=document.createElement('div');
     box.style.display='grid';
     box.style.gridTemplateColumns='1fr 1fr';
@@ -3553,7 +3564,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     box.appendChild(mk('City','ord_city',order.member.city));
     wrap.appendChild(box);
 
-    /* --- Activation Fee block --- */
     const prod=document.createElement('div');
     prod.style.marginTop='14px';
     const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
@@ -3573,14 +3583,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       `This fee is the current prevailing rate and may change if you opt to pay later.`;
     wrap.appendChild(feeNote);
 
-    /* --- Coupon separator --- */
     const couponSep=document.createElement('div');
     couponSep.style.borderTop='1px dashed #ddd';
     couponSep.style.marginTop='14px';
     couponSep.style.paddingTop='10px';
     wrap.appendChild(couponSep);
 
-    /* --- Coupon input --- */
     const couponWrap=document.createElement('div');
 
     const couponInput=document.createElement('input');
@@ -3613,7 +3621,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
     wrap.appendChild(couponWrap);
 
-    /* --- Totals --- */
     const totals=document.createElement('div');
     totals.style.marginTop='14px';
     wrap.appendChild(totals);
@@ -3630,7 +3637,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
     updateTotals(order);
 
-    /* --- Pay Button --- */
     const payBox=document.createElement('div');
     payBox.style.marginTop='18px';
 
@@ -3654,7 +3660,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable, couponError};
   }
 
-  /* ---------------- PATCH Member ---------------- */
   async function patchMember(id,box){
     const body={
       name:$id('ord_full_name').value.trim(),
@@ -3674,7 +3679,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }catch{return null;}
   }
 
-  /* ---------------- Apply Coupon ---------------- */
   async function applyCoupon(id,code,box){
     try{
       if (box.couponError){
@@ -3719,7 +3723,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
-  /* ---------------- Confirm Pay ---------------- */
   async function confirmPay(id,box){
     const saved = await patchMember(id,box);
     if(!saved) return;
@@ -3782,7 +3785,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
-  /* ---------------- Form Submit ---------------- */
+  /* ---------------- Form Submit (updated to change URL) ---------------- */
   form.addEventListener('submit',async function(e){
     e.preventDefault();
 
@@ -3822,12 +3825,26 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         return;
       }
 
-      // Remove intro message / whitespace before replacing form
+      // Remove any intro/whitespace, then show order UI
       removeFormIntroMessage();
       removeExtraWhitespaceAroundForm();
 
+      // If order_url present, change browser URL (replaceState), and set document.title
+      if (j.order && j.order.order_url) {
+        try {
+          history.replaceState({}, '', j.order.order_url);
+          if (j.order.order_ref) {
+            document.title = `${j.order.order_ref} — KenFolios`;
+          }
+        } catch (e) {
+          // ignore if history API not allowed
+        }
+      }
+
       const wrap=document.createElement('div');
-      wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at));
+      // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
+      const emailed = (j.email_sent === true) || false;
+      wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
 
       const box=buildOrderBox(j.order);
       wrap.appendChild(box.wrap);
@@ -3844,7 +3861,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   });
 
 })();
-
 
 
 </script>
