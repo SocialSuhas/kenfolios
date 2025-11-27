@@ -284,6 +284,85 @@
       </div>
     </section>
   </main>
+<script>
+/*
+  ------------------------------------------------------------
+  KEN/VStreet — Order Loader Script
+  ------------------------------------------------------------
+  Purpose:
+    • Detect /community/order/<ref_id> URLs when user opens page directly
+    • Fetch the order from backend
+    • Render the same order UI (Saved Notice + Order Box)
+    • Replace/skip the join form if present
+
+  Notes:
+    • Requires: createSavedNotice(), buildOrderBox(), applyCoupon(),
+                confirmPay() from main frontend script.
+    • Backend must expose POST /api/order/by-ref to fetch order.
+  ------------------------------------------------------------
+*/
+(function () {
+
+  // Match URLs like /community/order/ABC123-000456
+  const path = window.location.pathname;
+  const match = path.match(/\/community\/order\/([A-Za-z0-9\-_.]+)/);
+
+  if (!match) return;  // Not an order page → do nothing
+
+  const refId = match[1];
+
+  // Remove join form if it exists on homepage
+  const joinForm = document.getElementById("kfJoinInfoForm");
+  if (joinForm) joinForm.remove();
+
+  // Create a container to show loading + final UI
+  const container = document.createElement("div");
+  container.style.padding = "20px";
+  container.style.fontSize = "1.1rem";
+  container.style.fontWeight = "600";
+  container.textContent = "Loading order…";
+  document.body.prepend(container);
+
+  // Fetch order using ref_id
+  fetch("https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ref_id: refId })
+  })
+  .then(r => r.json())
+  .then(j => {
+    if (!j.ok) {
+      container.textContent = "Order not found.";
+      return;
+    }
+
+    const order = j.order;
+    container.innerHTML = ""; // Clear loading state
+
+    // Show top "Saved" notice (same as post-submit)
+    container.appendChild(
+      createSavedNotice(order.order_ref, order.order_created_at, order.order_url, false)
+    );
+
+    // Build full order summary UI
+    const box = buildOrderBox(order);
+    container.appendChild(box.wrap);
+
+    // Wire events (coupon + pay)
+    box.applyBtn.addEventListener("click", () =>
+      applyCoupon(order.member.id, box.couponInput.value.trim(), box)
+    );
+
+    box.payBtn.addEventListener("click", () =>
+      confirmPay(order.member.id, box)
+    );
+  })
+  .catch(() => {
+    container.textContent = "Unable to load order.";
+  });
+
+})();
+</script>
 
   <script>
     (function () {
@@ -331,5 +410,6 @@
       const intervalId = setInterval(tick, 1000);
     })();
   </script>
+  
 </body>
 </html>
