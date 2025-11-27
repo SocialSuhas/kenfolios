@@ -1245,12 +1245,13 @@ body > .chat-skeleton {
   }
 }
 
-/* Wrap entire order UI (make sure wrapper has this class in HTML/JS) */
+/* Wrap entire order UI */
 .kf-order-wrapper {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box;
   overflow: hidden;
+  padding: 12px;
 }
 
 /* Member fields grid – responsive */
@@ -1276,15 +1277,15 @@ body > .chat-skeleton {
 
 /* APPLY BUTTON CENTERING */
 .kf-order-wrapper .kf-apply-btn {
-  display: block;
-  margin: 8px auto 0 auto; /* center horizontally */
+  display: inline-block;
+  margin: 0 auto;
   padding: 8px 14px;
   font-size: 0.9rem;
   border: 1px solid #ddd;
   border-radius: 6px;
   background: #fff;
   cursor: pointer;
-  max-width: 200px; /* stays smaller than main button */
+  max-width: 200px;
 }
 
 /* Main confirm & pay button responsive */
@@ -1292,10 +1293,10 @@ body > .chat-skeleton {
   width: 100%;
   padding: 12px 20px;
   font-size: 1rem;
-  background: var(--kf-red); /* your theme */
-  color: #fff;
   border-radius: 8px;
   border: none;
+  color: #fff;
+  background: var(--kf-red);
 }
 @media (max-width: 640px) {
   .kf-order-wrapper .kf-primary-btn {
@@ -1313,6 +1314,7 @@ body > .chat-skeleton {
     gap: 6px;
   }
 }
+
 
 
   </style>
@@ -3252,15 +3254,96 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v6.3 — adds visible unique order URL (pushState) & clickable link
-   - When an order is created and response returned (j.order), the browser URL is updated to j.order.order_url (history.replaceState)
-   - The saved notice shows a clickable link to the order_url
-   - Optionally shows "We've emailed this URL" if the backend sends a flag (not required)
+/* kf-join-frontend v6.3 — full updated frontend script
+   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
+   - Removes visible order URL / "pay later" copy from saved notice
+   - Coupon input + Apply button stacked (Apply centered)
+   - Editable fields responsive (stack on small screens)
 */
-
 (function(){
   if (window.__KF_JOINFORM_V6_3) return;
   window.__KF_JOINFORM_V6_3 = true;
+
+  /* ------------------ CSS Injection (responsive classes) ------------------ */
+  (function injectKFStyles(){
+    const css = `
+/* Wrap entire order UI */
+.kf-order-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px;
+}
+
+/* Member fields grid – responsive */
+.kf-order-wrapper .kf-member-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* desktop */
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .kf-order-wrapper .kf-member-box {
+    grid-template-columns: 1fr !important; /* mobile stack */
+  }
+}
+
+/* Inputs never overflow */
+.kf-order-wrapper .kf-input,
+.kf-order-wrapper input,
+.kf-order-wrapper select {
+  width: 100% !important;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* APPLY BUTTON CENTERING */
+.kf-order-wrapper .kf-apply-btn {
+  display: inline-block;
+  margin: 0 auto;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+/* Main confirm & pay button responsive */
+.kf-order-wrapper .kf-primary-btn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  background: var(--kf-red, #d32f2f);
+}
+@media (max-width: 640px) {
+  .kf-order-wrapper .kf-primary-btn {
+    width: 100% !important;
+  }
+}
+
+/* Tighten padding on very small screens */
+@media (max-width: 420px) {
+  .kf-order-wrapper {
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .kf-order-wrapper .kf-member-box {
+    gap: 6px;
+  }
+}
+    `;
+    if (!document.getElementById('kf-join-v6-3-styles')) {
+      const s = document.createElement('style');
+      s.id = 'kf-join-v6-3-styles';
+      s.appendChild(document.createTextNode(css));
+      document.head.appendChild(s);
+    }
+  })();
 
   const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
   const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
@@ -3366,65 +3449,48 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     btn.style.display = btn.dataset._old || '';
   }
 
-  /* -------- Saved notice above order box (now shows clickable URL) -------- */
+  /* -------- Saved notice above order box (now short — no visible URL) -------- */
   function createSavedNotice(ref, createdIso, orderUrl, emailed) {
-    const n=document.createElement('div');
-    n.style.padding='12px';
-    n.style.borderRadius='8px';
-    n.style.background='rgba(230,245,255,0.95)';
-    n.style.fontWeight='600';
-    n.style.marginBottom='14px';
-    n.style.display='flex';
-    n.style.flexDirection='column';
-    n.style.gap='6px';
+    const n = document.createElement('div');
+    n.style.padding = '12px';
+    n.style.borderRadius = '8px';
+    n.style.background = 'rgba(230,245,255,0.95)';
+    n.style.fontWeight = '600';
+    n.style.marginBottom = '14px';
+    n.style.display = 'flex';
+    n.style.flexDirection = 'column';
+    n.style.gap = '6px';
 
-    const line1=document.createElement('div');
-    line1.textContent=`✅ Details saved. Order ID: ${ref}`;
+    const line1 = document.createElement('div');
+    line1.textContent = `✅ Details saved. Order ID: ${ref}`;
     n.appendChild(line1);
 
-    if (createdIso){
-      const d=new Date(createdIso);
-      const pretty = d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
-      const dt=document.createElement('div');
-      dt.style.fontSize='.9rem';
-      dt.style.color='#444';
-      dt.textContent=`Order created: ${pretty}`;
+    if (createdIso) {
+      const d = new Date(createdIso);
+      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      const dt = document.createElement('div');
+      dt.style.fontSize = '.9rem';
+      dt.style.color = '#444';
+      dt.textContent = `Order created: ${pretty}`;
       n.appendChild(dt);
     }
 
-    if (orderUrl){
-      const linkWrap=document.createElement('div');
-      linkWrap.style.fontSize='.95rem';
-      linkWrap.style.color='#0b63ce';
-      linkWrap.style.fontWeight='600';
-      const a=document.createElement('a');
-      a.href = orderUrl;
-      a.textContent = orderUrl.replace(/^https?:\/\//,'');
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      linkWrap.appendChild(a);
-      n.appendChild(linkWrap);
+    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
+    const sub = document.createElement('div');
+    sub.style.fontSize = '.95rem';
+    sub.style.color = '#111';
+    sub.style.marginTop = '6px';
+    sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
+    n.appendChild(sub);
 
-      if (emailed) {
-        const em=document.createElement('div');
-        em.style.fontSize='.9rem';
-        em.style.color='#444';
-        em.style.fontWeight='500';
-        em.textContent = 'We have also emailed this link to you — use it to edit or complete payment later.';
-        n.appendChild(em);
-      } else {
-        const em2=document.createElement('div');
-        em2.style.fontSize='.9rem';
-        em2.style.color='#666';
-        em2.textContent = 'You can copy this link to access or complete the order later.';
-        n.appendChild(em2);
-      }
-    } else {
-      const sub=document.createElement('div');
-      sub.style.fontSize='.95rem';
-      sub.style.color='#111';
-      sub.textContent='Please review the order details below and complete payment to activate your membership.';
-      n.appendChild(sub);
+    // If backend explicitly reports an email was sent we can optionally show that
+    if (emailed) {
+      const em = document.createElement('div');
+      em.style.fontSize = '.9rem';
+      em.style.color = '#444';
+      em.style.fontWeight = '500';
+      em.textContent = 'We have emailed this order link to you — use it to edit or complete payment.';
+      n.appendChild(em);
     }
 
     return n;
@@ -3454,51 +3520,53 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     setTimeout(()=>{el.style.display='none';},3000);
   }
 
-  /* ---------------- Order Box (same as v6.2 styling) ---------------- */
-  function buildOrderBox(order){
-    const wrap=document.createElement('div');
-    wrap.style.width='100%';
-    wrap.style.padding='12px';
-    wrap.style.background='#fff';
-    wrap.style.border='1px solid #eee';
-    wrap.style.borderRadius='12px';
+  /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
+  function buildOrderBox(order) {
+    const wrap = document.createElement('div');
+    wrap.className = 'kf-order-wrapper';
+    wrap.style.width = '100%';
+    wrap.style.padding = '12px';
+    wrap.style.background = '#fff';
+    wrap.style.border = '1px solid #eee';
+    wrap.style.borderRadius = '12px';
+    wrap.style.boxSizing = 'border-box';
 
     const headerWrap = document.createElement('div');
     headerWrap.style.display = 'flex';
     headerWrap.style.flexDirection = 'column';
     headerWrap.style.gap = '6px';
 
-    const topRow=document.createElement('div');
-    topRow.style.display='flex';
-    topRow.style.justifyContent='space-between';
+    const topRow = document.createElement('div');
+    topRow.style.display = 'flex';
+    topRow.style.justifyContent = 'space-between';
 
-    const left=document.createElement('div');
-    left.innerHTML='<strong>Order Summary</strong>';
+    const left = document.createElement('div');
+    left.innerHTML = '<strong>Order Summary</strong>';
 
-    const right=document.createElement('div');
-    right.style.color='#444';
-    right.style.fontWeight='600';
-    right.textContent=`Order ID: ${order.order_ref}`;
+    const right = document.createElement('div');
+    right.style.color = '#444';
+    right.style.fontWeight = '600';
+    right.textContent = `Order ID: ${order.order_ref}`;
 
     topRow.appendChild(left);
     topRow.appendChild(right);
     headerWrap.appendChild(topRow);
 
-    if (order.order_created_at){
-      const r2=document.createElement('div');
-      r2.style.fontSize='.85rem';
-      r2.style.color='#666';
-      const d=new Date(order.order_created_at);
-      const pretty = d.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+    if (order.order_created_at) {
+      const r2 = document.createElement('div');
+      r2.style.fontSize = '.85rem';
+      r2.style.color = '#666';
+      const d = new Date(order.order_created_at);
+      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
       r2.textContent = `Order created: ${pretty}`;
       headerWrap.appendChild(r2);
     }
 
     wrap.appendChild(headerWrap);
 
-    const c=document.createElement('div');
-    c.style.marginTop='14px';
-    c.innerHTML=
+    const c = document.createElement('div');
+    c.style.marginTop = '14px';
+    c.innerHTML =
       `<div style="font-weight:700">${COMPANY_NAME}</div>
        <div style="color:#666">${COMPANY_ADDRESS}</div>
        <div style="font-size:.85rem;color:#666;margin-top:4px">
@@ -3506,127 +3574,154 @@ var delay = 1200 + Math.floor(Math.random()*1000);
        </div>`;
     wrap.appendChild(c);
 
-    const compSep=document.createElement('div');
-    compSep.style.borderTop='1px solid #e6e6e6';
-    compSep.style.marginTop='12px';
-    compSep.style.paddingTop='12px';
+    const compSep = document.createElement('div');
+    compSep.style.borderTop = '1px solid #e6e6e6';
+    compSep.style.marginTop = '12px';
+    compSep.style.paddingTop = '12px';
     wrap.appendChild(compSep);
 
-    const notice=document.createElement('div');
-    notice.style.background='rgba(249,250,251,0.9)';
-    notice.style.border='1px solid #f1f5f9';
-    notice.style.padding='10px';
-    notice.style.borderRadius='8px';
-    notice.style.color='#334155';
-    notice.style.fontWeight='600';
-    notice.style.fontSize='.95rem';
-    notice.textContent="We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
+    const notice = document.createElement('div');
+    notice.style.background = 'rgba(249,250,251,0.9)';
+    notice.style.border = '1px solid #f1f5f9';
+    notice.style.padding = '10px';
+    notice.style.borderRadius = '8px';
+    notice.style.color = '#334155';
+    notice.style.fontWeight = '600';
+    notice.style.fontSize = '.95rem';
+    notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
     wrap.appendChild(notice);
 
-    const box=document.createElement('div');
-    box.style.display='grid';
-    box.style.gridTemplateColumns='1fr 1fr';
-    box.style.gap='10px';
-    box.style.marginTop='12px';
+    // MEMBER BOX (responsive grid)
+    const box = document.createElement('div');
+    box.className = 'kf-member-box';
+    box.style.display = 'grid';
+    box.style.gridTemplateColumns = '1fr 1fr';
+    box.style.gap = '10px';
+    box.style.marginTop = '12px';
 
     const editable = order.editable;
 
-    function mk(label,id,val){
-      const f=document.createElement('div');
+    function mk(label, id, val) {
+      const f = document.createElement('div');
 
-      const l=document.createElement('label');
-      l.textContent=label;
-      l.style.fontSize='.9rem';
-      l.style.display='block';
-      l.style.marginBottom='6px';
+      const l = document.createElement('label');
+      l.textContent = label;
+      l.style.fontSize = '.9rem';
+      l.style.display = 'block';
+      l.style.marginBottom = '6px';
       f.appendChild(l);
 
-      if (editable){
-        const i=document.createElement('input');
-        i.id=id; i.value=val||'';
-        styleInput(i);
+      if (editable) {
+        const i = document.createElement('input');
+        i.id = id;
+        i.value = val || '';
+        i.className = 'kf-input';
+        // basic inline fallback styling so class alone still looks ok
+        i.style.padding = '10px';
+        i.style.border = '1px solid #e6e6e6';
+        i.style.borderRadius = '8px';
+        i.style.background = '#fafafa';
+        i.style.boxSizing = 'border-box';
+        i.style.fontSize = '0.95rem';
         f.appendChild(i);
       } else {
-        const t=document.createElement('div');
-        t.textContent=val||'';
-        t.style.padding='10px';
-        t.style.borderRadius='8px';
-        t.style.background='#fafafa';
-        t.style.border='1px solid #e6e6e6';
+        const t = document.createElement('div');
+        t.textContent = val || '';
+        t.style.padding = '10px';
+        t.style.borderRadius = '8px';
+        t.style.background = '#fafafa';
+        t.style.border = '1px solid #e6e6e6';
         f.appendChild(t);
       }
       return f;
     }
 
-    box.appendChild(mk('Full Name','ord_full_name',order.member.full_name));
-    box.appendChild(mk('Email','ord_email',order.member.email));
-    box.appendChild(mk('Phone','ord_phone',order.member.phone));
-    box.appendChild(mk('City','ord_city',order.member.city));
+    box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
+    box.appendChild(mk('Email', 'ord_email', order.member.email));
+    box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
+    box.appendChild(mk('City', 'ord_city', order.member.city));
     wrap.appendChild(box);
 
-    const prod=document.createElement('div');
-    prod.style.marginTop='14px';
+    // PRODUCT + fee note (unchanged)
+    const prod = document.createElement('div');
+    prod.style.marginTop = '14px';
     const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
-    prod.innerHTML=
+    prod.innerHTML =
       `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
         <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
         <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
       </div>`;
     wrap.appendChild(prod);
 
-    const feeNote=document.createElement('div');
-    feeNote.style.fontSize='.85rem';
-    feeNote.style.color='#555';
-    feeNote.style.marginTop='6px';
-    feeNote.textContent=
-      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. `+
+    const feeNote = document.createElement('div');
+    feeNote.style.fontSize = '.85rem';
+    feeNote.style.color = '#555';
+    feeNote.style.marginTop = '6px';
+    feeNote.textContent =
+      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
       `This fee is the current prevailing rate and may change if you opt to pay later.`;
     wrap.appendChild(feeNote);
 
-    const couponSep=document.createElement('div');
-    couponSep.style.borderTop='1px dashed #ddd';
-    couponSep.style.marginTop='14px';
-    couponSep.style.paddingTop='10px';
+    // Coupon area — stacked layout: input above Apply button
+    const couponSep = document.createElement('div');
+    couponSep.style.borderTop = '1px dashed #ddd';
+    couponSep.style.marginTop = '14px';
+    couponSep.style.paddingTop = '10px';
     wrap.appendChild(couponSep);
 
-    const couponWrap=document.createElement('div');
+    const couponWrap = document.createElement('div');
+    couponWrap.style.display = 'flex';
+    couponWrap.style.flexDirection = 'column';
+    couponWrap.style.gap = '8px';
+    couponWrap.style.marginTop = '8px';
+    couponWrap.style.alignItems = 'flex-start';
 
-    const couponInput=document.createElement('input');
-    couponInput.placeholder='Coupon code';
-    styleInput(couponInput);
-    couponInput.style.maxWidth = '300px';
+    const couponInput = document.createElement('input');
+    couponInput.placeholder = 'Coupon code';
+    couponInput.className = 'kf-input';
+    couponInput.style.width = '100%';
+    couponInput.style.maxWidth = '100%';
+    couponInput.style.boxSizing = 'border-box';
+    couponInput.style.padding = '10px';
+    couponInput.style.border = '1px solid #e6e6e6';
+    couponInput.style.borderRadius = '8px';
     couponWrap.appendChild(couponInput);
 
-    const applyBtn=document.createElement('button');
-    applyBtn.textContent='Apply';
-    applyBtn.type='button';
-    applyBtn.style.margin='8px 0 0 12px';
-    applyBtn.style.padding='8px 14px';
-    applyBtn.style.fontSize='.9rem';
-    applyBtn.style.border='1px solid #ddd';
-    applyBtn.style.borderRadius='8px';
-    applyBtn.style.background='#fff';
-    applyBtn.style.cursor='pointer';
-    couponWrap.style.display = 'flex';
-    couponWrap.style.alignItems = 'center';
-    couponWrap.appendChild(applyBtn);
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = 'Apply';
+    applyBtn.type = 'button';
+    applyBtn.className = 'kf-apply-btn';
+    applyBtn.style.padding = '8px 14px';
+    applyBtn.style.fontSize = '.9rem';
+    applyBtn.style.border = '1px solid #ddd';
+    applyBtn.style.borderRadius = '6px';
+    applyBtn.style.background = '#fff';
+    applyBtn.style.cursor = 'pointer';
+    // center the apply button horizontally by wrapping it
+    const applyWrap = document.createElement('div');
+    applyWrap.style.width = '100%';
+    applyWrap.style.display = 'flex';
+    applyWrap.style.justifyContent = 'center';
+    applyWrap.appendChild(applyBtn);
+    couponWrap.appendChild(applyWrap);
 
-    const couponError=document.createElement('div');
-    couponError.style.color='#b91c1c';
-    couponError.style.marginTop='6px';
-    couponError.style.textAlign='center';
-    couponError.style.fontWeight='600';
-    couponError.style.display='none';
+    const couponError = document.createElement('div');
+    couponError.style.color = '#b91c1c';
+    couponError.style.marginTop = '6px';
+    couponError.style.textAlign = 'center';
+    couponError.style.fontWeight = '600';
+    couponError.style.display = 'none';
     couponWrap.appendChild(couponError);
 
     wrap.appendChild(couponWrap);
 
-    const totals=document.createElement('div');
-    totals.style.marginTop='14px';
+    // totals
+    const totals = document.createElement('div');
+    totals.style.marginTop = '14px';
     wrap.appendChild(totals);
 
-    function updateTotals(o){
-      totals.innerHTML=
+    function updateTotals(o) {
+      totals.innerHTML =
         `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
          <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
          <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
@@ -3637,29 +3732,43 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
     updateTotals(order);
 
-    const payBox=document.createElement('div');
-    payBox.style.marginTop='18px';
+    const payBox = document.createElement('div');
+    payBox.style.marginTop = '18px';
 
-    const payBtn=document.createElement('button');
-    payBtn.textContent='Confirm & Pay';
-    payBtn.style.width='100%';
-    payBtn.style.padding='12px 20px';
-    payBtn.style.borderRadius='8px';
-    payBtn.style.fontSize='1rem';
-    payBtn.style.cursor='pointer';
-    stylePrimaryButton(payBtn);
+    const payBtn = document.createElement('button');
+    payBtn.textContent = 'Confirm & Pay';
+    payBtn.className = 'kf-primary-btn';
+    payBtn.style.width = '100%';
+    payBtn.style.padding = '12px 20px';
+    payBtn.style.borderRadius = '8px';
+    payBtn.style.fontSize = '1rem';
+    payBtn.style.cursor = 'pointer';
+    payBtn.style.background = 'var(--kf-red, #d32f2f)';
+    payBtn.style.color = '#fff';
+    payBtn.style.border = 'none';
     payBox.appendChild(payBtn);
 
-    const payMsg=document.createElement('div');
-    payMsg.style.display='none';
-    payMsg.style.marginTop='10px';
+    const payMsg = document.createElement('div');
+    payMsg.style.display = 'none';
+    payMsg.style.marginTop = '10px';
 
     wrap.appendChild(payBox);
     wrap.appendChild(payMsg);
 
-    return {wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox:totals, editable, couponError};
+    // Return references needed by event wiring
+    return {
+      wrap,
+      couponInput,
+      applyBtn,
+      payBtn,
+      payMsg,
+      totalsBox: totals,
+      editable,
+      couponError
+    };
   }
 
+  /* ------------------ Networking helpers for coupon/payment ------------------ */
   async function patchMember(id,box){
     const body={
       name:$id('ord_full_name').value.trim(),
@@ -3851,6 +3960,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
       form.replaceWith(wrap);
 
+      // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
       box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
       box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
 
