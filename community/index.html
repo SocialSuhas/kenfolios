@@ -3254,7 +3254,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v6.3 — full updated frontend script
+
+ /* kf-join-frontend v6.3 — full updated frontend script
    - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
    - Removes visible order URL / "pay later" copy from saved notice
    - Coupon input + Apply button stacked (Apply centered)
@@ -3824,7 +3825,323 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
       box.totalsBox.innerHTML=
         `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Di
+         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+           <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+         </div>`;
+
+      showInlineSuccess(box.payMsg,'Coupon applied');
+    }catch{
+      box.applyBtn.disabled=false;
+      box.couponError.textContent='Error applying coupon';
+      box.couponError.style.display='block';
+    }
+  }
+
+  async function confirmPay(id,box){
+    const saved = await patchMember(id,box);
+    if(!saved) return;
+
+    const code = box.couponApplied || box.couponInput.value.trim() || null;
+
+    try{
+      box.payBtn.disabled=true;
+
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:code})
+      });
+      const j=await resp.json();
+
+      box.payBtn.disabled=false;
+
+      if(!resp.ok||!j.ok){
+        showInlineError(box.payMsg,j.message);
+        return;
+      }
+
+      if(!j.razorpay_configured){
+        box.payMsg.style.display='block';
+        box.payMsg.textContent='Payment options will appear here soon.';
+        return;
+      }
+
+      const rp=j.razorpay_order;
+
+      const options={
+        key:rp.key_id,
+        amount:rp.amount,
+        currency:rp.currency,
+        order_id:rp.id,
+        handler: async function(res){
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              member_id:id,
+              razorpay_payment_id:res.razorpay_payment_id,
+              razorpay_order_id:res.razorpay_order_id,
+              razorpay_signature:res.razorpay_signature,
+              coupon:code
+            })
+          });
+          box.payBtn.disabled=true;
+          box.payBtn.textContent='Paid';
+        }
+      };
+
+      const rzp=new Razorpay(options);
+      rzp.open();
+
+    }catch{
+      box.payBtn.disabled=false;
+      showInlineError(box.payMsg,'Cannot initiate payment');
+    }
+  }
+
+  /* ---------------- Form Submit (updated to change URL) ---------------- */
+  if (form) {
+    form.addEventListener('submit',async function(e){
+      e.preventDefault();
+
+      if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
+        alert('Complete all fields');
+        return;
+      }
+
+      const submitBtn=form.querySelector('button[type="submit"]');
+      const pill=createProgressPill('Saving…');
+      replaceSubmitWithPill(submitBtn,pill);
+
+      const payload={
+        name:val('fi_name'),
+        dob:val('fi_dob'),
+        gender:val('fi_gender'),
+        email:val('fi_email'),
+        phone:val('fi_phone'),
+        city:val('fi_city'),
+        expectations:checkedValues('expectations'),
+        accept:true,
+        source:'kenfolios-join-v2'
+      };
+
+      try{
+        const resp=await fetch(WRITE_ENDPOINT,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        const j=await resp.json();
+
+        restoreSubmitFromPill(submitBtn,pill);
+
+        if(!resp.ok||!j.ok){
+          alert(j.message||"Could not save");
+          return;
+        }
+
+        // Remove any intro/whitespace, then show order UI
+        removeFormIntroMessage();
+        removeExtraWhitespaceAroundForm();
+
+        // If order_url present, change browser URL (replaceState), and set document.title
+        if (j.order && j.order.order_url) {
+          try {
+            // order_url now uses ?order=REF style (worker writes it that way)
+            history.replaceState({}, '', j.order.order_url);
+            if (j.order.order_ref) {
+              document.title = `${j.order.order_ref} — KenFolios`;
+            }
+          } catch (e) {
+            // ignore if history API not allowed
+          }
+        }
+
+        const wrap=document.createElement('div');
+        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
+        const emailed = (j.email_sent === true) || false;
+        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
+
+        const box=buildOrderBox(j.order);
+        wrap.appendChild(box.wrap);
+
+        // Replace the form in-place so UI appears exactly where the form was
+        form.replaceWith(wrap);
+
+        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
+        box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
+        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+
+      }catch{
+        restoreSubmitFromPill(submitBtn,pill);
+        alert('Save failed');
+      }
+    });
+  }
+
+  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
+     Replaces the original form container (if present) so the order UI appears where the form was.
+  ---------------- */
+  (function orderLoader(){
+    function detectOrderRef() {
+      try {
+        const sp = new URLSearchParams(window.location.search || '');
+        const q = sp.get('order');
+        if (q && q.trim()) return q.trim();
+        // legacy path: /community/order/REF
+        const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
+        if (m && m[1]) return m[1];
+      } catch (e) { /* ignore */ }
+      return null;
+    }
+
+    const ref = detectOrderRef();
+    if (!ref) return;
+
+    (async function loadOrder() {
+      const WORKER_URL = FETCH_ORDER_BY_REF;
+
+      // Find the container we should replace:
+      // Prefer the actual form element's container (so UI appears in same spot)
+      let container = null;
+
+      // 1) If the join form exists on the page, replace it directly
+      const existingForm = document.getElementById('kfJoinInfoForm');
+      if (existingForm) {
+        // replace the form element itself with the order UI later
+        container = existingForm;
+      } else {
+        // 2) Try common "chat area" or "community" containers that your template may use
+        const trySelectors = [
+          '#community', '#community-wrap', '#community-container',
+          '#main', '.main', '#content', '.content',
+          '#chat', '.chat-area', '.chatbox', '.chat-container'
+        ];
+        for (const sel of trySelectors) {
+          const el = document.querySelector(sel);
+          if (el) { container = el; break; }
+        }
+      }
+
+      // 3) Fallback: create a loader near top of body, but try to put it under .content if possible
+      let createdFallback = false;
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'kf-order-loader';
+        container.style.maxWidth = '980px';
+        container.style.margin = '18px auto';
+        // Place fallback near top of page content region if available
+        const main = document.querySelector('#main, .main, #content, .content') || document.body;
+        main.prepend(container);
+        createdFallback = true;
+      } else {
+        // If we found the form element, we'll replace that element (not its parent).
+        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
+        // To be safe, convert the target into a wrapper node we can replace when order is ready:
+        if (container !== document.getElementById('kfJoinInfoForm')) {
+          // create a placeholder wrapper inside the container
+          const wrapper = document.createElement('div');
+          wrapper.id = 'kf-order-loader';
+          // place at top of container
+          container.prepend(wrapper);
+          container = wrapper;
+          createdFallback = true;
+        }
+      }
+
+      // show temporary loading state
+      container.textContent = 'Loading order…';
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref_id: ref })
+        });
+        const j = await res.json();
+
+        if (!res.ok || !j.ok) {
+          container.textContent = 'Order not found.';
+          return;
+        }
+
+        const order = j.order;
+
+        // <= INSERT HERE: remove intro message if it exists on the page (so unique-URL loads don't show the "Before you proceed..." copy)
+        try {
+          removeFormIntroMessage();
+          removeExtraWhitespaceAroundForm();
+        } catch (e) {
+          console.error('Failed to remove intro whitespace:', e);
+        }
+
+        // Build UI the same way as after submit — replace the form element (if existed)
+        const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
+        const frag = document.createDocumentFragment();
+
+        // Saved notice + order box (re-using helper functions)
+        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
+          frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+          const box = buildOrderBox(order);
+          frag.appendChild(box.wrap);
+
+          // Wire up apply & pay
+          const memberId = (order.member && order.member.id) ? order.member.id : null;
+          if (box.applyBtn && memberId) {
+            box.applyBtn.addEventListener('click', function(){
+              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            });
+          }
+          if (box.payBtn && memberId) {
+            box.payBtn.addEventListener('click', function(){
+              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
+            });
+          }
+
+        } else {
+          const el = document.createElement('div');
+          el.style.padding = '12px';
+          el.style.background = '#fff';
+          el.style.border = '1px solid #eee';
+          el.style.borderRadius = '8px';
+          el.textContent = 'Order: ' + order.order_ref + ' — Total ' + (order.totals ? ('₹' + order.totals.total) : '—');
+          frag.appendChild(el);
+        }
+
+        // Perform replace: if the original form exists, replace the form element with our UI.
+        if (targetToReplace) {
+          targetToReplace.replaceWith(frag);
+        } else if (!createdFallback) {
+          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
+          const existingLoader = document.getElementById('kf-order-loader');
+          if (existingLoader) {
+            existingLoader.innerHTML = '';
+            existingLoader.appendChild(frag);
+          } else {
+            container.innerHTML = '';
+            container.appendChild(frag);
+          }
+        } else {
+          // fallback created wrapper — populate it
+          container.innerHTML = '';
+          container.appendChild(frag);
+        }
+
+        // Update title if available
+        try {
+          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
+        } catch(e){}
+      } catch (err) {
+        container.textContent = 'Network error loading order.';
+        console.error('Order loader error:', err);
+      }
+    })();
+  })();
+
+})();
 
 </script>
 
