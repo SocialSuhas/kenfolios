@@ -3254,16 +3254,16 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-
- /* ============================================================================
-   kf-join-frontend v7.1 — Full script WITH original injected CSS restored
-   - Keeps full functionality: join, order loader, coupon, Razorpay, confirm
-   - Restores the original injected responsive CSS (same as v6.3)
-   - Still relies on page CSS where available (both apply)
-   ============================================================================ */
+/* kf-join-frontend v6.3 — full updated frontend script
+   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
+   - Removes visible order URL / "pay later" copy from saved notice
+   - Coupon input + Apply button stacked (Apply centered)
+   - Editable fields responsive (stack on small screens)
+   - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
+*/
 (function(){
-  if (window.__KF_JOINFORM_V7_1) return;
-  window.__KF_JOINFORM_V7_1 = true;
+  if (window.__KF_JOINFORM_V6_3) return;
+  window.__KF_JOINFORM_V6_3 = true;
 
   /* ------------------ CSS Injection (responsive classes) ------------------ */
   (function injectKFStyles(){
@@ -3346,25 +3346,72 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   })();
 
-  /* ---------------- ENDPOINTS ---------------- */
-  const WRITE_ENDPOINT   = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
-  const PATCH_MEMBER     = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
-  const CREATE_ORDER     = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
-  const PAYMENT_CONFIRM  = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
+  const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
+  const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
+  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
   const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
 
-  /* -------------- UTILITIES -------------- */
-  const form = document.getElementById("kfJoinInfoForm");
+  const COMPANY_NAME = "KenFolios Media Private Limited";
+  const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
+  const COMPANY_CIN = "U72900DL2017PTC321788";
+  const COMPANY_GSTIN = "07AAGCK7129K1Z7";
+
+  const form = document.getElementById('kfJoinInfoForm');
+  // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
+  // But most flows have the form present.
+  // If form isn't present we still run the loader below.
+  // if (!form) return; <-- DO NOT early return
+
+  /* -----------------------------------------------
+     REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
+  ------------------------------------------------ */
+  function removeFormIntroMessage() {
+    const el1 = document.querySelector('.kf-form-intro');
+    if (el1) el1.remove();
+    const el2 = document.getElementById('kfFormIntro');
+    if (el2) el2.remove();
+    const prev = form && form.previousElementSibling;
+    if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
+      prev.remove();
+    }
+  }
+  function removeExtraWhitespaceAroundForm() {
+    if (!form) return;
+    let sib=form.previousSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.previousSibling;
+      sib.remove();
+      sib=t;
+    }
+    sib=form.nextSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.nextSibling;
+      sib.remove();
+      sib=t;
+    }
+  }
+
   function $id(id){ return document.getElementById(id); }
-  function val(id){ const el=$id(id); return el?el.value.trim():""; }
+  function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
   function checkedValues(name){
     if (!form) return [];
-    return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value);
+    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
+    return Array.from(list).map(i => i.value);
+  }
+
+  function styleInput(el){
+    el.style.width = '100%';
+    el.style.padding = '10px';
+    el.style.border = '1px solid #e6e6e6';
+    el.style.borderRadius = '8px';
+    el.style.background = '#fafafa';
+    el.style.boxSizing = 'border-box';
+    el.style.fontSize = '0.95rem';
   }
 
   function createProgressPill(text){
-    const pill=document.createElement("div");
-    pill.className = 'kf-progress-pill';
+    const pill = document.createElement('div');
     pill.style.display='inline-flex';
     pill.style.alignItems='center';
     pill.style.gap='8px';
@@ -3375,7 +3422,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     pill.style.background='#e6f0ff';
     pill.style.color='#111';
 
-    const spin=document.createElement("span");
+    const spin = document.createElement('span');
     spin.style.width='16px';
     spin.style.height='16px';
     spin.style.borderRadius='50%';
@@ -3383,24 +3430,24 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     spin.style.borderTopColor='rgba(0,0,0,0.55)';
     spin.style.animation='kf-spin 0.8s linear infinite';
 
-    const txt=document.createElement("span");
-    txt.textContent=text||"Processing…";
+    const txt = document.createElement('span');
+    txt.textContent = text || 'Processing…';
 
     pill.appendChild(spin);
     pill.appendChild(txt);
 
-    if (!document.getElementById('kf-spin-style')) {
-      const st = document.createElement('style');
-      st.id = 'kf-spin-style';
-      st.textContent = "@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
-      document.head.appendChild(st);
+    if (!$id('kf-spin-style')){
+      const style=document.createElement('style');
+      style.id='kf-spin-style';
+      style.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      document.head.appendChild(style);
     }
     return pill;
   }
 
   function replaceSubmitWithPill(btn,pill){
     btn.dataset._old = btn.style.display || '';
-    btn.style.display = 'none';
+    btn.style.display='none';
     btn.parentNode.insertBefore(pill,btn.nextSibling);
   }
 
@@ -3409,43 +3456,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     btn.style.display = btn.dataset._old || '';
   }
 
-  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-  function showInlineError(el,msg){
-    if(!el) return;
-    el.style.display='block';
-    el.style.color='#b45309';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{ if(el) el.style.display='none'; },6000);
-  }
-  function showInlineSuccess(el,msg){
-    if(!el) return;
-    el.style.display='block';
-    el.style.color='#166534';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{ if(el) el.style.display='none'; },3000);
-  }
-
-  /* ---- Intro removal helpers (unchanged) ---- */
-  function removeFormIntroMessage(){
-    const el1 = document.querySelector('.kf-form-intro'); if (el1) el1.remove();
-    const el2 = document.getElementById('kfFormIntro'); if (el2) el2.remove();
-    if (form) {
-      const prev = form.previousElementSibling;
-      if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) prev.remove();
-    }
-  }
-  function removeExtraWhitespaceAroundForm(){
-    if (!form) return;
-    let sib=form.previousSibling;
-    while(sib && sib.nodeType===3){ let t=sib.previousSibling; sib.remove(); sib=t; }
-    sib=form.nextSibling;
-    while(sib && sib.nodeType===3){ let t=sib.nextSibling; sib.remove(); sib=t; }
-  }
-
-  /* -------------- UI BUILDERS -------------- */
-  function createSavedNotice(ref, createdIso, orderUrl, emailed){
+  /* -------- Saved notice above order box (now short — no visible URL) -------- */
+  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
     const n = document.createElement('div');
     n.style.padding = '12px';
     n.style.borderRadius = '8px';
@@ -3470,6 +3482,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       n.appendChild(dt);
     }
 
+    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
     const sub = document.createElement('div');
     sub.style.fontSize = '.95rem';
     sub.style.color = '#111';
@@ -3477,6 +3490,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
     n.appendChild(sub);
 
+    // If backend explicitly reports an email was sent we can optionally show that
     if (emailed) {
       const em = document.createElement('div');
       em.style.fontSize = '.9rem';
@@ -3489,6 +3503,31 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     return n;
   }
 
+  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+
+  function stylePrimaryButton(btn){
+    btn.style.background='var(--kf-red)';
+    btn.style.color='#fff';
+    btn.style.border='none';
+  }
+
+  function showInlineError(el,msg){
+    el.style.display='block';
+    el.style.color='#b45309';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},6000);
+  }
+
+  function showInlineSuccess(el,msg){
+    el.style.display='block';
+    el.style.color='#166534';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},3000);
+  }
+
+  /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
   function buildOrderBox(order) {
     const wrap = document.createElement('div');
     wrap.className = 'kf-order-wrapper';
@@ -3535,10 +3574,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     const c = document.createElement('div');
     c.style.marginTop = '14px';
     c.innerHTML =
-      `<div style="font-weight:700">${order.company && order.company.name ? order.company.name : 'KenFolios Media Private Limited'}</div>
-       <div style="color:#666">${order.company && order.company.address ? order.company.address : ''}</div>
+      `<div style="font-weight:700">${COMPANY_NAME}</div>
+       <div style="color:#666">${COMPANY_ADDRESS}</div>
        <div style="font-size:.85rem;color:#666;margin-top:4px">
-         GSTIN: ${order.company && order.company.gstin ? order.company.gstin : ''} | CIN: ${order.company && order.company.cin ? order.company.cin : ''}
+         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
        </div>`;
     wrap.appendChild(c);
 
@@ -3559,6 +3598,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
     wrap.appendChild(notice);
 
+    // MEMBER BOX (responsive grid)
     const box = document.createElement('div');
     box.className = 'kf-member-box';
     box.style.display = 'grid';
@@ -3583,6 +3623,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         i.id = id;
         i.value = val || '';
         i.className = 'kf-input';
+        // basic inline fallback styling so class alone still looks ok
         i.style.padding = '10px';
         i.style.border = '1px solid #e6e6e6';
         i.style.borderRadius = '8px';
@@ -3608,6 +3649,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     box.appendChild(mk('City', 'ord_city', order.member.city));
     wrap.appendChild(box);
 
+    // PRODUCT + fee note (unchanged)
     const prod = document.createElement('div');
     prod.style.marginTop = '14px';
     const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
@@ -3627,6 +3669,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       `This fee is the current prevailing rate and may change if you opt to pay later.`;
     wrap.appendChild(feeNote);
 
+    // Coupon area — stacked layout: input above Apply button
     const couponSep = document.createElement('div');
     couponSep.style.borderTop = '1px dashed #ddd';
     couponSep.style.marginTop = '14px';
@@ -3661,7 +3704,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     applyBtn.style.borderRadius = '6px';
     applyBtn.style.background = '#fff';
     applyBtn.style.cursor = 'pointer';
-
+    // center the apply button horizontally by wrapping it
     const applyWrap = document.createElement('div');
     applyWrap.style.width = '100%';
     applyWrap.style.display = 'flex';
@@ -3679,6 +3722,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
     wrap.appendChild(couponWrap);
 
+    // totals
     const totals = document.createElement('div');
     totals.style.marginTop = '14px';
     wrap.appendChild(totals);
@@ -3718,6 +3762,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     wrap.appendChild(payBox);
     wrap.appendChild(payMsg);
 
+    // Return references needed by event wiring
     return {
       wrap,
       couponInput,
@@ -3730,7 +3775,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     };
   }
 
-  /* ---------------- NETWORKING HELPERS ---------------- */
+  /* ------------------ Networking helpers for coupon/payment ------------------ */
   async function patchMember(id,box){
     const body={
       name:$id('ord_full_name').value.trim(),
@@ -3739,7 +3784,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       city:$id('ord_city').value.trim()
     };
     try{
-      const resp=await fetch(PATCH_MEMBER+id,{
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(body)
@@ -3758,7 +3803,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       }
       box.applyBtn.disabled=true;
 
-      const resp=await fetch(CREATE_ORDER,{
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({member_id:id, coupon:code, simulate:true})
@@ -3803,7 +3848,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     try{
       box.payBtn.disabled=true;
 
-      const resp=await fetch(CREATE_ORDER,{
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({member_id:id, coupon:code})
@@ -3826,12 +3871,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       const rp=j.razorpay_order;
 
       const options={
-        key:j.razorpay_key_id,
+        key:rp.key_id,
         amount:rp.amount,
         currency:rp.currency,
         order_id:rp.id,
         handler: async function(res){
-          const conf = await fetch(PAYMENT_CONFIRM,{
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
@@ -3842,27 +3887,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
               coupon:code
             })
           });
-          const cj = await conf.json();
-          if (!cj.ok){
-            showInlineError(box.payMsg,"Server payment confirmation failed.");
-            return;
-          }
-
           box.payBtn.disabled=true;
           box.payBtn.textContent='Paid';
-
-          if (cj.order.receipt_url) {
-            history.replaceState({}, "", cj.order.receipt_url);
-          }
-          if (cj.order.activation_url) {
-            const u = new URL(window.location.href);
-            const act = new URL(cj.order.activation_url).searchParams.get("activation");
-            if (act) u.searchParams.set("activation", act);
-            history.replaceState({}, "", u.toString());
-          }
-
-          box.payMsg.style.display='block';
-          box.payMsg.textContent='Payment successful — activation link emailed.';
         }
       };
 
@@ -3875,7 +3901,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
-  /* ---------------- FORM SUBMIT (JOIN) ---------------- */
+  /* ---------------- Form Submit (updated to change URL) ---------------- */
   if (form) {
     form.addEventListener('submit',async function(e){
       e.preventDefault();
@@ -3916,29 +3942,38 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           return;
         }
 
+        // Remove any intro/whitespace, then show order UI
         removeFormIntroMessage();
         removeExtraWhitespaceAroundForm();
 
+        // If order_url present, change browser URL (replaceState), and set document.title
         if (j.order && j.order.order_url) {
           try {
+            // order_url now uses ?order=REF style (worker writes it that way)
             history.replaceState({}, '', j.order.order_url);
             if (j.order.order_ref) {
               document.title = `${j.order.order_ref} — KenFolios`;
             }
-          } catch (e) {}
+          } catch (e) {
+            // ignore if history API not allowed
+          }
         }
 
         const wrap=document.createElement('div');
+        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
         const emailed = (j.email_sent === true) || false;
         wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
 
         const box=buildOrderBox(j.order);
         wrap.appendChild(box.wrap);
 
+        // Replace the form in-place so UI appears exactly where the form was
         form.replaceWith(wrap);
 
+        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
         box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+
       }catch{
         restoreSubmitFromPill(submitBtn,pill);
         alert('Save failed');
@@ -3946,16 +3981,19 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     });
   }
 
-  /* ---------------- ORDER LOADER ---------------- */
+  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
+     Replaces the original form container (if present) so the order UI appears where the form was.
+  ---------------- */
   (function orderLoader(){
     function detectOrderRef() {
       try {
         const sp = new URLSearchParams(window.location.search || '');
         const q = sp.get('order');
         if (q && q.trim()) return q.trim();
+        // legacy path: /community/order/REF
         const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
         if (m && m[1]) return m[1];
-      } catch (e) { }
+      } catch (e) { /* ignore */ }
       return null;
     }
 
@@ -3965,11 +4003,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     (async function loadOrder() {
       const WORKER_URL = FETCH_ORDER_BY_REF;
 
+      // Find the container we should replace:
+      // Prefer the actual form element's container (so UI appears in same spot)
       let container = null;
+
+      // 1) If the join form exists on the page, replace it directly
       const existingForm = document.getElementById('kfJoinInfoForm');
       if (existingForm) {
+        // replace the form element itself with the order UI later
         container = existingForm;
       } else {
+        // 2) Try common "chat area" or "community" containers that your template may use
         const trySelectors = [
           '#community', '#community-wrap', '#community-container',
           '#main', '.main', '#content', '.content',
@@ -3981,25 +4025,33 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         }
       }
 
+      // 3) Fallback: create a loader near top of body, but try to put it under .content if possible
       let createdFallback = false;
       if (!container) {
         container = document.createElement('div');
         container.id = 'kf-order-loader';
         container.style.maxWidth = '980px';
         container.style.margin = '18px auto';
+        // Place fallback near top of page content region if available
         const main = document.querySelector('#main, .main, #content, .content') || document.body;
         main.prepend(container);
         createdFallback = true;
       } else {
+        // If we found the form element, we'll replace that element (not its parent).
+        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
+        // To be safe, convert the target into a wrapper node we can replace when order is ready:
         if (container !== document.getElementById('kfJoinInfoForm')) {
+          // create a placeholder wrapper inside the container
           const wrapper = document.createElement('div');
           wrapper.id = 'kf-order-loader';
+          // place at top of container
           container.prepend(wrapper);
           container = wrapper;
           createdFallback = true;
         }
       }
 
+      // show temporary loading state
       container.textContent = 'Loading order…';
 
       try {
@@ -4017,27 +4069,27 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
         const order = j.order;
 
-        try {
-          removeFormIntroMessage();
-          removeExtraWhitespaceAroundForm();
-        } catch (e) {
-          console.error('Failed to remove intro whitespace:', e);
-        }
-
+        // Build UI the same way as after submit — replace the form element (if existed)
         const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
         const frag = document.createDocumentFragment();
 
+        // Saved notice + order box (re-using helper functions)
         if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
           frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
+          // Wire up apply & pay
           const memberId = (order.member && order.member.id) ? order.member.id : null;
           if (box.applyBtn && memberId) {
-            box.applyBtn.addEventListener('click', function(){ try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); } });
+            box.applyBtn.addEventListener('click', function(){
+              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            });
           }
           if (box.payBtn && memberId) {
-            box.payBtn.addEventListener('click', function(){ try { confirmPay(memberId, box); } catch(e){ console.error(e); } });
+            box.payBtn.addEventListener('click', function(){
+              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
+            });
           }
 
         } else {
@@ -4050,9 +4102,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           frag.appendChild(el);
         }
 
+        // Perform replace: if the original form exists, replace the form element with our UI.
         if (targetToReplace) {
           targetToReplace.replaceWith(frag);
         } else if (!createdFallback) {
+          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
           const existingLoader = document.getElementById('kf-order-loader');
           if (existingLoader) {
             existingLoader.innerHTML = '';
@@ -4062,11 +4116,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
             container.appendChild(frag);
           }
         } else {
+          // fallback created wrapper — populate it
           container.innerHTML = '';
           container.appendChild(frag);
         }
 
-        try { if (order.order_ref) document.title = `${order.order_ref} — KenFolios`; } catch(e){}
+        // Update title if available
+        try {
+          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
+        } catch(e){}
       } catch (err) {
         container.textContent = 'Network error loading order.';
         console.error('Order loader error:', err);
@@ -4076,10 +4134,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
 })();
 
-
-
 </script>
-
 
 </body>
 </html>
