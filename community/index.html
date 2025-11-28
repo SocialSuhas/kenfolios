@@ -3255,18 +3255,21 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
 })();
 
- /* kf-join-frontend v6.3 — full updated frontend script
-   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
-   - Removes visible order URL / "pay later" copy from saved notice
-   - Coupon input + Apply button stacked (Apply centered)
-   - Editable fields responsive (stack on small screens)
-   - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
-*/
-(function(){
-  if (window.__KF_JOINFORM_V6_3) return;
-  window.__KF_JOINFORM_V6_3 = true;
+/* ============================================================================
+   kf-join-frontend v7.0 (Full Script)
+   - Razorpay integrated
+   - Order URL, Receipt URL, Activation URL
+   - Fully responsive order summary
+   - Fully replaces v6.3 (but UI is same)
+   ============================================================================ */
 
-  /* ------------------ CSS Injection (responsive classes) ------------------ */
+(function(){
+  if (window.__KF_JOINFORM_V7_0) return;
+  window.__KF_JOINFORM_V7_0 = true;
+
+  /* -------------------------------------------------------------
+     Inject responsive CSS (same as your v6.3)
+  ------------------------------------------------------------- */
   (function injectKFStyles(){
     const css = `
 /* Wrap entire order UI */
@@ -3281,16 +3284,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 /* Member fields grid – responsive */
 .kf-order-wrapper .kf-member-box {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* desktop */
+  grid-template-columns: 1fr 1fr; 
   gap: 10px;
 }
 @media (max-width: 720px) {
   .kf-order-wrapper .kf-member-box {
-    grid-template-columns: 1fr !important; /* mobile stack */
+    grid-template-columns: 1fr !important;
   }
 }
 
-/* Inputs never overflow */
 .kf-order-wrapper .kf-input,
 .kf-order-wrapper input,
 .kf-order-wrapper select {
@@ -3299,7 +3301,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   min-width: 0;
 }
 
-/* APPLY BUTTON CENTERING */
+/* APPLY BUTTON CENTER */
 .kf-order-wrapper .kf-apply-btn {
   display: inline-block;
   margin: 0 auto;
@@ -3312,7 +3314,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   max-width: 200px;
 }
 
-/* Main confirm & pay button responsive */
+/* Main pay button responsive */
 .kf-order-wrapper .kf-primary-btn {
   width: 100%;
   padding: 12px 20px;
@@ -3327,559 +3329,415 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     width: 100% !important;
   }
 }
-
-/* Tighten padding on very small screens */
-@media (max-width: 420px) {
-  .kf-order-wrapper {
-    padding: 8px;
-    border-radius: 8px;
-  }
-  .kf-order-wrapper .kf-member-box {
-    gap: 6px;
-  }
-}
     `;
-    if (!document.getElementById('kf-join-v6-3-styles')) {
-      const s = document.createElement('style');
-      s.id = 'kf-join-v6-3-styles';
+    if (!document.getElementById("kf-join-v7-styles")) {
+      const s = document.createElement("style");
+      s.id = "kf-join-v7-styles";
       s.appendChild(document.createTextNode(css));
       document.head.appendChild(s);
     }
   })();
 
-  const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
-  const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
-  const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
-  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
+  /* -------------------------------------------------------------
+     ENDPOINTS
+  ------------------------------------------------------------- */
+  const WRITE_ENDPOINT   = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  const PATCH_MEMBER     = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
+  const CREATE_ORDER     = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
+  const PAYMENT_CONFIRM  = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
   const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
 
-  const COMPANY_NAME = "KenFolios Media Private Limited";
-  const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
-  const COMPANY_CIN = "U72900DL2017PTC321788";
-  const COMPANY_GSTIN = "07AAGCK7129K1Z7";
-
-  const form = document.getElementById('kfJoinInfoForm');
-  // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
-  // But most flows have the form present.
-  // If form isn't present we still run the loader below.
-  // if (!form) return; <-- DO NOT early return
-
-  /* -----------------------------------------------
-     REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
-  ------------------------------------------------ */
-  function removeFormIntroMessage() {
-    const el1 = document.querySelector('.kf-form-intro');
-    if (el1) el1.remove();
-    const el2 = document.getElementById('kfFormIntro');
-    if (el2) el2.remove();
-    const prev = form && form.previousElementSibling;
-    if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
-      prev.remove();
-    }
-  }
-  function removeExtraWhitespaceAroundForm() {
-    if (!form) return;
-    let sib=form.previousSibling;
-    while(sib && sib.nodeType===3){
-      let t=sib.previousSibling;
-      sib.remove();
-      sib=t;
-    }
-    sib=form.nextSibling;
-    while(sib && sib.nodeType===3){
-      let t=sib.nextSibling;
-      sib.remove();
-      sib=t;
-    }
-  }
-
+  /* -------------------------------------------------------------
+     Utility functions
+  ------------------------------------------------------------- */
+  const form = document.getElementById("kfJoinInfoForm");
   function $id(id){ return document.getElementById(id); }
-  function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
+  function val(id){ const el=$id(id); return el?el.value.trim():""; }
   function checkedValues(name){
     if (!form) return [];
-    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
-    return Array.from(list).map(i => i.value);
+    return Array.from(form.querySelectorAll(`input[name="${name}"]:checked`))
+      .map(i=>i.value);
   }
 
-  function styleInput(el){
-    el.style.width = '100%';
-    el.style.padding = '10px';
-    el.style.border = '1px solid #e6e6e6';
-    el.style.borderRadius = '8px';
-    el.style.background = '#fafafa';
-    el.style.boxSizing = 'border-box';
-    el.style.fontSize = '0.95rem';
+  /* Remove intro message */
+  function removeFormIntroMessage(){
+    const el1 = document.querySelector(".kf-form-intro");
+    if (el1) el1.remove();
+    const el2 = document.getElementById("kfFormIntro");
+    if (el2) el2.remove();
+    const prev = form && form.previousElementSibling;
+    if (prev && prev.textContent.toLowerCase().includes("before you proceed")) prev.remove();
+  }
+  function removeExtraWhitespaceAroundForm(){
+    if (!form) return;
+    let sib=form.previousSibling;
+    while(sib && sib.nodeType===3){ let t=sib.previousSibling; sib.remove(); sib=t; }
+    sib=form.nextSibling;
+    while(sib && sib.nodeType===3){ let t=sib.nextSibling; sib.remove(); sib=t; }
   }
 
   function createProgressPill(text){
-    const pill = document.createElement('div');
-    pill.style.display='inline-flex';
-    pill.style.alignItems='center';
-    pill.style.gap='8px';
-    pill.style.padding='8px 12px';
-    pill.style.borderRadius='999px';
-    pill.style.fontWeight='600';
-    pill.style.fontSize='0.95rem';
-    pill.style.background='#e6f0ff';
-    pill.style.color='#111';
+    const pill=document.createElement("div");
+    pill.style.display="inline-flex";
+    pill.style.alignItems="center";
+    pill.style.gap="8px";
+    pill.style.padding="8px 12px";
+    pill.style.borderRadius="999px";
+    pill.style.fontWeight="600";
+    pill.style.fontSize="0.95rem";
+    pill.style.background="#e6f0ff";
 
-    const spin = document.createElement('span');
-    spin.style.width='16px';
-    spin.style.height='16px';
-    spin.style.borderRadius='50%';
-    spin.style.border='2px solid rgba(0,0,0,0.20)';
-    spin.style.borderTopColor='rgba(0,0,0,0.55)';
-    spin.style.animation='kf-spin 0.8s linear infinite';
+    const spin=document.createElement("span");
+    spin.style.width="16px";
+    spin.style.height="16px";
+    spin.style.borderRadius="50%";
+    spin.style.border="2px solid rgba(0,0,0,.2)";
+    spin.style.borderTopColor="rgba(0,0,0,.55)";
+    spin.style.animation="kf-spin 0.8s linear infinite";
 
-    const txt = document.createElement('span');
-    txt.textContent = text || 'Processing…';
+    if (!document.getElementById("kf-spin-style")) {
+      const st=document.createElement("style");
+      st.id="kf-spin-style";
+      st.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      document.head.appendChild(st);
+    }
+
+    const txt=document.createElement("span");
+    txt.textContent=text||"Processing…";
 
     pill.appendChild(spin);
     pill.appendChild(txt);
-
-    if (!$id('kf-spin-style')){
-      const style=document.createElement('style');
-      style.id='kf-spin-style';
-      style.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
-      document.head.appendChild(style);
-    }
     return pill;
   }
 
   function replaceSubmitWithPill(btn,pill){
-    btn.dataset._old = btn.style.display || '';
-    btn.style.display='none';
+    btn.dataset._old = btn.style.display || "";
+    btn.style.display="none";
     btn.parentNode.insertBefore(pill,btn.nextSibling);
   }
 
   function restoreSubmitFromPill(btn,pill){
     if (pill && pill.parentNode) pill.remove();
-    btn.style.display = btn.dataset._old || '';
+    btn.style.display = btn.dataset._old || "";
   }
 
-  /* -------- Saved notice above order box (now short — no visible URL) -------- */
-  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
-    const n = document.createElement('div');
-    n.style.padding = '12px';
-    n.style.borderRadius = '8px';
-    n.style.background = 'rgba(230,245,255,0.95)';
-    n.style.fontWeight = '600';
-    n.style.marginBottom = '14px';
-    n.style.display = 'flex';
-    n.style.flexDirection = 'column';
-    n.style.gap = '6px';
+  function formatINR(n){ return "₹" + Number(n).toLocaleString("en-IN"); }
 
-    const line1 = document.createElement('div');
-    line1.textContent = `✅ Details saved. Order ID: ${ref}`;
+  function showInlineError(el,msg){
+    el.style.display="block";
+    el.style.color="#b45309";
+    el.style.fontWeight="600";
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display="none";},6000);
+  }
+  function showInlineSuccess(el,msg){
+    el.style.display="block";
+    el.style.color="#166534";
+    el.style.fontWeight="600";
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display="none";},3000);
+  }
+
+  /* -------------------------------------------------------------
+     Saved Notice
+  ------------------------------------------------------------- */
+  function createSavedNotice(ref, createdIso, orderUrl, emailed){
+    const n=document.createElement("div");
+    n.style.padding="12px";
+    n.style.borderRadius="8px";
+    n.style.background="rgba(230,245,255,0.95)";
+    n.style.fontWeight="600";
+    n.style.marginBottom="14px";
+
+    const line1=document.createElement("div");
+    line1.textContent=`✅ Details saved. Order ID: ${ref}`;
     n.appendChild(line1);
 
     if (createdIso) {
-      const d = new Date(createdIso);
-      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-      const dt = document.createElement('div');
-      dt.style.fontSize = '.9rem';
-      dt.style.color = '#444';
-      dt.textContent = `Order created: ${pretty}`;
+      const pretty = new Date(createdIso)
+        .toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
+      const dt=document.createElement("div");
+      dt.style.fontSize="0.9rem";
+      dt.style.color="#444";
+      dt.textContent=`Order created: ${pretty}`;
       n.appendChild(dt);
     }
 
-    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
-    const sub = document.createElement('div');
-    sub.style.fontSize = '.95rem';
-    sub.style.color = '#111';
-    sub.style.marginTop = '6px';
-    sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
+    const sub=document.createElement("div");
+    sub.style.fontSize="0.95rem";
+    sub.style.color="#111";
+    sub.style.marginTop="6px";
+    sub.textContent="We have saved your details. Please review and complete payment to activate your membership.";
     n.appendChild(sub);
 
-    // If backend explicitly reports an email was sent we can optionally show that
     if (emailed) {
-      const em = document.createElement('div');
-      em.style.fontSize = '.9rem';
-      em.style.color = '#444';
-      em.style.fontWeight = '500';
-      em.textContent = 'We have emailed this order link to you — use it to edit or complete payment.';
+      const em=document.createElement("div");
+      em.style.fontSize="0.9rem";
+      em.style.color="#444";
+      em.textContent="We have emailed this order link to you.";
       n.appendChild(em);
     }
-
     return n;
   }
 
-  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-
-  function stylePrimaryButton(btn){
-    btn.style.background='var(--kf-red)';
-    btn.style.color='#fff';
-    btn.style.border='none';
-  }
-
-  function showInlineError(el,msg){
-    el.style.display='block';
-    el.style.color='#b45309';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{el.style.display='none';},6000);
-  }
-
-  function showInlineSuccess(el,msg){
-    el.style.display='block';
-    el.style.color='#166534';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{el.style.display='none';},3000);
-  }
-
-  /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
+  /* -------------------------------------------------------------
+     Build Order Box UI
+  ------------------------------------------------------------- */
   function buildOrderBox(order) {
-    const wrap = document.createElement('div');
-    wrap.className = 'kf-order-wrapper';
-    wrap.style.width = '100%';
-    wrap.style.padding = '12px';
-    wrap.style.background = '#fff';
-    wrap.style.border = '1px solid #eee';
-    wrap.style.borderRadius = '12px';
-    wrap.style.boxSizing = 'border-box';
+    const wrap=document.createElement("div");
+    wrap.className="kf-order-wrapper";
+    wrap.style.background="#fff";
+    wrap.style.border="1px solid #eee";
+    wrap.style.borderRadius="12px";
 
-    const headerWrap = document.createElement('div');
-    headerWrap.style.display = 'flex';
-    headerWrap.style.flexDirection = 'column';
-    headerWrap.style.gap = '6px';
+    /* Header */
+    const header=document.createElement("div");
+    header.style.display="flex";
+    header.style.flexDirection="column";
+    header.style.gap="6px";
 
-    const topRow = document.createElement('div');
-    topRow.style.display = 'flex';
-    topRow.style.justifyContent = 'space-between';
+    const row=document.createElement("div");
+    row.style.display="flex";
+    row.style.justifyContent="space-between";
 
-    const left = document.createElement('div');
-    left.innerHTML = '<strong>Order Summary</strong>';
+    const left=document.createElement("div");
+    left.innerHTML="<strong>Order Summary</strong>";
 
-    const right = document.createElement('div');
-    right.style.color = '#444';
-    right.style.fontWeight = '600';
-    right.textContent = `Order ID: ${order.order_ref}`;
+    const right=document.createElement("div");
+    right.style.fontWeight="600";
+    right.textContent=`Order ID: ${order.order_ref}`;
 
-    topRow.appendChild(left);
-    topRow.appendChild(right);
-    headerWrap.appendChild(topRow);
+    row.appendChild(left);
+    row.appendChild(right);
+    header.appendChild(row);
 
     if (order.order_created_at) {
-      const r2 = document.createElement('div');
-      r2.style.fontSize = '.85rem';
-      r2.style.color = '#666';
-      const d = new Date(order.order_created_at);
-      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-      r2.textContent = `Order created: ${pretty}`;
-      headerWrap.appendChild(r2);
+      const dt=document.createElement("div");
+      dt.style.fontSize=".85rem";
+      dt.style.color="#666";
+      dt.textContent="Order created: " + new Date(order.order_created_at)
+        .toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
+      header.appendChild(dt);
     }
 
-    wrap.appendChild(headerWrap);
+    wrap.appendChild(header);
 
-    const c = document.createElement('div');
-    c.style.marginTop = '14px';
-    c.innerHTML =
-      `<div style="font-weight:700">${COMPANY_NAME}</div>
-       <div style="color:#666">${COMPANY_ADDRESS}</div>
-       <div style="font-size:.85rem;color:#666;margin-top:4px">
-         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
-       </div>`;
-    wrap.appendChild(c);
-
-    const compSep = document.createElement('div');
-    compSep.style.borderTop = '1px solid #e6e6e6';
-    compSep.style.marginTop = '12px';
-    compSep.style.paddingTop = '12px';
-    wrap.appendChild(compSep);
-
-    const notice = document.createElement('div');
-    notice.style.background = 'rgba(249,250,251,0.9)';
-    notice.style.border = '1px solid #f1f5f9';
-    notice.style.padding = '10px';
-    notice.style.borderRadius = '8px';
-    notice.style.color = '#334155';
-    notice.style.fontWeight = '600';
-    notice.style.fontSize = '.95rem';
-    notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
-    wrap.appendChild(notice);
-
-    // MEMBER BOX (responsive grid)
-    const box = document.createElement('div');
-    box.className = 'kf-member-box';
-    box.style.display = 'grid';
-    box.style.gridTemplateColumns = '1fr 1fr';
-    box.style.gap = '10px';
-    box.style.marginTop = '12px';
+    /* Member fields */
+    const box=document.createElement("div");
+    box.className="kf-member-box";
+    box.style.marginTop="12px";
 
     const editable = order.editable;
 
-    function mk(label, id, val) {
-      const f = document.createElement('div');
+    function field(label,id,value){
+      const f=document.createElement("div");
 
-      const l = document.createElement('label');
-      l.textContent = label;
-      l.style.fontSize = '.9rem';
-      l.style.display = 'block';
-      l.style.marginBottom = '6px';
+      const l=document.createElement("label");
+      l.textContent=label;
+      l.style.fontSize=".9rem";
       f.appendChild(l);
 
       if (editable) {
-        const i = document.createElement('input');
-        i.id = id;
-        i.value = val || '';
-        i.className = 'kf-input';
-        // basic inline fallback styling so class alone still looks ok
-        i.style.padding = '10px';
-        i.style.border = '1px solid #e6e6e6';
-        i.style.borderRadius = '8px';
-        i.style.background = '#fafafa';
-        i.style.boxSizing = 'border-box';
-        i.style.fontSize = '0.95rem';
+        const i=document.createElement("input");
+        i.id=id;
+        i.className="kf-input";
+        i.value=value||"";
         f.appendChild(i);
       } else {
-        const t = document.createElement('div');
-        t.textContent = val || '';
-        t.style.padding = '10px';
-        t.style.borderRadius = '8px';
-        t.style.background = '#fafafa';
-        t.style.border = '1px solid #e6e6e6';
+        const t=document.createElement("div");
+        t.textContent=value || "";
+        t.style.padding="10px";
+        t.style.background="#fafafa";
+        t.style.border="1px solid #e6e6e6";
         f.appendChild(t);
       }
       return f;
     }
 
-    box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
-    box.appendChild(mk('Email', 'ord_email', order.member.email));
-    box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
-    box.appendChild(mk('City', 'ord_city', order.member.city));
+    box.appendChild(field("Full Name","ord_full_name",order.member.full_name));
+    box.appendChild(field("Email","ord_email",order.member.email));
+    box.appendChild(field("Phone","ord_phone",order.member.phone));
+    box.appendChild(field("City","ord_city",order.member.city));
     wrap.appendChild(box);
 
-    // PRODUCT + fee note (unchanged)
-    const prod = document.createElement('div');
-    prod.style.marginTop = '14px';
-    const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
-    prod.innerHTML =
-      `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
-        <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
-        <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
-      </div>`;
-    wrap.appendChild(prod);
+    /* Product */
+    const p=document.createElement("div");
+    p.style.marginTop="14px";
+    p.innerHTML=`<div style="display:flex;justify-content:space-between">
+      <strong>${order.product.name}</strong>
+      <span>${formatINR(order.product.base_price)}</span>
+    </div>`;
+    wrap.appendChild(p);
 
-    const feeNote = document.createElement('div');
-    feeNote.style.fontSize = '.85rem';
-    feeNote.style.color = '#555';
-    feeNote.style.marginTop = '6px';
-    feeNote.textContent =
-      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
-      `This fee is the current prevailing rate and may change if you opt to pay later.`;
-    wrap.appendChild(feeNote);
+    /* Coupon input */
+    const couponWrap=document.createElement("div");
+    couponWrap.style.marginTop="12px";
 
-    // Coupon area — stacked layout: input above Apply button
-    const couponSep = document.createElement('div');
-    couponSep.style.borderTop = '1px dashed #ddd';
-    couponSep.style.marginTop = '14px';
-    couponSep.style.paddingTop = '10px';
-    wrap.appendChild(couponSep);
+    const input=document.createElement("input");
+    input.className="kf-input";
+    input.placeholder="Coupon code";
 
-    const couponWrap = document.createElement('div');
-    couponWrap.style.display = 'flex';
-    couponWrap.style.flexDirection = 'column';
-    couponWrap.style.gap = '8px';
-    couponWrap.style.marginTop = '8px';
-    couponWrap.style.alignItems = 'flex-start';
+    const applyBtn=document.createElement("button");
+    applyBtn.className="kf-apply-btn";
+    applyBtn.textContent="Apply";
 
-    const couponInput = document.createElement('input');
-    couponInput.placeholder = 'Coupon code';
-    couponInput.className = 'kf-input';
-    couponInput.style.width = '100%';
-    couponInput.style.maxWidth = '100%';
-    couponInput.style.boxSizing = 'border-box';
-    couponInput.style.padding = '10px';
-    couponInput.style.border = '1px solid #e6e6e6';
-    couponInput.style.borderRadius = '8px';
-    couponWrap.appendChild(couponInput);
+    const ce=document.createElement("div");
+    ce.style.color="#b91c1c";
+    ce.style.display="none";
+    ce.style.fontWeight="600";
+    ce.style.marginTop="6px";
 
-    const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Apply';
-    applyBtn.type = 'button';
-    applyBtn.className = 'kf-apply-btn';
-    applyBtn.style.padding = '8px 14px';
-    applyBtn.style.fontSize = '.9rem';
-    applyBtn.style.border = '1px solid #ddd';
-    applyBtn.style.borderRadius = '6px';
-    applyBtn.style.background = '#fff';
-    applyBtn.style.cursor = 'pointer';
-    // center the apply button horizontally by wrapping it
-    const applyWrap = document.createElement('div');
-    applyWrap.style.width = '100%';
-    applyWrap.style.display = 'flex';
-    applyWrap.style.justifyContent = 'center';
-    applyWrap.appendChild(applyBtn);
-    couponWrap.appendChild(applyWrap);
-
-    const couponError = document.createElement('div');
-    couponError.style.color = '#b91c1c';
-    couponError.style.marginTop = '6px';
-    couponError.style.textAlign = 'center';
-    couponError.style.fontWeight = '600';
-    couponError.style.display = 'none';
-    couponWrap.appendChild(couponError);
+    couponWrap.appendChild(input);
+    couponWrap.appendChild(applyBtn);
+    couponWrap.appendChild(ce);
 
     wrap.appendChild(couponWrap);
 
-    // totals
-    const totals = document.createElement('div');
-    totals.style.marginTop = '14px';
+    /* Totals */
+    const totals=document.createElement("div");
+    totals.style.marginTop="12px";
+
+    function refreshTotals(o){
+      totals.innerHTML=`
+        <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px;">
+          <span>Total</span><span>${formatINR(o.totals.total)}</span>
+        </div>`;
+    }
+    refreshTotals(order);
     wrap.appendChild(totals);
 
-    function updateTotals(o) {
-      totals.innerHTML =
-        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
-         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-           <span>Total</span><span>${formatINR(o.totals.total)}</span>
-         </div>`;
-    }
-    updateTotals(order);
+    /* Pay */
+    const payBtn=document.createElement("button");
+    payBtn.className="kf-primary-btn";
+    payBtn.textContent="Confirm & Pay";
 
-    const payBox = document.createElement('div');
-    payBox.style.marginTop = '18px';
+    const payMsg=document.createElement("div");
+    payMsg.style.display="none";
+    payMsg.style.marginTop="8px";
 
-    const payBtn = document.createElement('button');
-    payBtn.textContent = 'Confirm & Pay';
-    payBtn.className = 'kf-primary-btn';
-    payBtn.style.width = '100%';
-    payBtn.style.padding = '12px 20px';
-    payBtn.style.borderRadius = '8px';
-    payBtn.style.fontSize = '1rem';
-    payBtn.style.cursor = 'pointer';
-    payBtn.style.background = 'var(--kf-red, #d32f2f)';
-    payBtn.style.color = '#fff';
-    payBtn.style.border = 'none';
-    payBox.appendChild(payBtn);
-
-    const payMsg = document.createElement('div');
-    payMsg.style.display = 'none';
-    payMsg.style.marginTop = '10px';
-
-    wrap.appendChild(payBox);
+    wrap.appendChild(payBtn);
     wrap.appendChild(payMsg);
 
-    // Return references needed by event wiring
     return {
       wrap,
-      couponInput,
+      couponInput: input,
       applyBtn,
+      couponError: ce,
+      totalsBox: totals,
       payBtn,
       payMsg,
-      totalsBox: totals,
       editable,
-      couponError
     };
   }
 
-  /* ------------------ Networking helpers for coupon/payment ------------------ */
-  async function patchMember(id,box){
+  /* -------------------------------------------------------------
+     PATCH MEMBER
+  ------------------------------------------------------------- */
+  async function patchMember(id, box){
     const body={
-      name:$id('ord_full_name').value.trim(),
-      email:$id('ord_email').value.trim(),
-      phone:$id('ord_phone').value.trim(),
-      city:$id('ord_city').value.trim()
+      full_name:$id("ord_full_name").value,
+      email:$id("ord_email").value,
+      phone:$id("ord_phone").value,
+      city:$id("ord_city").value
     };
-    try{
-      const resp=await fetch(PATCH_MEMBER_BASE+id,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(body)
-      });
-      const j=await resp.json();
-      if(!resp.ok||!j.ok) return null;
-      return j.order;
-    }catch{return null;}
+
+    const resp=await fetch(PATCH_MEMBER+id,{
+      method:"PATCH",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify(body)
+    });
+    const j=await resp.json();
+    if (!j.ok) return null;
+    return j.order;
   }
 
-  async function applyCoupon(id,code,box){
+  /* -------------------------------------------------------------
+     APPLY COUPON
+  ------------------------------------------------------------- */
+  async function applyCoupon(id, code, box){
     try{
-      if (box.couponError){
-        box.couponError.style.display='none';
-        box.couponError.textContent='';
-      }
+      box.couponError.style.display="none";
       box.applyBtn.disabled=true;
 
-      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code, simulate:true})
+      const resp=await fetch(CREATE_ORDER,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ member_id:id, coupon:code, simulate:true })
       });
       const j=await resp.json();
-
       box.applyBtn.disabled=false;
 
-      if(!resp.ok||!j.ok){
-        if(box.couponError){
-          box.couponError.textContent=j.message || 'Invalid coupon';
-          box.couponError.style.display='block';
-        }
+      if (!j.ok) {
+        box.couponError.textContent=j.message || "Invalid coupon";
+        box.couponError.style.display="block";
         return;
       }
 
-      box.couponApplied=j.order.applied_coupon || null;
-
-      box.totalsBox.innerHTML=
-        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
-         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-           <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
-         </div>`;
-
-      showInlineSuccess(box.payMsg,'Coupon applied');
-    }catch{
+      box.couponApplied = j.order.applied_coupon || null;
+      box.totalsBox.innerHTML="";
+      box.totalsBox.innerHTML=`
+        <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px;">
+          <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+        </div>`;
+      showInlineSuccess(box.payMsg,"Coupon applied");
+    } catch (e){
+      box.couponError.textContent="Error applying coupon";
+      box.couponError.style.display="block";
       box.applyBtn.disabled=false;
-      box.couponError.textContent='Error applying coupon';
-      box.couponError.style.display='block';
     }
   }
 
-  async function confirmPay(id,box){
-    const saved = await patchMember(id,box);
-    if(!saved) return;
+  /* -------------------------------------------------------------
+     CONFIRM & PAY (Razorpay)
+  ------------------------------------------------------------- */
+  async function confirmPay(id, box){
+    const saved = await patchMember(id, box);
+    if (!saved) return;
 
     const code = box.couponApplied || box.couponInput.value.trim() || null;
 
     try{
       box.payBtn.disabled=true;
 
-      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code})
+      const resp=await fetch(CREATE_ORDER,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ member_id:id, coupon:code })
       });
       const j=await resp.json();
 
       box.payBtn.disabled=false;
 
-      if(!resp.ok||!j.ok){
+      if (!j.ok) {
         showInlineError(box.payMsg,j.message);
         return;
       }
 
-      if(!j.razorpay_configured){
-        box.payMsg.style.display='block';
-        box.payMsg.textContent='Payment options will appear here soon.';
+      if (!j.razorpay_configured) {
+        box.payMsg.style.display="block";
+        box.payMsg.textContent="Payment options will appear here soon.";
         return;
       }
 
-      const rp=j.razorpay_order;
+      const rpOrder = j.razorpay_order;
+      const options = {
+        key: j.razorpay_key_id,
+        amount: rpOrder.amount,
+        currency: rpOrder.currency,
+        order_id: rpOrder.id,
 
-      const options={
-        key:rp.key_id,
-        amount:rp.amount,
-        currency:rp.currency,
-        order_id:rp.id,
         handler: async function(res){
-          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
+          const conf = await fetch(PAYMENT_CONFIRM,{
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
             body:JSON.stringify({
               member_id:id,
               razorpay_payment_id:res.razorpay_payment_id,
@@ -3888,257 +3746,168 @@ var delay = 1200 + Math.floor(Math.random()*1000);
               coupon:code
             })
           });
+
+          const cj = await conf.json();
+          if (!cj.ok){
+            showInlineError(box.payMsg,"Server payment confirmation failed.");
+            return;
+          }
+
           box.payBtn.disabled=true;
-          box.payBtn.textContent='Paid';
+          box.payBtn.textContent="Paid";
+
+          /* Update URL with receipt + activation */
+          if (cj.order.receipt_url)
+            history.replaceState({}, "", cj.order.receipt_url);
+
+          if (cj.order.activation_url) {
+            const u = new URL(window.location.href);
+            const act = new URL(cj.order.activation_url).searchParams.get("activation");
+            if (act) u.searchParams.set("activation", act);
+            history.replaceState({}, "", u.toString());
+          }
+
+          box.payMsg.style.display="block";
+          box.payMsg.textContent="Payment successful — activation link emailed.";
         }
       };
 
-      const rzp=new Razorpay(options);
+      const rzp = new Razorpay(options);
       rzp.open();
 
-    }catch{
+    } catch (e) {
       box.payBtn.disabled=false;
-      showInlineError(box.payMsg,'Cannot initiate payment');
+      showInlineError(box.payMsg,"Cannot initiate payment");
     }
   }
 
-  /* ---------------- Form Submit (updated to change URL) ---------------- */
+  /* -------------------------------------------------------------
+     FORM SUBMIT (JOIN)
+  ------------------------------------------------------------- */
   if (form) {
-    form.addEventListener('submit',async function(e){
+    form.addEventListener("submit", async function(e){
       e.preventDefault();
 
-      if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
-        alert('Complete all fields');
+      if (!val("fi_name") || !val("fi_dob") || !val("fi_gender") ||
+          !val("fi_email") || !val("fi_phone") || !val("fi_city") ||
+          !$id("fi_accept").checked || checkedValues("expectations").length===0) {
+        alert("Complete all fields");
         return;
       }
 
-      const submitBtn=form.querySelector('button[type="submit"]');
-      const pill=createProgressPill('Saving…');
+      const submitBtn=form.querySelector("button[type=submit]");
+      const pill=createProgressPill("Saving…");
       replaceSubmitWithPill(submitBtn,pill);
 
       const payload={
-        name:val('fi_name'),
-        dob:val('fi_dob'),
-        gender:val('fi_gender'),
-        email:val('fi_email'),
-        phone:val('fi_phone'),
-        city:val('fi_city'),
-        expectations:checkedValues('expectations'),
-        accept:true,
-        source:'kenfolios-join-v2'
+        name:val("fi_name"),
+        dob:val("fi_dob"),
+        gender:val("fi_gender"),
+        email:val("fi_email"),
+        phone:val("fi_phone"),
+        city:val("fi_city"),
+        expectations:checkedValues("expectations"),
+        accept:true
       };
 
       try{
         const resp=await fetch(WRITE_ENDPOINT,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
           body:JSON.stringify(payload)
         });
         const j=await resp.json();
 
         restoreSubmitFromPill(submitBtn,pill);
 
-        if(!resp.ok||!j.ok){
+        if (!j.ok){
           alert(j.message||"Could not save");
           return;
         }
 
-        // Remove any intro/whitespace, then show order UI
         removeFormIntroMessage();
         removeExtraWhitespaceAroundForm();
 
-        // If order_url present, change browser URL (replaceState), and set document.title
-        if (j.order && j.order.order_url) {
-          try {
-            // order_url now uses ?order=REF style (worker writes it that way)
-            history.replaceState({}, '', j.order.order_url);
-            if (j.order.order_ref) {
-              document.title = `${j.order.order_ref} — KenFolios`;
-            }
-          } catch (e) {
-            // ignore if history API not allowed
-          }
+        if (j.order && j.order.order_url){
+          history.replaceState({}, "", j.order.order_url);
+          if (j.order.order_ref) document.title = `${j.order.order_ref} — KenFolios`;
         }
 
-        const wrap=document.createElement('div');
-        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
-        const emailed = (j.email_sent === true) || false;
-        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
+        const wrap=document.createElement("div");
+        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, false));
 
-        const box=buildOrderBox(j.order);
+        const box = buildOrderBox(j.order);
         wrap.appendChild(box.wrap);
-
-        // Replace the form in-place so UI appears exactly where the form was
         form.replaceWith(wrap);
 
-        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
-        box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
-        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+        box.applyBtn.addEventListener("click",()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
+        box.payBtn.addEventListener("click",()=>confirmPay(j.member_id,box));
 
-      }catch{
+      } catch(e) {
         restoreSubmitFromPill(submitBtn,pill);
-        alert('Save failed');
+        alert("Save failed");
       }
     });
   }
 
-  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
-     Replaces the original form container (if present) so the order UI appears where the form was.
-  ---------------- */
+  /* -------------------------------------------------------------
+     ORDER LOADER (unique URL load)
+  ------------------------------------------------------------- */
   (function orderLoader(){
-    function detectOrderRef() {
-      try {
-        const sp = new URLSearchParams(window.location.search || '');
-        const q = sp.get('order');
-        if (q && q.trim()) return q.trim();
-        // legacy path: /community/order/REF
-        const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
-        if (m && m[1]) return m[1];
-      } catch (e) { /* ignore */ }
+    function detectRef(){
+      const q=new URLSearchParams(location.search).get("order");
+      if (q) return q.trim();
+
+      const m=location.pathname.match(/order\/(.+)$/);
+      if (m && m[1]) return m[1];
+
       return null;
     }
 
-    const ref = detectOrderRef();
+    const ref = detectRef();
     if (!ref) return;
 
-    (async function loadOrder() {
-      const WORKER_URL = FETCH_ORDER_BY_REF;
+    (async function load(){
+      let container = document.getElementById("kfJoinInfoForm");
 
-      // Find the container we should replace:
-      // Prefer the actual form element's container (so UI appears in same spot)
-      let container = null;
-
-      // 1) If the join form exists on the page, replace it directly
-      const existingForm = document.getElementById('kfJoinInfoForm');
-      if (existingForm) {
-        // replace the form element itself with the order UI later
-        container = existingForm;
-      } else {
-        // 2) Try common "chat area" or "community" containers that your template may use
-        const trySelectors = [
-          '#community', '#community-wrap', '#community-container',
-          '#main', '.main', '#content', '.content',
-          '#chat', '.chat-area', '.chatbox', '.chat-container'
-        ];
-        for (const sel of trySelectors) {
-          const el = document.querySelector(sel);
-          if (el) { container = el; break; }
-        }
-      }
-
-      // 3) Fallback: create a loader near top of body, but try to put it under .content if possible
-      let createdFallback = false;
       if (!container) {
-        container = document.createElement('div');
-        container.id = 'kf-order-loader';
-        container.style.maxWidth = '980px';
-        container.style.margin = '18px auto';
-        // Place fallback near top of page content region if available
-        const main = document.querySelector('#main, .main, #content, .content') || document.body;
-        main.prepend(container);
-        createdFallback = true;
-      } else {
-        // If we found the form element, we'll replace that element (not its parent).
-        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
-        // To be safe, convert the target into a wrapper node we can replace when order is ready:
-        if (container !== document.getElementById('kfJoinInfoForm')) {
-          // create a placeholder wrapper inside the container
-          const wrapper = document.createElement('div');
-          wrapper.id = 'kf-order-loader';
-          // place at top of container
-          container.prepend(wrapper);
-          container = wrapper;
-          createdFallback = true;
-        }
+        container=document.createElement("div");
+        container.style.maxWidth="980px";
+        container.style.margin="24px auto";
+        document.body.prepend(container);
       }
 
-      // show temporary loading state
-      container.textContent = 'Loading order…';
+      container.textContent="Loading order…";
 
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref_id: ref })
-        });
-        const j = await res.json();
+      const resp=await fetch(FETCH_ORDER_BY_REF,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ ref_id:ref })
+      });
 
-        if (!res.ok || !j.ok) {
-          container.textContent = 'Order not found.';
-          return;
-        }
-
-        const order = j.order;
-
-        // <= INSERT HERE: remove intro message if it exists on the page (so unique-URL loads don't show the "Before you proceed..." copy)
-        try {
-          removeFormIntroMessage();
-          removeExtraWhitespaceAroundForm();
-        } catch (e) {
-          console.error('Failed to remove intro whitespace:', e);
-        }
-
-        // Build UI the same way as after submit — replace the form element (if existed)
-        const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
-        const frag = document.createDocumentFragment();
-
-        // Saved notice + order box (re-using helper functions)
-        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
-          frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
-          const box = buildOrderBox(order);
-          frag.appendChild(box.wrap);
-
-          // Wire up apply & pay
-          const memberId = (order.member && order.member.id) ? order.member.id : null;
-          if (box.applyBtn && memberId) {
-            box.applyBtn.addEventListener('click', function(){
-              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
-            });
-          }
-          if (box.payBtn && memberId) {
-            box.payBtn.addEventListener('click', function(){
-              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
-            });
-          }
-
-        } else {
-          const el = document.createElement('div');
-          el.style.padding = '12px';
-          el.style.background = '#fff';
-          el.style.border = '1px solid #eee';
-          el.style.borderRadius = '8px';
-          el.textContent = 'Order: ' + order.order_ref + ' — Total ' + (order.totals ? ('₹' + order.totals.total) : '—');
-          frag.appendChild(el);
-        }
-
-        // Perform replace: if the original form exists, replace the form element with our UI.
-        if (targetToReplace) {
-          targetToReplace.replaceWith(frag);
-        } else if (!createdFallback) {
-          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
-          const existingLoader = document.getElementById('kf-order-loader');
-          if (existingLoader) {
-            existingLoader.innerHTML = '';
-            existingLoader.appendChild(frag);
-          } else {
-            container.innerHTML = '';
-            container.appendChild(frag);
-          }
-        } else {
-          // fallback created wrapper — populate it
-          container.innerHTML = '';
-          container.appendChild(frag);
-        }
-
-        // Update title if available
-        try {
-          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
-        } catch(e){}
-      } catch (err) {
-        container.textContent = 'Network error loading order.';
-        console.error('Order loader error:', err);
+      const j=await resp.json();
+      if (!j.ok){
+        container.textContent="Order not found.";
+        return;
       }
+
+      removeFormIntroMessage();
+      removeExtraWhitespaceAroundForm();
+
+      const frag=document.createDocumentFragment();
+      frag.appendChild(createSavedNotice(j.order.order_ref,j.order.order_created_at,null,false));
+
+      const box=buildOrderBox(j.order);
+      frag.appendChild(box.wrap);
+
+      container.replaceWith(frag);
+
+      const id=j.order.member.id;
+
+      box.applyBtn.addEventListener("click",()=>applyCoupon(id,box.couponInput.value.trim(),box));
+      box.payBtn.addEventListener("click",()=>confirmPay(id,box));
     })();
+
   })();
 
 })();
