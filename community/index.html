@@ -4142,12 +4142,272 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+/* 
+  =====================================================================
+    KF JOIN — EXTRA PATCH V1
+    --------------------------------------------------------------
+    This script is a PATCH that must be placed **below the existing 
+    kf-join-frontend v6.3 submit script**.
 
-</script>
-<!--
+    WHY THIS PATCH EXISTS:
+    -----------------------
+    - Ensures member_id always exists on the order wrapper even if 
+      page is loaded directly via ?order=REF or via order loader.
+    - Auto-fetches member details using order_ref when missing.
+    - Adds safe fallback wiring for:
+        • Coupon Apply
+        • Confirm & Pay buttons
+    - Fixes cases where the wrapper loads AFTER form submission 
+      or is inserted by DOM replacement.
+    - Works even without modifying original script structure.
+    - Does NOT interfere with the main logic — runs only when needed.
+
+    HOW TO USE:
+    -----------
+    → Directly paste this entire block **below your current script**.
+    → No need to search for a line number.
+    → Self-contained; will auto-run and auto-patch runtime issues.
+
+  =====================================================================
+*/
+
+(function(){
+  if (window.__KF_JOIN_EXTRA_PATCH_V1) return;
+  window.__KF_JOIN_EXTRA_PATCH_V1 = true;
+
+  const FALLBACK_BASE = (window.KF_PAY_BASE || "https://kf-payments-processor.ksn-nvl.workers.dev").replace(/\/+$/, "");
+  const FETCH_BY_REF = (typeof FETCH_ORDER_BY_REF !== 'undefined') ? FETCH_ORDER_BY_REF : (FALLBACK_BASE + "/api/order/by-ref");
+
+  // helper
+  function el(tag, attrs={}, ...ch){ const e=document.createElement(tag); for(const k in attrs){ if(k==='style') Object.assign(e.style,attrs[k]); else if(k==='class') e.className=attrs[k]; else e.setAttribute(k,attrs[k]); } ch.forEach(c=>{ if(typeof c==='string') e.appendChild(document.createTextNode(c)); else if(c) e.appendChild(c); }); return e; }
+  function postJson(url, body){ return fetch(url,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json().catch(()=>null)).catch(()=>null); }
+  function setMemberFallbacks(mid, targetEl){
+    try {
+      if (!mid) return false;
+      // hidden input
+      const hidExisting = document.querySelector('#member_id');
+      if (!hidExisting) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'member_id';
+        hidden.id = 'member_id';
+        hidden.value = String(mid);
+        if (targetEl && targetEl.appendChild) targetEl.appendChild(hidden); else document.body.appendChild(hidden);
+      } else {
+        hidExisting.value = String(mid);
+      }
+      if (targetEl && targetEl.dataset) targetEl.dataset.memberId = String(mid);
+      window.__KF_MEMBER_ID = Number(mid);
+      console.info('KF: member_id fallbacks set ->', mid);
+      return true;
+    } catch(e){
+      console.error('KF: setMemberFallbacks error', e);
+      return false;
+    }
+  }
+
+  const ORDER_SELECTORS = ['.kf-order-wrapper', '#kf-order-loader', '.kf-order-box', '.kf-order'];
+
+  function findOrderWrapper() {
+    for (const s of ORDER_SELECTORS) {
+      const n = document.querySelector(s);
+      if (n) return n;
+    }
+    const nodes = Array.from(document.querySelectorAll('div,section'));
+    for (const n of nodes) {
+      if ((n.textContent||'').includes('Order ID:')) return n;
+    }
+    return null;
+  }
+
+  function detectOrderRefFromDOM(wrapper) {
+    if (!wrapper) return null;
+    const txt = wrapper.textContent || '';
+    const m = txt.match(/([A-Z]{2,}[0-9A-Za-z\-_.]{3,})/);
+    if (m && m[1]) {
+      const cand = m[1].trim();
+      if (/\-/.test(cand) && /\d/.test(cand)) return cand;
+    }
+    try {
+      const sp = new URLSearchParams(window.location.search || '');
+      const q = sp.get('order') || sp.get('ref');
+      if (q && q.trim()) return q.trim();
+    } catch(e){}
+    return null;
+  }
+
+  async function ensureMemberOnWrapper(wrapper) {
+    if (!wrapper) return;
+    const existingMember = wrapper.dataset && wrapper.dataset.memberId ? wrapper.dataset.memberId : (document.querySelector('#member_id') ? document.querySelector('#member_id').value : null) || window.__KF_MEMBER_ID || null;
+    if (existingMember) {
+      setMemberFallbacks(existingMember, wrapper);
+      return;
+    }
+    const ref = detectOrderRefFromDOM(wrapper);
+    if (!ref) return;
+    try {
+      const res = await postJson(FETCH_BY_REF, { ref_id: ref });
+      if (res && res.ok && res.order && res.order.member && res.order.member.id) {
+        setMemberFallbacks(Number(res.order.member.id), wrapper);
+      } else if (res && res.ok && res.body && res.body.order && res.body.order.member && res.body.order.member.id) {
+        setMemberFallbacks(Number(res.body.order.member.id), wrapper);
+      } else if (res && res.order && res.order.member && res.order.member.id) {
+        setMemberFallbacks(Number(res.order.member.id), wrapper);
+      }
+    } catch(e){
+      console.error('KF: fetch by ref failed', e);
+    }
+  }
+
+  const mo = new MutationObserver((mutations)=>{
+    for (const m of mutations) {
+      for (const n of Array.from(m.addedNodes || [])) {
+        if (!(n instanceof HTMLElement)) continue;
+        const found = findOrderWrapper();
+        if (found) {
+          ensureMemberOnWrapper(found);
+          tryWirePaymentButtons(found);
+        }
+      }
+    }
+  });
+  mo.observe(document.documentElement || document.body, { childList:true, subtree:true });
+
+  (function runNow(){
+    const wrapper = findOrderWrapper();
+    if (wrapper) ensureMemberOnWrapper(wrapper);
+    if (wrapper) tryWirePaymentButtons(wrapper);
+  })();
+
+  const FALLBACK_INITIATE = (typeof CREATE_ORDER_ENDPOINT !== 'undefined') ? CREATE_ORDER_ENDPOINT : (FALLBACK_BASE + "/api/pay/initiate");
+  const FALLBACK_CONFIRM  = (typeof PAYMENT_CONFIRM_ENDPOINT !== 'undefined') ? PAYMENT_CONFIRM_ENDPOINT : (FALLBACK_BASE + "/api/pay/confirm");
+
+  function safePostJson(url, body){ return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json().catch(()=>({ok:false}))).catch(()=>({ok:false})); }
+
+  function tryWirePaymentButtons(wrapper) {
+    if (!wrapper) return;
+    const applyBtn = wrapper.querySelector('.kf-apply-btn') || wrapper.querySelector('button[data-kf="apply"]') || null;
+    const couponInput = wrapper.querySelector('input[placeholder*="Coupon"]') || wrapper.querySelector('#kf_coupon') || null;
+    const payBtn = wrapper.querySelector('.kf-primary-btn') || Array.from(wrapper.querySelectorAll('button')).find(b=>/confirm\s*&\s*pay/i.test((b.textContent||''))) || null;
+    const msg = wrapper.querySelector('.kf-pay-msg') || (function(){ const d=el('div',{class:'kf-pay-msg', style:{marginTop:'10px'}}); wrapper.appendChild(d); return d; })();
+
+    if (applyBtn && couponInput && !applyBtn.dataset.__kfPatched) {
+      applyBtn.dataset.__kfPatched = '1';
+      applyBtn.addEventListener('click', async function(){
+        const mid = window.__KF_MEMBER_ID || document.querySelector('#member_id')?.value || wrapper.dataset?.memberId || null;
+        if (!mid) { msg.textContent='Member ID missing'; msg.style.color='#b91c1c'; setTimeout(()=>msg.textContent='',3000); return; }
+        try {
+          const res = await safePostJson(FALLBACK_INITIATE, { member_id: Number(mid), coupon: couponInput.value.trim()||null, simulate: true });
+          if (!res || !res.ok) {
+            msg.textContent = (res && res.message) ? res.message : 'Invalid coupon';
+            msg.style.color = '#b91c1c';
+            setTimeout(()=>msg.textContent='',3000);
+            return;
+          }
+          const order = res.order || res.body && res.body.order;
+          const totalsBox = wrapper.querySelector('.kf-totals, .kf-order-totals, .kf-totals-box');
+          if (totalsBox && order && order.totals) {
+            totalsBox.innerHTML =
+              `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${order.totals.subtotal}</span></div>
+               <div style="display:flex;justify-content:space-between"><span>Discount</span><span>₹${order.totals.discount}</span></div>
+               <div style="display:flex;justify-content:space-between"><span>GST</span><span>₹${order.totals.gst}</span></div>
+               <div style="display:flex;justify-content:space-between;font-weight:700"><span>Total</span><span>₹${order.totals.total}</span></div>`;
+          }
+          msg.textContent='Coupon applied';
+          msg.style.color='#065f46';
+          setTimeout(()=>msg.textContent='',2500);
+        } catch(e) {
+          console.error('Apply error', e);
+          msg.textContent='Coupon apply failed';
+          msg.style.color='#b91c1c';
+          setTimeout(()=>msg.textContent='',3000);
+        }
+      });
+    }
+
+    if (payBtn && !payBtn.dataset.__kfPatched) {
+      payBtn.dataset.__kfPatched = '1';
+      payBtn.addEventListener('click', async function(ev){
+        ev.preventDefault();
+        payBtn.disabled = true;
+        msg.textContent = 'Starting payment...';
+        msg.style.color = '#111';
+        const mid = window.__KF_MEMBER_ID || document.querySelector('#member_id')?.value || wrapper.dataset?.memberId || null;
+        if (!mid) { msg.textContent='Member ID missing'; msg.style.color='#b91c1c'; payBtn.disabled=false; return; }
+        try {
+          const patchUrl = (typeof PATCH_MEMBER_BASE !== 'undefined') ? (PATCH_MEMBER_BASE + mid) : (FALLBACK_BASE + "/api/member/" + mid);
+          await fetch(patchUrl, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}) }).catch(()=>{});
+        } catch(e){}
+        try {
+          const couponVal = couponInput ? couponInput.value.trim() : null;
+          const init = await safePostJson(FALLBACK_INITIATE, { member_id: Number(mid), coupon: couponVal, simulate: false });
+          if (!init || !init.ok) {
+            msg.textContent = (init && init.message) ? init.message : 'Could not create order';
+            msg.style.color = '#b91c1c';
+            payBtn.disabled = false;
+            return;
+          }
+          if (!init.razorpay_configured && !(init.body && init.body.razorpay_configured)) {
+            msg.textContent = 'Payment options will appear here soon.';
+            msg.style.color = '#111';
+            payBtn.disabled = false;
+            return;
+          }
+          const rp = (init.razorpay_order || (init.body && init.body.razorpay_order));
+          const keyId = (rp && rp.key_id) ? rp.key_id : (window.__RAZORPAY_KEY_ID || null);
+          if (!keyId) {
+            msg.textContent = 'Missing Razorpay key';
+            msg.style.color = '#b91c1c';
+            payBtn.disabled = false;
+            return;
+          }
+          const options = {
+            key: keyId,
+            amount: rp.amount,
+            currency: rp.currency,
+            order_id: rp.id,
+            name: (init.order && init.order.company && init.order.company.name) ? init.order.company.name : 'KenFolios',
+            description: (init.order && init.order.product && init.order.product.name) ? init.order.product.name : 'Activation fee',
+            prefill: { name: wrapper.querySelector('#ord_full_name')?.value||'', email: wrapper.querySelector('#ord_email')?.value||'', contact: wrapper.querySelector('#ord_phone')?.value||'' },
+            notes: { member_id: String(mid) },
+            handler: async function(res) {
+              msg.textContent = 'Verifying payment...';
+              try {
+                const conf = await postJson(FALLBACK_CONFIRM, { member_id: Number(mid), razorpay_payment_id: res.razorpay_payment_id, razorpay_order_id: res.razorpay_order_id, razorpay_signature: res.razorpay_signature, coupon: couponVal });
+                if (!conf || !conf.ok) {
+                  msg.textContent = (conf && conf.message) ? conf.message : 'Payment confirm failed';
+                  msg.style.color = '#b91c1c';
+                  payBtn.disabled = false;
+                  return;
+                }
+                const receipt = conf.receipt || conf.body && conf.body.receipt || conf.body && conf.body.order || conf.order;
+                if (receipt && receipt.receipt_token) {
+                  try { history.replaceState({}, '', '?receipt=' + encodeURIComponent(receipt.receipt_token)); } catch(e){}
+                }
+                const rBox = el('div',{style:{maxWidth:'820px',margin:'12px auto',padding:'16px',background:'#fff',border:'1px solid #eee',borderRadius:'10px'}});
+                rBox.appendChild(el('div',{style:{fontSize:'1.1rem',fontWeight:800}}, 'Receipt'));
+                if (receipt && receipt.created_at) rBox.appendChild(el('div',{style:{color:'#666'}}, 'Paid: ' + (new Date(receipt.created_at)).toLocaleString('en-IN')));
+                if (receipt && receipt.totals) rBox.appendChild(el('div',{style:{marginTop:'8px'}}, 'Amount: ₹' + (receipt.totals.total || 0)));
+                wrapper.replaceWith(rBox);
+              } catch(e) {
+                console.error('confirm error', e);
+                msg.textContent = 'Confirm failed';
+                msg.style.color = '#b91c1c';
+                payBtn.disabled = false;
+              }
+            }
+          };
+          try { const rzp = new Razorpay(options); rzp.open(); } catch(e){ msg.textContent='Could not open Razorpay'; msg.style.color='#b91c1c'; payBtn.disabled=false; }
+        } catch(e){ console.error('initiate error', e); msg.textContent='Network error'; msg.style.color='#b91c1c'; payBtn.disabled=false; }
+      });
+    }
+  }
+
+})();
+/* 
 ===============================================================================
 KF Payments Integration Patch (single script)
-Paste this <script> block **immediately AFTER** your existing `kf-join-frontend v6.3` script.
+Paste this entire JS block **immediately AFTER** your existing `kf-join-frontend v6.3` script.
 This file *does not* replace your frontend — it only wires the existing order box
 (created by v6.3) to your payment worker endpoints and Razorpay Checkout.
 
@@ -4174,13 +4434,9 @@ REQUIREMENTS
     2) hidden input <input name="member_id" value="...">
     3) global window.__KF_MEMBER_ID set after join completes
 - Put this script after v6.3 so the DOM and constants are available.
-
-USAGE
-- No other edits required. This patch wires to the existing UI and endpoints.
 ===============================================================================
--->
+*/
 
-<script>
 (function(){
   /* Guard: run only once even if script included multiple times */
   if (window.__KF_PAYMENTS_PATCH_V1) return;
@@ -4522,7 +4778,113 @@ USAGE
   }, 300);
 
 })();
+ /* 
+===============================================================================
+KF Payments Worker Frontend Safety Patch
+Paste this block immediately AFTER the payments frontend script you already added.
+Purpose: when the page is loaded with ?order=REF or if the order box exists before the patch,
+         this script will fetch the order by ref (if needed) to ensure member_id is available,
+         then it will wire Confirm & Pay buttons robustly.
+===============================================================================
+*/
+
+(function(){
+  if (window.__KF_PAY_FRONTEND_FALLBACK_V1) return;
+  window.__KF_PAY_FRONTEND_FALLBACK_V1 = true;
+
+  const BASE = (window.KF_PAY_BASE || "https://kf-payments-processor.ksn-nvl.workers.dev").replace(/\/+$/, "");
+  const ENDPOINTS = {
+    INITIATE: (typeof CREATE_ORDER_ENDPOINT !== 'undefined') ? CREATE_ORDER_ENDPOINT : BASE + '/api/pay/initiate',
+    CONFIRM:  (typeof PAYMENT_CONFIRM_ENDPOINT !== 'undefined') ? PAYMENT_CONFIRM_ENDPOINT : BASE + '/api/pay/confirm',
+    FETCH_BY_REF: (typeof FETCH_ORDER_BY_REF !== 'undefined') ? FETCH_ORDER_BY_REF : BASE + '/api/order/by-ref'
+  };
+
+  function postJson(url, body){ return fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(r=>r.json().catch(()=>null)).catch(()=>null); }
+  function el(tag, a={}, ...ch){ const e=document.createElement(tag); for(const k in a) { if(k==='style') Object.assign(e.style,a[k]); else if(k==='class') e.className=a[k]; else e.setAttribute(k,a[k]); } ch.forEach(c=> typeof c==='string' ? e.appendChild(document.createTextNode(c)) : e.appendChild(c)); return e; }
+
+  // read order ref from URL query
+  function getOrderRefFromURL(){
+    try { const sp = new URLSearchParams(window.location.search || ''); return sp.get('order') || sp.get('ref') || null; } catch(e){ return null; }
+  }
+
+  async function fetchOrderByRef(ref){
+    if (!ref) return null;
+    try {
+      const r = await postJson(ENDPOINTS.FETCH_BY_REF, { ref_id: ref });
+      if (r && r.ok && r.order) return r.order;
+      if (r && r.body && r.body.ok && r.body.order) return r.body.order;
+      return null;
+    } catch(e){ console.error('fetchOrderByRef error', e); return null; }
+  }
+
+  // Ensure member_id exists on the page (hidden input, dataset on wrapper, window.__KF_MEMBER_ID)
+  async function ensureMemberForRef(ref) {
+    const wrapper = document.querySelector('.kf-order-wrapper') || document.querySelector('#kf-order-loader') || document.body;
+    const existing = wrapper && (wrapper.dataset && wrapper.dataset.memberId) ? wrapper.dataset.memberId : (document.querySelector('#member_id') ? document.querySelector('#member_id').value : null) || window.__KF_MEMBER_ID || null;
+    if (existing) return existing;
+    if (!ref) return null;
+    const order = await fetchOrderByRef(ref);
+    if (order && order.member && order.member.id) {
+      const mid = Number(order.member.id);
+      // set hidden input
+      let hid = document.querySelector('#member_id');
+      if (!hid) {
+        hid = document.createElement('input');
+        hid.type = 'hidden'; hid.name = 'member_id'; hid.id = 'member_id'; document.body.appendChild(hid);
+      }
+      hid.value = String(mid);
+      // dataset on wrapper
+      const w = document.querySelector('.kf-order-wrapper') || document.querySelector('#kf-order-loader') || document.querySelector('.kf-order-box');
+      if (w && w.dataset) w.dataset.memberId = String(mid);
+      window.__KF_MEMBER_ID = mid;
+      console.info('KF-pay: member id set from ref ->', mid);
+      return mid;
+    }
+    return null;
+  }
+
+  // On page load, if ?order present, ensure member id then try to wire pay buttons
+  (async function init(){
+    const ref = getOrderRefFromURL();
+    if (ref) {
+      await ensureMemberForRef(ref);
+      // Wait briefly for order UI to render (if orderLoader is creating it)
+      setTimeout(()=>{ const wrapper = document.querySelector('.kf-order-wrapper') || document.querySelector('#kf-order-loader'); if (wrapper) { /* attempt to find pay button and noop attach to re-wire */ const pay = wrapper.querySelector('.kf-primary-btn') || Array.from(wrapper.querySelectorAll('button')).find(b=>/confirm\s*&\s*pay/i.test(b.textContent||'')); if (pay && !pay.dataset.__kfPatched) { pay.dataset.__kfPatched='1'; /* no-op: actual wiring done in main patch but ensure member_id present */ } } }, 700);
+    } else {
+      // not opened via ?order — still ensure wrapper present and set member id if possible
+      const wrapper = document.querySelector('.kf-order-wrapper');
+      if (wrapper && !wrapper.dataset?.memberId) {
+        // try to detect ref from DOM and fetch
+        const txt = wrapper.textContent || '';
+        const m = txt.match(/([A-Z]{2,}[0-9A-Za-z\-_.]{3,})/);
+        const refCand = m && m[1] ? m[1] : null;
+        if (refCand) await ensureMemberForRef(refCand);
+      }
+    }
+  })();
+
+  // attempt to wire pay & apply if wrapper exists (non-invasive)
+  function tryWire() {
+    const wrapper = document.querySelector('.kf-order-wrapper') || document.querySelector('#kf-order-loader');
+    if (!wrapper) return;
+    const apply = wrapper.querySelector('.kf-apply-btn');
+    const coupon = wrapper.querySelector('input[placeholder*="Coupon"]') || wrapper.querySelector('#kf_coupon');
+    const pay = wrapper.querySelector('.kf-primary-btn') || Array.from(wrapper.querySelectorAll('button')).find(b=>/confirm\s*&\s*pay/i.test(b.textContent||''));
+    if (apply && coupon && !apply.dataset.__kfPatched) {
+      apply.dataset.__kfPatched = '1';
+      apply.addEventListener('click', async ()=>{ const mid = window.__KF_MEMBER_ID || document.querySelector('#member_id')?.value || wrapper.dataset?.memberId || null; if (!mid) { console.warn('KF-pay: member id missing on apply'); return; } await postJson(ENDPOINTS.INITIATE, { member_id: Number(mid), coupon: coupon.value.trim()||null, simulate: true }); });
+    }
+    if (pay && !pay.dataset.__kfPatched) {
+      // do not attach full handler here — main patch already does it; ensure member present
+      pay.dataset.__kfPatched='1';
+    }
+  }
+  // run periodically short-lived to attach quick bindings
+  let cnt=0; const iv=setInterval(()=>{ tryWire(); cnt++; if(cnt>10) clearInterval(iv); }, 300);
+
+})();
 </script>
+
 
 </body>
 </html>
