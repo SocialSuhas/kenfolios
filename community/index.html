@@ -3254,8 +3254,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v6.3 — full updated frontend script
-   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
+/* kf-join-frontend v6.3 — full updated frontend script - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
    - Removes visible order URL / "pay later" copy from saved notice
    - Coupon input + Apply button stacked (Apply centered)
    - Editable fields responsive (stack on small screens)
@@ -3269,75 +3268,23 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   (function injectKFStyles(){
     const css = `
 /* Wrap entire order UI */
-.kf-order-wrapper {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 12px;
-}
-
+.kf-order-wrapper { width: 100% !important; max-width: 100% !important; box-sizing: border-box; overflow: hidden; padding: 12px; }
 /* Member fields grid – responsive */
-.kf-order-wrapper .kf-member-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* desktop */
-  gap: 10px;
-}
-@media (max-width: 720px) {
-  .kf-order-wrapper .kf-member-box {
-    grid-template-columns: 1fr !important; /* mobile stack */
-  }
-}
-
+.kf-order-wrapper .kf-member-box { display: grid; grid-template-columns: 1fr 1fr; /* desktop */ gap: 10px; }
+@media (max-width: 720px) { .kf-order-wrapper .kf-member-box { grid-template-columns: 1fr !important; /* mobile stack */ } }
 /* Inputs never overflow */
-.kf-order-wrapper .kf-input,
-.kf-order-wrapper input,
-.kf-order-wrapper select {
-  width: 100% !important;
-  box-sizing: border-box;
-  min-width: 0;
-}
-
+.kf-order-wrapper .kf-input, .kf-order-wrapper input, .kf-order-wrapper select { width: 100% !important; box-sizing: border-box; min-width: 0; }
 /* APPLY BUTTON CENTERING */
-.kf-order-wrapper .kf-apply-btn {
-  display: inline-block;
-  margin: 0 auto;
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  max-width: 200px;
-}
-
+.kf-order-wrapper .kf-apply-btn { display: inline-block; margin: 0 auto; padding: 8px 14px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; max-width: 200px; }
 /* Main confirm & pay button responsive */
-.kf-order-wrapper .kf-primary-btn {
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  color: #fff;
-  background: var(--kf-red, #d32f2f);
-}
-@media (max-width: 640px) {
-  .kf-order-wrapper .kf-primary-btn {
-    width: 100% !important;
-  }
-}
-
+.kf-order-wrapper .kf-primary-btn { width: 100%; padding: 12px 20px; font-size: 1rem; border-radius: 8px; border: none; color: #fff; background: var(--kf-red, #d32f2f); }
+@media (max-width: 640px) { .kf-order-wrapper .kf-primary-btn { width: 100% !important; } }
 /* Tighten padding on very small screens */
 @media (max-width: 420px) {
-  .kf-order-wrapper {
-    padding: 8px;
-    border-radius: 8px;
-  }
-  .kf-order-wrapper .kf-member-box {
-    gap: 6px;
-  }
+  .kf-order-wrapper { padding: 8px; border-radius: 8px; }
+  .kf-order-wrapper .kf-member-box { gap: 6px; }
 }
-    `;
+`;
     if (!document.getElementById('kf-join-v6-3-styles')) {
       const s = document.createElement('style');
       s.id = 'kf-join-v6-3-styles';
@@ -3351,17 +3298,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
   const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
   const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
-
   const COMPANY_NAME = "KenFolios Media Private Limited";
   const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
   const COMPANY_CIN = "U72900DL2017PTC321788";
   const COMPANY_GSTIN = "07AAGCK7129K1Z7";
 
-  const form = document.getElementById('kfJoinInfoForm');
-  // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
-  // But most flows have the form present.
-  // If form isn't present we still run the loader below.
-  // if (!form) return; <-- DO NOT early return
+  const form = document.getElementById('kfJoinInfoForm'); // Note: may be null when loader runs
 
   /* -----------------------------------------------
      REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
@@ -3375,7 +3317,21 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
       prev.remove();
     }
+    // Also remove an enclosing bubble if present that contains the intro text but not the form element
+    if (form) {
+      const bubble = form.closest('#finalJoinInfo') || form.closest('.chat-msg') || form.closest('.bubble');
+      if (bubble) {
+        // If bubble contains only intro + form and we've already replaced or removed form, remove the textual intro nodes
+        const nodes = Array.from(bubble.childNodes);
+        for (const n of nodes) {
+          if (n.nodeType === 3 && /before you proceed/i.test(n.textContent || '')) {
+            n.remove();
+          }
+        }
+      }
+    }
   }
+
   function removeExtraWhitespaceAroundForm() {
     if (!form) return;
     let sib=form.previousSibling;
@@ -3394,11 +3350,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   function $id(id){ return document.getElementById(id); }
   function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
-  function checkedValues(name){
-    if (!form) return [];
-    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
-    return Array.from(list).map(i => i.value);
-  }
+  function checkedValues(name){ if (!form) return []; const list = form.querySelectorAll('input[name="'+name+'"]:checked'); return Array.from(list).map(i => i.value); }
 
   function styleInput(el){
     el.style.width = '100%';
@@ -3421,7 +3373,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     pill.style.fontSize='0.95rem';
     pill.style.background='#e6f0ff';
     pill.style.color='#111';
-
     const spin = document.createElement('span');
     spin.style.width='16px';
     spin.style.height='16px';
@@ -3429,13 +3380,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     spin.style.border='2px solid rgba(0,0,0,0.20)';
     spin.style.borderTopColor='rgba(0,0,0,0.55)';
     spin.style.animation='kf-spin 0.8s linear infinite';
-
     const txt = document.createElement('span');
     txt.textContent = text || 'Processing…';
-
     pill.appendChild(spin);
     pill.appendChild(txt);
-
     if (!$id('kf-spin-style')){
       const style=document.createElement('style');
       style.id='kf-spin-style';
@@ -3482,7 +3430,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       n.appendChild(dt);
     }
 
-    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
     const sub = document.createElement('div');
     sub.style.fontSize = '.95rem';
     sub.style.color = '#111';
@@ -3490,7 +3437,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
     n.appendChild(sub);
 
-    // If backend explicitly reports an email was sent we can optionally show that
     if (emailed) {
       const em = document.createElement('div');
       em.style.fontSize = '.9rem';
@@ -3504,12 +3450,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-
-  function stylePrimaryButton(btn){
-    btn.style.background='var(--kf-red)';
-    btn.style.color='#fff';
-    btn.style.border='none';
-  }
+  function stylePrimaryButton(btn){ btn.style.background='var(--kf-red)'; btn.style.color='#fff'; btn.style.border='none'; }
 
   function showInlineError(el,msg){
     el.style.display='block';
@@ -3546,15 +3487,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     const topRow = document.createElement('div');
     topRow.style.display = 'flex';
     topRow.style.justifyContent = 'space-between';
-
     const left = document.createElement('div');
     left.innerHTML = '<strong>Order Summary</strong>';
-
     const right = document.createElement('div');
     right.style.color = '#444';
     right.style.fontWeight = '600';
     right.textContent = `Order ID: ${order.order_ref}`;
-
     topRow.appendChild(left);
     topRow.appendChild(right);
     headerWrap.appendChild(topRow);
@@ -3568,17 +3506,13 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       r2.textContent = `Order created: ${pretty}`;
       headerWrap.appendChild(r2);
     }
-
     wrap.appendChild(headerWrap);
 
     const c = document.createElement('div');
     c.style.marginTop = '14px';
-    c.innerHTML =
-      `<div style="font-weight:700">${COMPANY_NAME}</div>
-       <div style="color:#666">${COMPANY_ADDRESS}</div>
-       <div style="font-size:.85rem;color:#666;margin-top:4px">
-         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
-       </div>`;
+    c.innerHTML = `<div style="font-weight:700">${COMPANY_NAME}</div>
+<div style="color:#666">${COMPANY_ADDRESS}</div>
+<div style="font-size:.85rem;color:#666;margin-top:4px"> GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN} </div>`;
     wrap.appendChild(c);
 
     const compSep = document.createElement('div');
@@ -3607,17 +3541,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     box.style.marginTop = '12px';
 
     const editable = order.editable;
-
     function mk(label, id, val) {
       const f = document.createElement('div');
-
       const l = document.createElement('label');
       l.textContent = label;
       l.style.fontSize = '.9rem';
       l.style.display = 'block';
       l.style.marginBottom = '6px';
       f.appendChild(l);
-
       if (editable) {
         const i = document.createElement('input');
         i.id = id;
@@ -3642,7 +3573,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       }
       return f;
     }
-
     box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
     box.appendChild(mk('Email', 'ord_email', order.member.email));
     box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
@@ -3653,20 +3583,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     const prod = document.createElement('div');
     prod.style.marginTop = '14px';
     const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
-    prod.innerHTML =
-      `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
-        <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
-        <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
-      </div>`;
+    prod.innerHTML = `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
+  <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
+  <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
+</div>`;
     wrap.appendChild(prod);
 
     const feeNote = document.createElement('div');
     feeNote.style.fontSize = '.85rem';
     feeNote.style.color = '#555';
     feeNote.style.marginTop = '6px';
-    feeNote.textContent =
-      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
-      `This fee is the current prevailing rate and may change if you opt to pay later.`;
+    feeNote.textContent = `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. + This fee is the current prevailing rate and may change if you opt to pay later.`;
     wrap.appendChild(feeNote);
 
     // Coupon area — stacked layout: input above Apply button
@@ -3704,6 +3631,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     applyBtn.style.borderRadius = '6px';
     applyBtn.style.background = '#fff';
     applyBtn.style.cursor = 'pointer';
+
     // center the apply button horizontally by wrapping it
     const applyWrap = document.createElement('div');
     applyWrap.style.width = '100%';
@@ -3715,7 +3643,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     const couponError = document.createElement('div');
     couponError.style.color = '#b91c1c';
     couponError.style.marginTop = '6px';
-    couponError.style.textAlign = 'center';
+    couponError.style.textAlign = 'center'; // ensure centered by default
     couponError.style.fontWeight = '600';
     couponError.style.display = 'none';
     couponWrap.appendChild(couponError);
@@ -3728,20 +3656,18 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     wrap.appendChild(totals);
 
     function updateTotals(o) {
-      totals.innerHTML =
-        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
-         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-           <span>Total</span><span>${formatINR(o.totals.total)}</span>
-         </div>`;
+      totals.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
+<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+  <span>Total</span><span>${formatINR(o.totals.total)}</span>
+</div>`;
     }
     updateTotals(order);
 
     const payBox = document.createElement('div');
     payBox.style.marginTop = '18px';
-
     const payBtn = document.createElement('button');
     payBtn.textContent = 'Confirm & Pay';
     payBtn.className = 'kf-primary-btn';
@@ -3758,24 +3684,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     const payMsg = document.createElement('div');
     payMsg.style.display = 'none';
     payMsg.style.marginTop = '10px';
-
     wrap.appendChild(payBox);
     wrap.appendChild(payMsg);
 
     // Return references needed by event wiring
-    return {
-      wrap,
-      couponInput,
-      applyBtn,
-      payBtn,
-      payMsg,
-      totalsBox: totals,
-      editable,
-      couponError
-    };
+    return { wrap, couponInput, applyBtn, payBtn, payMsg, totalsBox: totals, editable, couponError };
   }
 
   /* ------------------ Networking helpers for coupon/payment ------------------ */
+
   async function patchMember(id,box){
     const body={
       name:$id('ord_full_name').value.trim(),
@@ -3784,121 +3701,121 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       city:$id('ord_city').value.trim()
     };
     try{
-      const resp=await fetch(PATCH_MEMBER_BASE+id,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(body)
-      });
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{ method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const j=await resp.json();
       if(!resp.ok||!j.ok) return null;
       return j.order;
     }catch{return null;}
   }
 
-  // ---------- PATCHED applyCoupon (improved UX: empty code check, centered errors, true-success-only) ----------
-  async function applyCoupon(id, code, box) {
-    // Defensive: require member id
-    if (!id) return;
+  // ---------- PATCH: improved coupon UX (validate empty input, only success when coupon applied,
+  // center-align error messages consistently)
+  async function applyCoupon(id,code,box){
+    try{
+      if (box.couponError){
+        box.couponError.style.display='none';
+        box.couponError.textContent='';
+        box.couponError.style.textAlign = 'center'; // ensure center alignment always
+      }
 
-    try {
-      // Normalize code
-      const c = code ? String(code).trim() : '';
-
-      // If empty, show centered hint and don't call backend
-      if (!c) {
-        if (box && box.couponError) {
-          box.couponError.style.display = 'block';
-          box.couponError.style.textAlign = 'center';
+      // Validate input locally first
+      const trimmedCode = (typeof code === 'string') ? code.trim() : '';
+      if (!trimmedCode) {
+        if (box.couponError) {
           box.couponError.textContent = 'Please enter a coupon code';
+          box.couponError.style.display = 'block';
+          box.couponError.style.textAlign = 'center';
         }
         return;
       }
 
-      if (box.couponError) { box.couponError.style.display = 'none'; box.couponError.textContent = ''; }
-      box.applyBtn.disabled = true;
-
-      const resp = await fetch(CREATE_ORDER_ENDPOINT, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ member_id: id, coupon: c, simulate: true })
+      box.applyBtn.disabled=true;
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:trimmedCode, simulate:true})
       });
-      const j = await resp.json();
+      const j=await resp.json();
+      box.applyBtn.disabled=false;
 
-      box.applyBtn.disabled = false;
-
-      if (!resp.ok || !j.ok) {
-        if (box.couponError) {
-          box.couponError.textContent = (j && j.message) ? j.message : 'Invalid coupon code';
-          box.couponError.style.display = 'block';
+      if(!resp.ok||!j.ok){
+        const msg = (j && j.message) ? j.message : 'Invalid coupon';
+        if(box.couponError){
+          box.couponError.textContent = msg;
+          box.couponError.style.display='block';
           box.couponError.style.textAlign = 'center';
         }
         return;
       }
 
-      // Only treat as applied when backend explicitly reports applied_coupon
-      box.couponApplied = (j.order && j.order.applied_coupon) ? j.order.applied_coupon : null;
-
-      if (j.order && j.order.totals) {
-        box.totalsBox.innerHTML =
-          `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
-           <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
-           <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
-           <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
-           <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-             <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
-           </div>`;
-      }
-
-      if (box.couponApplied) {
-        showInlineSuccess(box.payMsg, 'Coupon applied successfully');
-      } else {
+      // If response OK, check whether coupon was actually applied.
+      const applied = (j.order && j.order.applied_coupon) ? j.order.applied_coupon : null;
+      if (!applied) {
+        // No coupon applied (server returned order but with no applied coupon)
         if (box.couponError) {
-          box.couponError.textContent = j.message || 'Coupon could not be applied';
+          box.couponError.textContent = 'No valid coupon applied';
           box.couponError.style.display = 'block';
           box.couponError.style.textAlign = 'center';
         }
+        // Update totals if provided by the server (simulate might still return recalculated totals)
+        if (j.order && j.order.totals) {
+          box.totalsBox.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+  <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+</div>`;
+        }
+        return;
       }
-    } catch (err) {
-      console.error('applyCoupon error', err);
-      if (box && box.applyBtn) box.applyBtn.disabled = false;
-      if (box && box.couponError) {
-        box.couponError.textContent = 'Error applying coupon';
-        box.couponError.style.display = 'block';
+
+      // Coupon applied -> update state & totals and show success
+      box.couponApplied = applied;
+      if (j.order && j.order.totals) {
+        box.totalsBox.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+  <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+</div>`;
+      }
+      showInlineSuccess(box.payMsg,'Coupon applied');
+    }catch{
+      box.applyBtn.disabled=false;
+      if (box.couponError) {
+        box.couponError.textContent='Error applying coupon';
+        box.couponError.style.display='block';
         box.couponError.style.textAlign = 'center';
       }
     }
   }
-  // ---------- end patched applyCoupon ----------
+  // ---------- end coupon patch
 
   async function confirmPay(id,box){
     const saved = await patchMember(id,box);
     if(!saved) return;
-
     const code = box.couponApplied || box.couponInput.value.trim() || null;
-
     try{
       box.payBtn.disabled=true;
-
       const resp=await fetch(CREATE_ORDER_ENDPOINT,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({member_id:id, coupon:code})
       });
       const j=await resp.json();
-
       box.payBtn.disabled=false;
-
       if(!resp.ok||!j.ok){
         showInlineError(box.payMsg,j.message);
         return;
       }
-
       if(!j.razorpay_configured){
         box.payMsg.style.display='block';
         box.payMsg.textContent='Payment options will appear here soon.';
         return;
       }
-
       const rp=j.razorpay_order;
-
       const options={
         key:rp.key_id,
         amount:rp.amount,
@@ -3908,22 +3825,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           await fetch(PAYMENT_CONFIRM_ENDPOINT,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              member_id:id,
-              razorpay_payment_id:res.razorpay_payment_id,
-              razorpay_order_id:res.razorpay_order_id,
-              razorpay_signature:res.razorpay_signature,
-              coupon:code
-            })
+            body:JSON.stringify({ member_id:id, razorpay_payment_id:res.razorpay_payment_id, razorpay_order_id:res.razorpay_order_id, razorpay_signature:res.razorpay_signature, coupon:code })
           });
           box.payBtn.disabled=true;
           box.payBtn.textContent='Paid';
         }
       };
-
       const rzp=new Razorpay(options);
       rzp.open();
-
     }catch{
       box.payBtn.disabled=false;
       showInlineError(box.payMsg,'Cannot initiate payment');
@@ -3934,43 +3843,22 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   if (form) {
     form.addEventListener('submit',async function(e){
       e.preventDefault();
-
       if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
         alert('Complete all fields');
         return;
       }
-
       const submitBtn=form.querySelector('button[type="submit"]');
       const pill=createProgressPill('Saving…');
       replaceSubmitWithPill(submitBtn,pill);
-
-      const payload={
-        name:val('fi_name'),
-        dob:val('fi_dob'),
-        gender:val('fi_gender'),
-        email:val('fi_email'),
-        phone:val('fi_phone'),
-        city:val('fi_city'),
-        expectations:checkedValues('expectations'),
-        accept:true,
-        source:'kenfolios-join-v2'
-      };
-
+      const payload={ name:val('fi_name'), dob:val('fi_dob'), gender:val('fi_gender'), email:val('fi_email'), phone:val('fi_phone'), city:val('fi_city'), expectations:checkedValues('expectations'), accept:true, source:'kenfolios-join-v2' };
       try{
-        const resp=await fetch(WRITE_ENDPOINT,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(payload)
-        });
+        const resp=await fetch(WRITE_ENDPOINT,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const j=await resp.json();
-
         restoreSubmitFromPill(submitBtn,pill);
-
         if(!resp.ok||!j.ok){
           alert(j.message||"Could not save");
           return;
         }
-
         // Remove any intro/whitespace, then show order UI
         removeFormIntroMessage();
         removeExtraWhitespaceAroundForm();
@@ -3978,21 +3866,16 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         // If order_url present, change browser URL (replaceState), and set document.title
         if (j.order && j.order.order_url) {
           try {
-            // order_url now uses ?order=REF style (worker writes it that way)
             history.replaceState({}, '', j.order.order_url);
             if (j.order.order_ref) {
               document.title = `${j.order.order_ref} — KenFolios`;
             }
-          } catch (e) {
-            // ignore if history API not allowed
-          }
+          } catch (e) { /* ignore if history API not allowed */ }
         }
 
         const wrap=document.createElement('div');
-        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
         const emailed = (j.email_sent === true) || false;
         wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
-
         const box=buildOrderBox(j.order);
         wrap.appendChild(box.wrap);
 
@@ -4002,7 +3885,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
         box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
-
       }catch{
         restoreSubmitFromPill(submitBtn,pill);
         alert('Save failed');
@@ -4011,9 +3893,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
-     Replaces the original form container (if present) so the order UI appears where the form was.
-  ---------------- */
-  (function orderLoader() {
+     Replaces the original chat bubble that contains the form (if present) so the intro
+     copy ("Before you proceed…") is removed along with the form when loading by ref.
+  --------------------------------------------------------------------- */
+  (function orderLoader(){
     function detectOrderRef() {
       try {
         const sp = new URLSearchParams(window.location.search || '');
@@ -4025,52 +3908,33 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       } catch (e) { /* ignore */ }
       return null;
     }
-
-    // Remove any intro copy that might be re-inserted by the template when revisiting the page with ?order
-    function removeGlobalIntro() {
-      try {
-        // remove known selectors
-        const els = document.querySelectorAll('.kf-form-intro, #kfFormIntro');
-        els.forEach(e => { try { e.remove(); } catch (e) {} });
-
-        // Scan for small leaf nodes containing the common intro phrase (case-insensitive)
-        const phrase = 'before you proceed, share a few details';
-        const walkers = document.querySelectorAll('body *');
-        for (const el of walkers) {
-          if (el.children && el.children.length > 0) continue; // skip non-leaf nodes
-          const txt = (el.textContent || '').trim().toLowerCase();
-          if (txt && txt.includes(phrase)) {
-            try { el.remove(); } catch (e) { /* ignore */ }
-          }
-        }
-      } catch (e) { /* ignore */ }
-    }
-
     const ref = detectOrderRef();
     if (!ref) return;
 
     (async function loadOrder() {
       const WORKER_URL = FETCH_ORDER_BY_REF;
 
-      // proactively remove intro copy that some templates re-insert when path changes
-      removeGlobalIntro();
-
       // Find the container we should replace:
-      // Prefer the actual form element's container (so UI appears in same spot)
+      // Prefer replacing the entire chat bubble that contains the form (so intro copy goes away).
       let container = null;
+      let targetForm = document.getElementById('kfJoinInfoForm');
 
-      // 1) If the join form exists on the page, replace it directly
-      const existingForm = document.getElementById('kfJoinInfoForm');
-      if (existingForm) {
-        // replace the form element itself with the order UI later
-        container = existingForm;
+      // If the join form exists, try to find its nearest chat bubble ancestor (robust)
+      if (targetForm) {
+        // common bubble selectors / ids used in templates
+        const bubbleAncestor = targetForm.closest('#finalJoinInfo') ||
+                               targetForm.closest('.chat-msg.admin') ||
+                               targetForm.closest('.chat-msg') ||
+                               targetForm.closest('.bubble');
+        if (bubbleAncestor) {
+          container = bubbleAncestor;
+        } else {
+          // If no bubble ancestor, we'll replace the form element itself later
+          container = targetForm;
+        }
       } else {
         // 2) Try common "chat area" or "community" containers that your template may use
-        const trySelectors = [
-          '#community', '#community-wrap', '#community-container',
-          '#main', '.main', '#content', '.content',
-          '#chat', '.chat-area', '.chatbox', '.chat-container'
-        ];
+        const trySelectors = [ '#community', '#community-wrap', '#community-container', '#main', '.main', '#content', '.content', '#chat', '.chat-area', '.chatbox', '.chat-container' ];
         for (const sel of trySelectors) {
           const el = document.querySelector(sel);
           if (el) { container = el; break; }
@@ -4084,19 +3948,16 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         container.id = 'kf-order-loader';
         container.style.maxWidth = '980px';
         container.style.margin = '18px auto';
-        // Place fallback near top of page content region if available
         const main = document.querySelector('#main, .main, #content, .content') || document.body;
         main.prepend(container);
         createdFallback = true;
       } else {
-        // If we found the form element, we'll replace that element (not its parent).
-        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
-        // To be safe, convert the target into a wrapper node we can replace when order is ready:
-        if (container !== document.getElementById('kfJoinInfoForm')) {
-          // create a placeholder wrapper inside the container
+        // If we found a big container (like #content) and it's not the form/bubble itself,
+        // create a placeholder wrapper inside the container so we can safely replace that wrapper later.
+        const isDirectTarget = (container === targetForm) || container.id === 'kfJoinInfoForm' || container.id === 'finalJoinInfo' || (container.classList && container.classList.contains('chat-msg'));
+        if (!isDirectTarget) {
           const wrapper = document.createElement('div');
           wrapper.id = 'kf-order-loader';
-          // place at top of container
           container.prepend(wrapper);
           container = wrapper;
           createdFallback = true;
@@ -4107,43 +3968,41 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       container.textContent = 'Loading order…';
 
       try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref_id: ref })
-        });
+        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref_id: ref }) });
         const j = await res.json();
-
         if (!res.ok || !j.ok) {
           container.textContent = 'Order not found.';
           return;
         }
-
         const order = j.order;
 
-        // Build UI the same way as after submit — replace the form element (if existed)
-        const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
+        // Build UI the same way as after submit — replace the form bubble (if existed)
         const frag = document.createDocumentFragment();
 
-        // Saved notice + order box (re-using helper functions)
-        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
+        if (typeof createSavedNotice === 'function') {
           frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+        } else {
+          const n = document.createElement('div');
+          n.textContent = 'Details saved — Order ID: ' + order.order_ref;
+          frag.appendChild(n);
+        }
+
+        if (typeof buildOrderBox === 'function') {
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
           // Wire up apply & pay
           const memberId = (order.member && order.member.id) ? order.member.id : null;
           if (box.applyBtn && memberId) {
-            box.applyBtn.addEventListener('click', function(){
-              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            box.applyBtn.addEventListener('click', function () {
+              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch (e) { console.error(e); }
             });
           }
           if (box.payBtn && memberId) {
-            box.payBtn.addEventListener('click', function(){
-              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
+            box.payBtn.addEventListener('click', function () {
+              try { confirmPay(memberId, box); } catch (e) { console.error(e); }
             });
           }
-
         } else {
           const el = document.createElement('div');
           el.style.padding = '12px';
@@ -4154,11 +4013,45 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           frag.appendChild(el);
         }
 
-        // Perform replace: if the original form exists, replace the form element with our UI.
-        if (targetToReplace) {
-          targetToReplace.replaceWith(frag);
+        // NEW: attempt to remove any intro copy in the same way submit flow does
+        // Prefer calling existing helper if available.
+        try {
+          if (typeof removeFormIntroMessage === 'function') {
+            removeFormIntroMessage();
+          } else if (targetForm) {
+            // fallback: remove the nearest text node that contains the intro phrase
+            const bubble = targetForm.closest('#finalJoinInfo') || targetForm.closest('.chat-msg') || targetForm.closest('.bubble');
+            if (bubble) {
+              const nodes = Array.from(bubble.childNodes);
+              for (const n of nodes) {
+                if (n.nodeType === 3 && /before you proceed/i.test(n.textContent || '')) {
+                  n.remove();
+                } else if (n.nodeType === 1) {
+                  if (n.textContent && /before you proceed/i.test(n.textContent)) {
+                    // leave it to the replacement logic below if needed
+                  }
+                }
+              }
+            }
+          }
+        } catch (err) { /* ignore errors from cleanup */ }
+
+        // Perform replace:
+        // If we have located a chat bubble ancestor (and it was used as container), replace that
+        // so the intro copy is removed. Otherwise replace the form element itself or insert into fallback.
+        const bubbleToReplace = document.getElementById('finalJoinInfo') ||
+                                (targetForm && targetForm.closest('.chat-msg.admin')) ||
+                                (targetForm && targetForm.closest('.chat-msg')) ||
+                                (targetForm && targetForm.closest('#finalJoinInfo'));
+
+        if (bubbleToReplace) {
+          // Replace the entire chat bubble with the order UI (keeps placement identical)
+          bubbleToReplace.replaceWith(frag);
+        } else if (targetForm && targetForm.parentNode && (container === targetForm || container.contains(targetForm))) {
+          // If container is the form, replace the form node
+          targetForm.replaceWith(frag);
         } else if (!createdFallback) {
-          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
+          // If we inserted into an existing wrapper (#kf-order-loader), clear and append.
           const existingLoader = document.getElementById('kf-order-loader');
           if (existingLoader) {
             existingLoader.innerHTML = '';
@@ -4173,20 +4066,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           container.appendChild(frag);
         }
 
-        // remove any intro remnants again after insert
-        removeGlobalIntro();
-
         // Update title if available
-        try {
-          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
-        } catch(e){}
+        try { if (order.order_ref) document.title = `${order.order_ref} — KenFolios`; } catch (e) {}
       } catch (err) {
         container.textContent = 'Network error loading order.';
         console.error('Order loader error:', err);
       }
     })();
   })();
-
 })();
 
 
