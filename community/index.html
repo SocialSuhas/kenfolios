@@ -3311,6 +3311,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   max-width: 200px;
 }
 
+/* Coupon message – always centered under Apply */
+.kf-order-wrapper .kf-coupon-message {
+  text-align: center;
+  width: 100%;
+}
+
 /* Main confirm & pay button responsive */
 .kf-order-wrapper .kf-primary-btn {
   width: 100%;
@@ -3532,7 +3538,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     if (!box || !box.couponError) return;
     const el = box.couponError;
     el.style.display = 'block';
-    el.style.textAlign = 'center';
     el.style.fontWeight = '600';
     el.style.color = isError ? '#b91c1c' : '#166534';
     el.textContent = msg;
@@ -3724,9 +3729,9 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     couponWrap.appendChild(applyWrap);
 
     const couponError = document.createElement('div');
+    couponError.className = 'kf-coupon-message';
     couponError.style.color = '#b91c1c';
     couponError.style.marginTop = '6px';
-    couponError.style.textAlign = 'center';
     couponError.style.fontWeight = '600';
     couponError.style.display = 'none';
     couponWrap.appendChild(couponError);
@@ -4169,6 +4174,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+
 
 </script>
 
