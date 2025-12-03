@@ -4174,6 +4174,48 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+ 
+/* === KF PATCH: redirect frontend API calls to kenfolios.com gateway === */
+(function () {
+  // Base domain where the worker is routed
+  const DOMAIN_BASE = "https://kenfolios.com";
+
+  // Keep original fetch
+  const ORIGINAL_FETCH = window.fetch;
+
+  window.fetch = function (input, init) {
+    try {
+      if (typeof input === "string") {
+        // Map old worker.dev URLs → kenfolios.com routes
+        input = input
+          .replace(
+            "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join",
+            DOMAIN_BASE + "/api/join"
+          )
+          .replace(
+            "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/",
+            DOMAIN_BASE + "/api/member/"
+          )
+          .replace(
+            "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order",
+            DOMAIN_BASE + "/api/payment/create-order"
+          )
+          .replace(
+            "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm",
+            DOMAIN_BASE + "/api/payment/verify"
+          )
+          .replace(
+            "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref",
+            DOMAIN_BASE + "/api/order/by-ref"
+          );
+      }
+    } catch (e) {
+      // fail safe: if anything goes wrong, just fall back to original fetch
+      console.error("KF gateway patch error:", e);
+    }
+    return ORIGINAL_FETCH(input, init);
+  };
+})();
 
 
 </script>
