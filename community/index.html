@@ -3905,81 +3905,109 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   /* -------- UPDATED: confirmPay now lazy-loads Razorpay script -------- */
-  async function confirmPay(id,box){
-    const saved = await patchMember(id,box);
-    if(!saved) return;
+  async function confirmPay(id, box){
+    const saved = await patchMember(id, box);
+    if (!saved) return;
 
     const code = box.couponApplied || box.couponInput.value.trim() || null;
 
-    try{
-      box.payBtn.disabled=true;
+    let payPill = null;
+    const btn = box.payBtn;
+    const msg = box.payMsg;
 
-      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+    try {
+      // Show same style pill used on submit, on the pay button
+      payPill = createProgressPill('Preparing payment…');
+      replaceSubmitWithPill(btn, payPill);
+      btn.disabled = true;
+      if (msg) {
+        msg.style.display = 'none';
+        msg.textContent = '';
+      }
+
+      const resp = await fetch(CREATE_ORDER_ENDPOINT, {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code})
+        body: JSON.stringify({ member_id: id, coupon: code })
       });
-      const j=await resp.json();
+      const j = await resp.json();
 
-      box.payBtn.disabled=false;
+      // We’re done with pre-processing, restore the button (unless we error)
+      restoreSubmitFromPill(btn, payPill);
+      payPill = null;
 
-      if(!resp.ok||!j.ok){
-        showInlineError(box.payMsg,j.message);
+      if (!resp.ok || !j.ok) {
+        btn.disabled = false;
+        showInlineError(msg, j.message || 'Could not initiate payment.');
         return;
       }
 
-      if(!j.razorpay_configured){
-        box.payMsg.style.display='block';
-        box.payMsg.textContent='Payment options will appear here soon.';
+      if (!j.razorpay_configured) {
+        btn.disabled = false;
+        msg.style.display = 'block';
+        msg.textContent = 'Payment options will appear here soon.';
         return;
       }
 
-      // Ensure Razorpay script is loaded before creating instance
+      // Load Razorpay script before opening popup
       try {
         await loadRazorpayScript();
       } catch (loadErr) {
         console.error('Razorpay script load error:', loadErr);
-        showInlineError(box.payMsg,'Payment gateway is temporarily unavailable. Please try again in a moment.');
+        btn.disabled = false;
+        showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
         return;
       }
 
       if (typeof Razorpay === 'undefined') {
-        showInlineError(box.payMsg,'Payment gateway is temporarily unavailable. Please try again in a moment.');
+        btn.disabled = false;
+        showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
         return;
       }
 
-      const rp=j.razorpay_order;
+      const rp = j.razorpay_order;
 
-      const options={
-        key:rp.key_id,
-        amount:rp.amount,
-        currency:rp.currency,
-        order_id:rp.id,
+      const options = {
+        key: rp.key_id,
+        amount: rp.amount,
+        currency: rp.currency,
+        order_id: rp.id,
         handler: async function(res){
-          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              member_id:id,
-              razorpay_payment_id:res.razorpay_payment_id,
-              razorpay_order_id:res.razorpay_order_id,
-              razorpay_signature:res.razorpay_signature,
-              coupon:code
-            })
-          });
-          box.payBtn.disabled=true;
-          box.payBtn.textContent='Paid';
+          try {
+            await fetch(PAYMENT_CONFIRM_ENDPOINT, {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                member_id: id,
+                razorpay_payment_id: res.razorpay_payment_id,
+                razorpay_order_id: res.razorpay_order_id,
+                razorpay_signature: res.razorpay_signature,
+                coupon: code
+              })
+            });
+          } catch (e) {
+            console.error('Payment confirm error:', e);
+          }
+          btn.disabled = true;
+          btn.textContent = 'Paid';
         }
       };
 
-      const rzp=new Razorpay(options);
+      // At this point everything is ready, show Razorpay popup
+      const rzp = new Razorpay(options);
+      btn.disabled = false; // allow retry if they close the popup
       rzp.open();
 
-    }catch{
-      box.payBtn.disabled=false;
-      showInlineError(box.payMsg,'Cannot initiate payment');
+    } catch (err) {
+      console.error('confirmPay error:', err);
+      if (payPill) {
+        restoreSubmitFromPill(btn, payPill);
+      }
+      btn.disabled = false;
+      showInlineError(msg, 'Cannot initiate payment. Please try again.');
     }
   }
+
 
   /* ---------------- Form Submit (updated to change URL) ---------------- */
   if (form) {
