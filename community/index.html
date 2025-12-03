@@ -3254,6 +3254,15 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+
+/* Razorpay Checkout Script
+     This script is required for opening the Razorpay payment popup.
+     Without it, clicking “Confirm & Pay” will fail with 
+     “Cannot initiate payment” because Razorpay will be undefined.*/
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+ 
 /* kf-join-frontend v6.3 — full updated frontend script
    - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
    - Removes visible order URL / "pay later" copy from saved notice
