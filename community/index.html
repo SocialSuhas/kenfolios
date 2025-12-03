@@ -3979,33 +3979,29 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       return;
     }
 
-    const rp = j.razorpay_order;
+         const rp = j.razorpay_order;
 
-    const options = {
-      key: rp.key_id,
-      amount: rp.amount,
-      currency: rp.currency,
-      order_id: rp.id,
-      handler: async function(res){
-        try {
-          await fetch(PAYMENT_CONFIRM_ENDPOINT, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-              member_id: id,
-              razorpay_payment_id: res.razorpay_payment_id,
-              razorpay_order_id: res.razorpay_order_id,
-              razorpay_signature: res.razorpay_signature,
-              coupon: code
+      const options = {
+        key: j.razorpay_key_id,  // ✅ use key from worker env
+        amount: rp.amount,
+        currency: rp.currency,
+        order_id: rp.id,
+        handler: async function(res){
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              member_id:id,
+              razorpay_payment_id:res.razorpay_payment_id,
+              razorpay_order_id:res.razorpay_order_id,
+              razorpay_signature:res.razorpay_signature,
+              coupon:code
             })
           });
-        } catch (e) {
-          console.error('Payment confirm error:', e);
+          box.payBtn.disabled = true;
+          box.payBtn.textContent = 'Paid';
         }
-        btn.disabled = true;
-        btn.textContent = 'Paid';
-      }
-    };
+      };
 
     const rzp = new Razorpay(options);
     rzp.open();
