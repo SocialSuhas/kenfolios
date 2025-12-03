@@ -3254,12 +3254,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-/* kf-join-frontend v6.3 — full updated frontend script
+
+/* kf-join-frontend v6.4 — full updated frontend script
    - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
    - Removes visible order URL / "pay later" copy from saved notice
    - Coupon input + Apply button stacked (Apply centered)
    - Editable fields responsive (stack on small screens)
    - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
+   - NEW: Lazy-load Razorpay checkout.js only when order summary / payment is active
 */
 (function(){
   if (window.__KF_JOINFORM_V6_3) return;
@@ -3362,6 +3364,38 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
   const COMPANY_CIN = "U72900DL2017PTC321788";
   const COMPANY_GSTIN = "07AAGCK7129K1Z7";
+
+  /* -------- NEW: Lazy-load Razorpay checkout script only when needed -------- */
+  let razorpayScriptPromise = null;
+  function loadRazorpayScript() {
+    if (window.Razorpay) return Promise.resolve();
+
+    if (razorpayScriptPromise) return razorpayScriptPromise;
+
+    razorpayScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[src*="checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => {
+          if (window.Razorpay) resolve();
+          else reject(new Error('Razorpay not available after load.'));
+        });
+        existing.addEventListener('error', () => reject(new Error('Failed to load Razorpay script.')));
+        return;
+      }
+
+      const s = document.createElement('script');
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.async = true;
+      s.onload = () => {
+        if (window.Razorpay) resolve();
+        else reject(new Error('Razorpay not available after load.'));
+      };
+      s.onerror = () => reject(new Error('Failed to load Razorpay script.'));
+      document.head.appendChild(s);
+    });
+
+    return razorpayScriptPromise;
+  }
 
   const form = document.getElementById('kfJoinInfoForm');
   // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
@@ -3665,7 +3699,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     box.appendChild(mk('City', 'ord_city', order.member.city));
     wrap.appendChild(box);
 
-    // PRODUCT + fee note (unchanged)
+    // PRODUCT + fee note
     const prod = document.createElement('div');
     prod.style.marginTop = '14px';
     const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
@@ -3720,7 +3754,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     applyBtn.style.borderRadius = '6px';
     applyBtn.style.background = '#fff';
     applyBtn.style.cursor = 'pointer';
-    // center the apply button horizontally by wrapping it
+
     const applyWrap = document.createElement('div');
     applyWrap.style.width = '100%';
     applyWrap.style.display = 'flex';
@@ -3870,6 +3904,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }
   }
 
+  /* -------- UPDATED: confirmPay now lazy-loads Razorpay script -------- */
   async function confirmPay(id,box){
     const saved = await patchMember(id,box);
     if(!saved) return;
@@ -3896,6 +3931,20 @@ var delay = 1200 + Math.floor(Math.random()*1000);
       if(!j.razorpay_configured){
         box.payMsg.style.display='block';
         box.payMsg.textContent='Payment options will appear here soon.';
+        return;
+      }
+
+      // Ensure Razorpay script is loaded before creating instance
+      try {
+        await loadRazorpayScript();
+      } catch (loadErr) {
+        console.error('Razorpay script load error:', loadErr);
+        showInlineError(box.payMsg,'Payment gateway is temporarily unavailable. Please try again in a moment.');
+        return;
+      }
+
+      if (typeof Razorpay === 'undefined') {
+        showInlineError(box.payMsg,'Payment gateway is temporarily unavailable. Please try again in a moment.');
         return;
       }
 
@@ -3980,7 +4029,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         // If order_url present, change browser URL (replaceState), and set document.title
         if (j.order && j.order.order_url) {
           try {
-            // Normalize so it always uses /community/?order=REF
             let targetUrl = j.order.order_url;
             if (typeof targetUrl === 'string') {
               targetUrl = targetUrl.replace('/community?','/community/?');
@@ -3995,7 +4043,6 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         }
 
         const wrap=document.createElement('div');
-        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
         const emailed = (j.email_sent === true) || false;
         wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
 
@@ -4009,6 +4056,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
         box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
 
+        // Start loading Razorpay script in background once order summary is visible
+        if (typeof loadRazorpayScript === 'function') {
+          loadRazorpayScript().catch(console.error);
+        }
+
       }catch{
         restoreSubmitFromPill(submitBtn,pill);
         alert('Save failed');
@@ -4016,16 +4068,13 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     });
   }
 
-  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
-     Replaces the original form container (if present) so the order UI appears where the form was.
-  ---------------- */
+  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order ---------------- */
   (function orderLoader(){
     function detectOrderRef() {
       try {
         const sp = new URLSearchParams(window.location.search || '');
         const q = sp.get('order');
         if (q && q.trim()) return q.trim();
-        // legacy path: /community/order/REF
         const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
         if (m && m[1]) return m[1];
       } catch (e) { /* ignore */ }
@@ -4044,17 +4093,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     (async function loadOrder() {
       const WORKER_URL = FETCH_ORDER_BY_REF;
 
-      // Find the container we should replace:
-      // Prefer the actual form element's container (so UI appears in same spot)
       let container = null;
 
-      // 1) If the join form exists on the page, replace it directly
       const existingForm = document.getElementById('kfJoinInfoForm');
       if (existingForm) {
-        // replace the form element itself with the order UI later
         container = existingForm;
       } else {
-        // 2) Try common "chat area" or "community" containers that your template may use
         const trySelectors = [
           '#community', '#community-wrap', '#community-container',
           '#main', '.main', '#content', '.content',
@@ -4066,33 +4110,25 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         }
       }
 
-      // 3) Fallback: create a loader near top of body, but try to put it under .content if possible
       let createdFallback = false;
       if (!container) {
         container = document.createElement('div');
         container.id = 'kf-order-loader';
         container.style.maxWidth = '980px';
         container.style.margin = '18px auto';
-        // Place fallback near top of page content region if available
         const main = document.querySelector('#main, .main, #content, .content') || document.body;
         main.prepend(container);
         createdFallback = true;
       } else {
-        // If we found the form element, we'll replace that element (not its parent).
-        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
-        // To be safe, convert the target into a wrapper node we can replace when order is ready:
         if (container !== document.getElementById('kfJoinInfoForm')) {
-          // create a placeholder wrapper inside the container
           const wrapper = document.createElement('div');
           wrapper.id = 'kf-order-loader';
-          // place at top of container
           container.prepend(wrapper);
           container = wrapper;
           createdFallback = true;
         }
       }
 
-      // show temporary loading state
       container.textContent = 'Loading order…';
 
       try {
@@ -4110,17 +4146,14 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
         const order = j.order;
 
-        // Build UI the same way as after submit — replace the form element (if existed)
         const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
         const frag = document.createDocumentFragment();
 
-        // Saved notice + order box (re-using helper functions)
         if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
           frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
-          // Wire up apply & pay
           const memberId = (order.member && order.member.id) ? order.member.id : null;
           if (box.applyBtn && memberId) {
             box.applyBtn.addEventListener('click', function(){
@@ -4133,6 +4166,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
             });
           }
 
+          // Preload Razorpay script when showing existing order as well
+          if (typeof loadRazorpayScript === 'function') {
+            loadRazorpayScript().catch(console.error);
+          }
+
         } else {
           const el = document.createElement('div');
           el.style.padding = '12px';
@@ -4143,11 +4181,9 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           frag.appendChild(el);
         }
 
-        // Perform replace: if the original form exists, replace the form element with our UI.
         if (targetToReplace) {
           targetToReplace.replaceWith(frag);
         } else if (!createdFallback) {
-          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
           const existingLoader = document.getElementById('kf-order-loader');
           if (existingLoader) {
             existingLoader.innerHTML = '';
@@ -4157,12 +4193,10 @@ var delay = 1200 + Math.floor(Math.random()*1000);
             container.appendChild(frag);
           }
         } else {
-          // fallback created wrapper — populate it
           container.innerHTML = '';
           container.appendChild(frag);
         }
 
-        // Update title if available
         try {
           if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
         } catch(e){}
@@ -4174,6 +4208,8 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
+
+
 
 
 </script>
