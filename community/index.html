@@ -3254,10 +3254,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   })();
 
 })();
-
- /* kf-join-frontend v6.3 — updated
-   - Keeps order summary + coupon logic
-   - Removes Confirm & Pay handler + related functions (for new payment script to take over)
+/* kf-join-frontend v6.3 — full updated frontend script
+   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
+   - Removes visible order URL / "pay later" copy from saved notice
+   - Coupon input + Apply button stacked (Apply centered)
+   - Editable fields responsive (stack on small screens)
+   - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
 */
 (function(){
   if (window.__KF_JOINFORM_V6_3) return;
@@ -3353,6 +3355,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
   const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
   const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
+  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
   const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
 
   const COMPANY_NAME = "KenFolios Media Private Limited";
@@ -3638,7 +3641,7 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         i.className = 'kf-input';
         // basic inline fallback styling so class alone still looks ok
         i.style.padding = '10px';
-        i.style.border = '1px solid '#e6e6e6';
+        i.style.border = '1px solid #e6e6e6';
         i.style.borderRadius = '8px';
         i.style.background = '#fafafa';
         i.style.boxSizing = 'border-box';
@@ -3789,9 +3792,24 @@ var delay = 1200 + Math.floor(Math.random()*1000);
   }
 
   /* ------------------ Networking helpers for coupon/payment ------------------ */
-
-  // NOTE: patchMember + confirmPay removed here.
-  // New payment script will own member patch + actual payment flow.
+  async function patchMember(id,box){
+    const body={
+      name:$id('ord_full_name').value.trim(),
+      email:$id('ord_email').value.trim(),
+      phone:$id('ord_phone').value.trim(),
+      city:$id('ord_city').value.trim()
+    };
+    try{
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      const j=await resp.json();
+      if(!resp.ok||!j.ok) return null;
+      return j.order;
+    }catch{return null;}
+  }
 
   async function applyCoupon(id,code,box){
     try{
@@ -3849,6 +3867,68 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     }catch{
       box.applyBtn.disabled=false;
       showCouponMessage(box, 'Error applying coupon. Please try again.', true);
+    }
+  }
+
+  async function confirmPay(id,box){
+    const saved = await patchMember(id,box);
+    if(!saved) return;
+
+    const code = box.couponApplied || box.couponInput.value.trim() || null;
+
+    try{
+      box.payBtn.disabled=true;
+
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:code})
+      });
+      const j=await resp.json();
+
+      box.payBtn.disabled=false;
+
+      if(!resp.ok||!j.ok){
+        showInlineError(box.payMsg,j.message);
+        return;
+      }
+
+      if(!j.razorpay_configured){
+        box.payMsg.style.display='block';
+        box.payMsg.textContent='Payment options will appear here soon.';
+        return;
+      }
+
+      const rp=j.razorpay_order;
+
+      const options={
+        key:rp.key_id,
+        amount:rp.amount,
+        currency:rp.currency,
+        order_id:rp.id,
+        handler: async function(res){
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              member_id:id,
+              razorpay_payment_id:res.razorpay_payment_id,
+              razorpay_order_id:res.razorpay_order_id,
+              razorpay_signature:res.razorpay_signature,
+              coupon:code
+            })
+          });
+          box.payBtn.disabled=true;
+          box.payBtn.textContent='Paid';
+        }
+      };
+
+      const rzp=new Razorpay(options);
+      rzp.open();
+
+    }catch{
+      box.payBtn.disabled=false;
+      showInlineError(box.payMsg,'Cannot initiate payment');
     }
   }
 
@@ -3925,8 +4005,9 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         // Replace the form in-place so UI appears exactly where the form was
         form.replaceWith(wrap);
 
-        // Wire up coupon apply button (Confirm & Pay will be handled by new script)
+        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
+        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
 
       }catch{
         restoreSubmitFromPill(submitBtn,pill);
@@ -4039,11 +4120,16 @@ var delay = 1200 + Math.floor(Math.random()*1000);
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
-          // Wire up apply button only; Confirm & Pay will be owned by new payment script
+          // Wire up apply & pay
           const memberId = (order.member && order.member.id) ? order.member.id : null;
           if (box.applyBtn && memberId) {
             box.applyBtn.addEventListener('click', function(){
               try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            });
+          }
+          if (box.payBtn && memberId) {
+            box.payBtn.addEventListener('click', function(){
+              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
             });
           }
 
