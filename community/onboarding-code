@@ -1,880 +1,574 @@
+/**
+ * kf-members-submit-z9p4x-worker — complete
+ * - Generates & persists order_url/ref_id on create-order and on initial join
+ * - Generates & persists unique_token/activation_url on payment confirm
+ * - BASE_PRODUCT is GST-inclusive (1999 INR)
+ * - Optional MAILER_WEBHOOK env: receives JSON payloads for order_created and activation events
+ *
+ * Bindings required:
+ * env.D1_WRITE_BINDING (Cloudflare D1)
+ * Optional env vars:
+ * env.RAZORPAY_KEY_ID
+ * env.RAZORPAY_KEY_SECRET
+ * env.ALLOWED_ORIGINS
+ * env.MAILER_WEBHOOK
+ *
+ * Drop-in replacement for your existing worker.
+ */
 
-/* kf-join-frontend v6.3 — full updated frontend script
-   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
-   - Removes visible order URL / "pay later" copy from saved notice
-   - Coupon input + Apply button stacked (Apply centered)
-   - Editable fields responsive (stack on small screens)
-   - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
-*/
-(function(){
-  if (window.__KF_JOINFORM_V6_3) return;
-  window.__KF_JOINFORM_V6_3 = true;
+const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 
-  /* ------------------ CSS Injection (responsive classes) ------------------ */
-  (function injectKFStyles(){
-    const css = `
-/* Wrap entire order UI */
-.kf-order-wrapper {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 12px;
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type,Accept"
+  };
 }
 
-/* Member fields grid – responsive */
-.kf-order-wrapper .kf-member-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* desktop */
-  gap: 10px;
-}
-@media (max-width: 720px) {
-  .kf-order-wrapper .kf-member-box {
-    grid-template-columns: 1fr !important; /* mobile stack */
-  }
+function json(body, status = 200, origin = "*") {
+  return new Response(JSON.stringify(body), { status, headers: { ...JSON_HEADERS, ...corsHeaders(origin) } });
 }
 
-/* Inputs never overflow */
-.kf-order-wrapper .kf-input,
-.kf-order-wrapper input,
-.kf-order-wrapper select {
-  width: 100% !important;
-  box-sizing: border-box;
-  min-width: 0;
-}
+// --- Product / tax config (server authoritative) ---
+const BASE_PRODUCT = { name: "Activation fee", base_price: 1999, currency: "INR", inclusive_gst: true };
+const GST_RATE = 0.18;
 
-/* APPLY BUTTON CENTERING */
-.kf-order-wrapper .kf-apply-btn {
-  display: inline-block;
-  margin: 0 auto;
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  max-width: 200px;
-}
+// --- Coupon definitions (server authoritative) ---
+const COUPONS = {
+  "KEN100": { code: "KEN100", type: "flat", amount: 100, min: 0, stackable: false },
+  "VSTREET20": { code: "VSTREET20", type: "percent", pct: 20, cap: 400, min: 0, stackable: false },
+  "LAUNCH500": { code: "LAUNCH500", type: "flat", amount: 500, min: 1499, stackable: false }
+};
 
-/* Main confirm & pay button responsive */
-.kf-order-wrapper .kf-primary-btn {
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  color: #fff;
-  background: var(--kf-red, #d32f2f);
-}
-@media (max-width: 640px) {
-  .kf-order-wrapper .kf-primary-btn {
-    width: 100% !important;
-  }
-}
+function moneyRound(n) { return Math.round(n); }
 
-/* Tighten padding on very small screens */
-@media (max-width: 420px) {
-  .kf-order-wrapper {
-    padding: 8px;
-    border-radius: 8px;
-  }
-  .kf-order-wrapper .kf-member-box {
-    gap: 6px;
-  }
-}
-    `;
-    if (!document.getElementById('kf-join-v6-3-styles')) {
-      const s = document.createElement('style');
-      s.id = 'kf-join-v6-3-styles';
-      s.appendChild(document.createTextNode(css));
-      document.head.appendChild(s);
-    }
-  })();
-
-  const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
-  const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
-  const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
-  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
-  const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
-
-  const COMPANY_NAME = "KenFolios Media Private Limited";
-  const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
-  const COMPANY_CIN = "U72900DL2017PTC321788";
-  const COMPANY_GSTIN = "07AAGCK7129K1Z7";
-
-  const form = document.getElementById('kfJoinInfoForm');
-  // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
-  // But most flows have the form present.
-  // If form isn't present we still run the loader below.
-  // if (!form) return; <-- DO NOT early return
-
-  /* -----------------------------------------------
-     REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
-  ------------------------------------------------ */
-  function removeFormIntroMessage() {
-    const el1 = document.querySelector('.kf-form-intro');
-    if (el1) el1.remove();
-    const el2 = document.getElementById('kfFormIntro');
-    if (el2) el2.remove();
-    const prev = form && form.previousElementSibling;
-    if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
-      prev.remove();
-    }
-  }
-  function removeExtraWhitespaceAroundForm() {
-    if (!form) return;
-    let sib=form.previousSibling;
-    while(sib && sib.nodeType===3){
-      let t=sib.previousSibling;
-      sib.remove();
-      sib=t;
-    }
-    sib=form.nextSibling;
-    while(sib && sib.nodeType===3){
-      let t=sib.nextSibling;
-      sib.remove();
-      sib=t;
-    }
-  }
-
-  function $id(id){ return document.getElementById(id); }
-  function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
-  function checkedValues(name){
-    if (!form) return [];
-    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
-    return Array.from(list).map(i => i.value);
-  }
-
-  function styleInput(el){
-    el.style.width = '100%';
-    el.style.padding = '10px';
-    el.style.border = '1px solid #e6e6e6';
-    el.style.borderRadius = '8px';
-    el.style.background = '#fafafa';
-    el.style.boxSizing = 'border-box';
-    el.style.fontSize = '0.95rem';
-  }
-
-  function createProgressPill(text){
-    const pill = document.createElement('div');
-    pill.style.display='inline-flex';
-    pill.style.alignItems='center';
-    pill.style.gap='8px';
-    pill.style.padding='8px 12px';
-    pill.style.borderRadius='999px';
-    pill.style.fontWeight='600';
-    pill.style.fontSize='0.95rem';
-    pill.style.background='#e6f0ff';
-    pill.style.color='#111';
-
-    const spin = document.createElement('span');
-    spin.style.width='16px';
-    spin.style.height='16px';
-    spin.style.borderRadius='50%';
-    spin.style.border='2px solid rgba(0,0,0,0.20)';
-    spin.style.borderTopColor='rgba(0,0,0,0.55)';
-    spin.style.animation='kf-spin 0.8s linear infinite';
-
-    const txt = document.createElement('span');
-    txt.textContent = text || 'Processing…';
-
-    pill.appendChild(spin);
-    pill.appendChild(txt);
-
-    if (!$id('kf-spin-style')){
-      const style=document.createElement('style');
-      style.id='kf-spin-style';
-      style.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
-      document.head.appendChild(style);
-    }
-    return pill;
-  }
-
-  function replaceSubmitWithPill(btn,pill){
-    btn.dataset._old = btn.style.display || '';
-    btn.style.display='none';
-    btn.parentNode.insertBefore(pill,btn.nextSibling);
-  }
-
-  function restoreSubmitFromPill(btn,pill){
-    if (pill && pill.parentNode) pill.remove();
-    btn.style.display = btn.dataset._old || '';
-  }
-
-  /* -------- Saved notice above order box (now short — no visible URL) -------- */
-  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
-    const n = document.createElement('div');
-    n.style.padding = '12px';
-    n.style.borderRadius = '8px';
-    n.style.background = 'rgba(230,245,255,0.95)';
-    n.style.fontWeight = '600';
-    n.style.marginBottom = '14px';
-    n.style.display = 'flex';
-    n.style.flexDirection = 'column';
-    n.style.gap = '6px';
-
-    const line1 = document.createElement('div');
-    line1.textContent = `✅ Details saved. Order ID: ${ref}`;
-    n.appendChild(line1);
-
-    if (createdIso) {
-      const d = new Date(createdIso);
-      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-      const dt = document.createElement('div');
-      dt.style.fontSize = '.9rem';
-      dt.style.color = '#444';
-      dt.textContent = `Order created: ${pretty}`;
-      n.appendChild(dt);
-    }
-
-    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
-    const sub = document.createElement('div');
-    sub.style.fontSize = '.95rem';
-    sub.style.color = '#111';
-    sub.style.marginTop = '6px';
-    sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
-    n.appendChild(sub);
-
-    // If backend explicitly reports an email was sent we can optionally show that
-    if (emailed) {
-      const em = document.createElement('div');
-      em.style.fontSize = '.9rem';
-      em.style.color = '#444';
-      em.style.fontWeight = '500';
-      em.textContent = 'We have emailed this order link to you — use it to edit or complete payment.';
-      n.appendChild(em);
-    }
-
-    return n;
-  }
-
-  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-
-  function stylePrimaryButton(btn){
-    btn.style.background='var(--kf-red)';
-    btn.style.color='#fff';
-    btn.style.border='none';
-  }
-
-  function showInlineError(el,msg){
-    el.style.display='block';
-    el.style.color='#b45309';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{el.style.display='none';},6000);
-  }
-
-  function showInlineSuccess(el,msg){
-    el.style.display='block';
-    el.style.color='#166534';
-    el.style.fontWeight='600';
-    el.textContent=msg;
-    setTimeout(()=>{el.style.display='none';},3000);
-  }
-
-  /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
-  function buildOrderBox(order) {
-    const wrap = document.createElement('div');
-    wrap.className = 'kf-order-wrapper';
-    wrap.style.width = '100%';
-    wrap.style.padding = '12px';
-    wrap.style.background = '#fff';
-    wrap.style.border = '1px solid #eee';
-    wrap.style.borderRadius = '12px';
-    wrap.style.boxSizing = 'border-box';
-
-    const headerWrap = document.createElement('div');
-    headerWrap.style.display = 'flex';
-    headerWrap.style.flexDirection = 'column';
-    headerWrap.style.gap = '6px';
-
-    const topRow = document.createElement('div');
-    topRow.style.display = 'flex';
-    topRow.style.justifyContent = 'space-between';
-
-    const left = document.createElement('div');
-    left.innerHTML = '<strong>Order Summary</strong>';
-
-    const right = document.createElement('div');
-    right.style.color = '#444';
-    right.style.fontWeight = '600';
-    right.textContent = `Order ID: ${order.order_ref}`;
-
-    topRow.appendChild(left);
-    topRow.appendChild(right);
-    headerWrap.appendChild(topRow);
-
-    if (order.order_created_at) {
-      const r2 = document.createElement('div');
-      r2.style.fontSize = '.85rem';
-      r2.style.color = '#666';
-      const d = new Date(order.order_created_at);
-      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-      r2.textContent = `Order created: ${pretty}`;
-      headerWrap.appendChild(r2);
-    }
-
-    wrap.appendChild(headerWrap);
-
-    const c = document.createElement('div');
-    c.style.marginTop = '14px';
-    c.innerHTML =
-      `<div style="font-weight:700">${COMPANY_NAME}</div>
-       <div style="color:#666">${COMPANY_ADDRESS}</div>
-       <div style="font-size:.85rem;color:#666;margin-top:4px">
-         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
-       </div>`;
-    wrap.appendChild(c);
-
-    const compSep = document.createElement('div');
-    compSep.style.borderTop = '1px solid #e6e6e6';
-    compSep.style.marginTop = '12px';
-    compSep.style.paddingTop = '12px';
-    wrap.appendChild(compSep);
-
-    const notice = document.createElement('div');
-    notice.style.background = 'rgba(249,250,251,0.9)';
-    notice.style.border = '1px solid #f1f5f9';
-    notice.style.padding = '10px';
-    notice.style.borderRadius = '8px';
-    notice.style.color = '#334155';
-    notice.style.fontWeight = '600';
-    notice.style.fontSize = '.95rem';
-    notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
-    wrap.appendChild(notice);
-
-    // MEMBER BOX (responsive grid)
-    const box = document.createElement('div');
-    box.className = 'kf-member-box';
-    box.style.display = 'grid';
-    box.style.gridTemplateColumns = '1fr 1fr';
-    box.style.gap = '10px';
-    box.style.marginTop = '12px';
-
-    const editable = order.editable;
-
-    function mk(label, id, val) {
-      const f = document.createElement('div');
-
-      const l = document.createElement('label');
-      l.textContent = label;
-      l.style.fontSize = '.9rem';
-      l.style.display = 'block';
-      l.style.marginBottom = '6px';
-      f.appendChild(l);
-
-      if (editable) {
-        const i = document.createElement('input');
-        i.id = id;
-        i.value = val || '';
-        i.className = 'kf-input';
-        // basic inline fallback styling so class alone still looks ok
-        i.style.padding = '10px';
-        i.style.border = '1px solid #e6e6e6';
-        i.style.borderRadius = '8px';
-        i.style.background = '#fafafa';
-        i.style.boxSizing = 'border-box';
-        i.style.fontSize = '0.95rem';
-        f.appendChild(i);
+/**
+ * applyCouponAndTotals
+ * - Accepts basePrice (INCLUSIVE of GST) and couponCode
+ * - Returns subtotal (base/inclusive), discount, taxable, gst, total
+ */
+function applyCouponAndTotals(basePrice, couponCode) {
+  const inclusive = Number(basePrice);
+  let discount = 0;
+  let appliedCoupon = null;
+  if (couponCode) {
+    const c = COUPONS[couponCode];
+    if (c) {
+      if (c.type === "flat") {
+        if (inclusive < (c.min || 0)) {
+          return { error: `Coupon ${couponCode} requires minimum order \u20B9${c.min}.` };
+        }
+        discount = Number(c.amount || 0);
+        appliedCoupon = c;
+      } else if (c.type === "percent") {
+        const raw = (inclusive * (Number(c.pct || 0) / 100));
+        const capped = c.cap ? Math.min(raw, Number(c.cap)) : raw;
+        discount = moneyRound(capped);
+        appliedCoupon = c;
       } else {
-        const t = document.createElement('div');
-        t.textContent = val || '';
-        t.style.padding = '10px';
-        t.style.borderRadius = '8px';
-        t.style.background = '#fafafa';
-        t.style.border = '1px solid #e6e6e6';
-        f.appendChild(t);
+        return { error: `Invalid coupon type for ${couponCode}.` };
       }
-      return f;
-    }
-
-    box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
-    box.appendChild(mk('Email', 'ord_email', order.member.email));
-    box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
-    box.appendChild(mk('City', 'ord_city', order.member.city));
-    wrap.appendChild(box);
-
-    // PRODUCT + fee note (unchanged)
-    const prod = document.createElement('div');
-    prod.style.marginTop = '14px';
-    const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
-    prod.innerHTML =
-      `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
-        <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
-        <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
-      </div>`;
-    wrap.appendChild(prod);
-
-    const feeNote = document.createElement('div');
-    feeNote.style.fontSize = '.85rem';
-    feeNote.style.color = '#555';
-    feeNote.style.marginTop = '6px';
-    feeNote.textContent =
-      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
-      `This fee is the current prevailing rate and may change if you opt to pay later.`;
-    wrap.appendChild(feeNote);
-
-    // Coupon area — stacked layout: input above Apply button
-    const couponSep = document.createElement('div');
-    couponSep.style.borderTop = '1px dashed #ddd';
-    couponSep.style.marginTop = '14px';
-    couponSep.style.paddingTop = '10px';
-    wrap.appendChild(couponSep);
-
-    const couponWrap = document.createElement('div');
-    couponWrap.style.display = 'flex';
-    couponWrap.style.flexDirection = 'column';
-    couponWrap.style.gap = '8px';
-    couponWrap.style.marginTop = '8px';
-    couponWrap.style.alignItems = 'flex-start';
-
-    const couponInput = document.createElement('input');
-    couponInput.placeholder = 'Coupon code';
-    couponInput.className = 'kf-input';
-    couponInput.style.width = '100%';
-    couponInput.style.maxWidth = '100%';
-    couponInput.style.boxSizing = 'border-box';
-    couponInput.style.padding = '10px';
-    couponInput.style.border = '1px solid #e6e6e6';
-    couponInput.style.borderRadius = '8px';
-    couponWrap.appendChild(couponInput);
-
-    const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Apply';
-    applyBtn.type = 'button';
-    applyBtn.className = 'kf-apply-btn';
-    applyBtn.style.padding = '8px 14px';
-    applyBtn.style.fontSize = '.9rem';
-    applyBtn.style.border = '1px solid #ddd';
-    applyBtn.style.borderRadius = '6px';
-    applyBtn.style.background = '#fff';
-    applyBtn.style.cursor = 'pointer';
-    // center the apply button horizontally by wrapping it
-    const applyWrap = document.createElement('div');
-    applyWrap.style.width = '100%';
-    applyWrap.style.display = 'flex';
-    applyWrap.style.justifyContent = 'center';
-    applyWrap.appendChild(applyBtn);
-    couponWrap.appendChild(applyWrap);
-
-    const couponError = document.createElement('div');
-    couponError.style.color = '#b91c1c';
-    couponError.style.marginTop = '6px';
-    couponError.style.textAlign = 'center';
-    couponError.style.fontWeight = '600';
-    couponError.style.display = 'none';
-    couponWrap.appendChild(couponError);
-
-    wrap.appendChild(couponWrap);
-
-    // totals
-    const totals = document.createElement('div');
-    totals.style.marginTop = '14px';
-    wrap.appendChild(totals);
-
-    function updateTotals(o) {
-      totals.innerHTML =
-        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
-         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-           <span>Total</span><span>${formatINR(o.totals.total)}</span>
-         </div>`;
-    }
-    updateTotals(order);
-
-    const payBox = document.createElement('div');
-    payBox.style.marginTop = '18px';
-
-    const payBtn = document.createElement('button');
-    payBtn.textContent = 'Confirm & Pay';
-    payBtn.className = 'kf-primary-btn';
-    payBtn.style.width = '100%';
-    payBtn.style.padding = '12px 20px';
-    payBtn.style.borderRadius = '8px';
-    payBtn.style.fontSize = '1rem';
-    payBtn.style.cursor = 'pointer';
-    payBtn.style.background = 'var(--kf-red, #d32f2f)';
-    payBtn.style.color = '#fff';
-    payBtn.style.border = 'none';
-    payBox.appendChild(payBtn);
-
-    const payMsg = document.createElement('div');
-    payMsg.style.display = 'none';
-    payMsg.style.marginTop = '10px';
-
-    wrap.appendChild(payBox);
-    wrap.appendChild(payMsg);
-
-    // Return references needed by event wiring
-    return {
-      wrap,
-      couponInput,
-      applyBtn,
-      payBtn,
-      payMsg,
-      totalsBox: totals,
-      editable,
-      couponError
-    };
-  }
-
-  /* ------------------ Networking helpers for coupon/payment ------------------ */
-  async function patchMember(id,box){
-    const body={
-      name:$id('ord_full_name').value.trim(),
-      email:$id('ord_email').value.trim(),
-      phone:$id('ord_phone').value.trim(),
-      city:$id('ord_city').value.trim()
-    };
-    try{
-      const resp=await fetch(PATCH_MEMBER_BASE+id,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(body)
-      });
-      const j=await resp.json();
-      if(!resp.ok||!j.ok) return null;
-      return j.order;
-    }catch{return null;}
-  }
-
-  async function applyCoupon(id,code,box){
-    try{
-      if (box.couponError){
-        box.couponError.style.display='none';
-        box.couponError.textContent='';
-      }
-      box.applyBtn.disabled=true;
-
-      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code, simulate:true})
-      });
-      const j=await resp.json();
-
-      box.applyBtn.disabled=false;
-
-      if(!resp.ok||!j.ok){
-        if(box.couponError){
-          box.couponError.textContent=j.message || 'Invalid coupon';
-          box.couponError.style.display='block';
-        }
-        return;
-      }
-
-      box.couponApplied=j.order.applied_coupon || null;
-
-      box.totalsBox.innerHTML=
-        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
-         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
-         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
-           <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
-         </div>`;
-
-      showInlineSuccess(box.payMsg,'Coupon applied');
-    }catch{
-      box.applyBtn.disabled=false;
-      box.couponError.textContent='Error applying coupon';
-      box.couponError.style.display='block';
+    } else {
+      return { error: `Invalid coupon code.` };
     }
   }
+  if (discount > inclusive) discount = inclusive;
+  const total = moneyRound(inclusive - discount);
+  // Taxable is total / (1 + GST_RATE)
+  const taxableRaw = total / (1 + GST_RATE);
+  const taxable = moneyRound(taxableRaw);
+  const gst = moneyRound(total - taxable);
+  return { subtotal: moneyRound(inclusive), discount: moneyRound(discount), taxable, gst, total, applied_coupon: appliedCoupon ? appliedCoupon.code : null };
+}
 
-  async function confirmPay(id,box){
-    const saved = await patchMember(id,box);
-    if(!saved) return;
+// --- Helpers ---
+function pathParts(url) {
+  const u = new URL(url);
+  return u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+}
 
-    const code = box.couponApplied || box.couponInput.value.trim() || null;
+function generateRefFromMember(memberId) {
+  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const a = alpha.charCodeAt(memberId % alpha.length) || 65;
+  const b = alpha.charCodeAt((memberId + 3) % alpha.length) || 65;
+  const c = alpha.charCodeAt((memberId + 7) % alpha.length) || 65;
+  const letters = String.fromCharCode(a, b, c);
+  const numpart = String((memberId * 37 + 1234) % 10000).padStart(4, '0');
+  const idpart = String(memberId).padStart(6, '0');
+  return `${letters}${numpart}-${idpart}`;
+}
 
-    try{
-      box.payBtn.disabled=true;
+function generateUniqueToken(len = 28) {
+  // Cloudflare Workers provide a global crypto
+  const bytes = new Uint8Array(Math.ceil(len * 0.75));
+  crypto.getRandomValues(bytes);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) {
+    s += bytes[i].toString(36);
+  }
+  return s.replace(/[^a-z0-9]/gi, '').slice(0, len);
+}
 
-      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code})
-      });
-      const j=await resp.json();
+function buildCompanyBlock() {
+  return {
+    name: "KenFolios Media Private Limited",
+    address: "Second floor, F-328, Lado Sarai, New Delhi, Delhi, 110030",
+    gstin: "07AAGCK7129K1Z7",
+    cin: "U72900DL2017PTC321788"
+  };
+}
 
-      box.payBtn.disabled=false;
+// --- Optional mailer webhook (fire-and-forget) ---
+async function fireMailerWebhook(env, payload) {
+  try {
+    if (!env.MAILER_WEBHOOK) return;
+    // Fire-and-forget: do not await (non-blocking). Any failure logged to console.
+    fetch(env.MAILER_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(e => { console.error('Mailer webhook failed (fire-and-forget):', String(e)); });
+  } catch (e) {
+    console.error('Mailer webhook error:', String(e));
+  }
+}
 
-      if(!resp.ok||!j.ok){
-        showInlineError(box.payMsg,j.message);
-        return;
-      }
+// --- Worker entrypoint ---
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const origin = request.headers.get("Origin") || "*";
 
-      if(!j.razorpay_configured){
-        box.payMsg.style.display='block';
-        box.payMsg.textContent='Payment options will appear here soon.';
-        return;
-      }
-
-      const rp=j.razorpay_order;
-
-      const options={
-        key:rp.key_id,
-        amount:rp.amount,
-        currency:rp.currency,
-        order_id:rp.id,
-        handler: async function(res){
-          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              member_id:id,
-              razorpay_payment_id:res.razorpay_payment_id,
-              razorpay_order_id:res.razorpay_order_id,
-              razorpay_signature:res.razorpay_signature,
-              coupon:code
-            })
-          });
-          box.payBtn.disabled=true;
-          box.payBtn.textContent='Paid';
-        }
-      };
-
-      const rzp=new Razorpay(options);
-      rzp.open();
-
-    }catch{
-      box.payBtn.disabled=false;
-      showInlineError(box.payMsg,'Cannot initiate payment');
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
-  }
 
-  /* ---------------- Form Submit (updated to change URL) ---------------- */
-  if (form) {
-    form.addEventListener('submit',async function(e){
-      e.preventDefault();
+    if (!env.D1_WRITE_BINDING) {
+      return json({ ok: false, message: "D1 binding not found (env.D1_WRITE_BINDING)" }, 500, origin);
+    }
 
-      if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
-        alert('Complete all fields');
-        return;
+    if (env.ALLOWED_ORIGINS && env.ALLOWED_ORIGINS.trim()) {
+      const allowed = env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+      if (allowed.length && origin !== "*" && !allowed.includes(origin)) {
+        return json({ ok: false, message: "Origin not allowed" }, 403, origin);
+      }
+    }
+
+    const rawPath = url.pathname.replace(/\/+$/, "") || "/";
+
+    try {
+      if ((rawPath === "/api/join" || rawPath.endsWith("/api/join")) && request.method === "POST") {
+        return await handleJoin(request, env, origin);
+      }
+      if (rawPath.startsWith("/api/member/") && request.method === "PATCH") {
+        return await handlePatchMember(request, env, origin);
+      }
+      if ((rawPath === "/api/payment/create-order" || rawPath.endsWith("/api/payment/create-order")) && request.method === "POST") {
+        return await handleCreateOrder(request, env, origin);
+      }
+      if ((rawPath === "/api/payment/confirm" || rawPath.endsWith("/api/payment/confirm")) && request.method === "POST") {
+        return await handlePaymentConfirm(request, env, origin);
       }
 
-      const submitBtn=form.querySelector('button[type="submit"]');
-      const pill=createProgressPill('Saving…');
-      replaceSubmitWithPill(submitBtn,pill);
-
-      const payload={
-        name:val('fi_name'),
-        dob:val('fi_dob'),
-        gender:val('fi_gender'),
-        email:val('fi_email'),
-        phone:val('fi_phone'),
-        city:val('fi_city'),
-        expectations:checkedValues('expectations'),
-        accept:true,
-        source:'kenfolios-join-v2'
-      };
-
-      try{
-        const resp=await fetch(WRITE_ENDPOINT,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(payload)
-        });
-        const j=await resp.json();
-
-        restoreSubmitFromPill(submitBtn,pill);
-
-        if(!resp.ok||!j.ok){
-          alert(j.message||"Could not save");
-          return;
-        }
-
-        // Remove any intro/whitespace, then show order UI
-        removeFormIntroMessage();
-        removeExtraWhitespaceAroundForm();
-
-        // If order_url present, change browser URL (replaceState), and set document.title
-        if (j.order && j.order.order_url) {
-          try {
-            // order_url now uses ?order=REF style (worker writes it that way)
-            history.replaceState({}, '', j.order.order_url);
-            if (j.order.order_ref) {
-              document.title = `${j.order.order_ref} — KenFolios`;
-            }
-          } catch (e) {
-            // ignore if history API not allowed
-          }
-        }
-
-        const wrap=document.createElement('div');
-        // If backend returned a flag that email sent, you can pass that as the 4th param (emailed)
-        const emailed = (j.email_sent === true) || false;
-        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
-
-        const box=buildOrderBox(j.order);
-        wrap.appendChild(box.wrap);
-
-        // Replace the form in-place so UI appears exactly where the form was
-        form.replaceWith(wrap);
-
-        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
-        box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
-        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
-
-      }catch{
-        restoreSubmitFromPill(submitBtn,pill);
-        alert('Save failed');
+      // --- NEW: endpoint to fetch order by ref_id (used by homepage loader) ---
+      if ((rawPath === "/api/order/by-ref" || rawPath.endsWith("/api/order/by-ref")) && request.method === "POST") {
+        return await handleFetchOrderByRef(request, env, origin);
       }
-    });
+      // ----------------------------------------------------------------------
+    } catch (err) {
+      console.error("Unhandled error:", String(err));
+      return json({ ok: false, message: "Internal error", error: String(err) }, 500, origin);
+    }
+
+    return json({ ok: false, message: "Not found" }, 404, origin);
+  }
+};
+
+// ---------------- Handlers ----------------
+async function parseJsonSafe(request) {
+  const ct = (request.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("application/json")) return await request.json();
+  const txt = await request.text();
+  try { return txt ? JSON.parse(txt) : {}; } catch { return {}; }
+}
+
+async function handleJoin(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const full_name = (body.name || body.fullName || body.full_name || "").toString().trim();
+  const dob = (body.dob || "").toString().trim();
+  const gender = (body.gender || "").toString().trim();
+  const city = (body.city || "").toString().trim();
+  const email = (body.email || "").toString().trim().toLowerCase();
+  const phone = (body.phone || "").toString().trim();
+  const expectations = Array.isArray(body.expectations) ? body.expectations.join(',') : (body.expectations || body.expect || "").toString();
+  const accept = (body.accept || body.accepted || body.fi_accept) ? 1 : 0;
+  const created_at = new Date().toISOString();
+
+  if (!full_name || !dob || !gender || !city || !email || !phone) {
+    return json({ ok: false, message: "Missing required fields (name,dob,gender,city,email,phone required)" }, 400, origin);
+  }
+  if (!/@/.test(email) || phone.length < 6) {
+    return json({ ok: false, message: "Invalid email or phone" }, 400, origin);
   }
 
-  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order
-     Replaces the original form container (if present) so the order UI appears where the form was.
-  ---------------- */
-  (function orderLoader(){
-    function detectOrderRef() {
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE email = ? ORDER BY created_at DESC LIMIT 1").bind(email).all();
+    if (lookup && lookup.results && lookup.results[0]) {
+      const existing = lookup.results[0];
+      if (existing.activation_fee_status === 'paid') {
+        return json({ ok: false, message: "A membership is already active for this email. Please use a different email to register or contact support if this is your account.", reason: "already_paid" }, 409, origin);
+      } else {
+        const updateSql = `UPDATE members SET full_name = ?, dob = ?, gender = ?, city = ?, phone = ?, expectations = ?, accepted_terms = ? WHERE id = ?`;
+        await db.prepare(updateSql)
+          .bind(full_name, dob, gender, city, phone, expectations, accept ? 1 : 0, existing.id)
+          .run();
+        const order = buildOrderObject(existing.id, existing, null);
+        const dbCount = await readMemberCountOrFallback(db);
+        return json({ ok: true, member_id: Number(existing.id), dbCount, order }, 200, origin);
+      }
+    }
+
+    // Insert new member
+    let member_id = null;
+    try {
+      const insertSql = `INSERT INTO members (full_name, dob, gender, city, email, phone, expectations, accepted_terms, created_at, activation_fee_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`;
+      const insertRes = await db.prepare(insertSql)
+        .bind(full_name, dob, gender, city, email, phone, expectations, accept ? 1 : 0, created_at, 'pending')
+        .all();
+      if (insertRes && insertRes.results && insertRes.results[0] && insertRes.results[0].id != null) {
+        member_id = Number(insertRes.results[0].id);
+      }
+    } catch (insErr) {
+      // fallback if RETURNING not supported
       try {
-        const sp = new URLSearchParams(window.location.search || '');
-        const q = sp.get('order');
-        if (q && q.trim()) return q.trim();
-        // legacy path: /community/order/REF
-        const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
-        if (m && m[1]) return m[1];
-      } catch (e) { /* ignore */ }
-      return null;
+        const plainInsert = `INSERT INTO members (full_name, dob, gender, city, email, phone, expectations, accepted_terms, created_at, activation_fee_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        await db.prepare(plainInsert)
+          .bind(full_name, dob, gender, city, email, phone, expectations, accept ? 1 : 0, created_at, 'pending')
+          .run();
+      } catch (plainErr) {
+        throw plainErr;
+      }
     }
 
-    const ref = detectOrderRef();
-    if (!ref) return;
+    if (!member_id) {
+      const byEmail = await db.prepare("SELECT id FROM members WHERE email = ? ORDER BY created_at DESC LIMIT 1").bind(email).all();
+      if (byEmail && byEmail.results && byEmail.results[0] && byEmail.results[0].id != null) {
+        member_id = Number(byEmail.results[0].id);
+      }
+    }
 
-    (async function loadOrder() {
-      const WORKER_URL = FETCH_ORDER_BY_REF;
+    try {
+      const upsertCountSql = `INSERT INTO meta (key, value) VALUES ('member_count', '1') ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`;
+      await db.prepare(upsertCountSql).run();
+    } catch (upErr) {
+      console.error("meta upsert failed:", String(upErr));
+    }
 
-      // Find the container we should replace:
-      // Prefer the actual form element's container (so UI appears in same spot)
-      let container = null;
+    // --- AFTER INSERT: ensure stable ref_id + order_url are created immediately ---
+    try {
+      const order_ref = generateRefFromMember(member_id);
+      // NEW: use query-param style order URL so CF Pages routing won't require a sub-folder
+      const order_url = `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+      await db.prepare(`UPDATE members SET ref_id = COALESCE(ref_id, ?), order_url = COALESCE(order_url, ?), activation_order_token = COALESCE(activation_order_token, ?) WHERE id = ?;`).bind(order_ref, order_url, order_ref, member_id).run();
+    } catch (e) {
+      console.error("Could not persist initial ref_id/order_url after join:", String(e));
+    }
 
-      // 1) If the join form exists on the page, replace it directly
-      const existingForm = document.getElementById('kfJoinInfoForm');
-      if (existingForm) {
-        // replace the form element itself with the order UI later
-        container = existingForm;
+    const byId = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+    const memberRow = (byId && byId.results && byId.results[0]) ? byId.results[0] : null;
+    const order = buildOrderObject(member_id, memberRow, null);
+    const dbCount = await readMemberCountOrFallback(db);
+    return json({ ok: true, member_id, message: "Joined", dbCount, order }, 201, origin);
+
+  } catch (err) {
+    const errStr = String(err || '');
+    console.error("DB write error:", errStr);
+    if (errStr.toLowerCase().includes('unique') || errStr.toLowerCase().includes('constraint')) {
+      return json({ ok: false, message: "Duplicate record (email may already exist)", error: errStr }, 409, origin);
+    }
+    return json({ ok: false, message: "DB write error", error: errStr }, 500, origin);
+  }
+}
+
+async function handlePatchMember(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const parts = pathParts(request.url);
+  const idPart = parts[parts.length - 1];
+  const memberId = Number(idPart);
+  if (!memberId) return json({ ok: false, message: "Missing member id" }, 400, origin);
+  const body = await parseJsonSafe(request);
+  const editableFields = {};
+  if (body.name) editableFields.full_name = body.name.toString().trim();
+  if (body.email) editableFields.email = body.email.toString().trim().toLowerCase();
+  if (body.phone) editableFields.phone = body.phone.toString().trim();
+  if (body.city) editableFields.city = body.city.toString().trim();
+  if (editableFields.email && !/@/.test(editableFields.email)) {
+    return json({ ok: false, message: "Invalid email" }, 400, origin);
+  }
+  if (editableFields.phone && editableFields.phone.length < 6) {
+    return json({ ok: false, message: "Invalid phone" }, 400, origin);
+  }
+
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(memberId).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      return json({ ok: false, message: "Member not found" }, 404, origin);
+    }
+    const existing = lookup.results[0];
+    if (existing.activation_fee_status === 'paid') {
+      return json({ ok: false, message: "Member already paid; record is read-only", reason: "already_paid" }, 409, origin);
+    }
+    const keys = Object.keys(editableFields);
+    if (keys.length === 0) {
+      const order = buildOrderObject(memberId, existing, null);
+      return json({ ok: true, member_id: memberId, order }, 200, origin);
+    }
+    const sets = keys.map(k => `${k} = ?`).join(", ");
+    const bindVals = keys.map(k => editableFields[k]);
+    bindVals.push(memberId);
+    const updateSql = `UPDATE members SET ${sets} WHERE id = ?`;
+    await db.prepare(updateSql).bind(...bindVals).run();
+    const updated = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(memberId).all();
+    const updatedRow = updated.results[0];
+    const order = buildOrderObject(memberId, updatedRow, null);
+    return json({ ok: true, member_id: memberId, order }, 200, origin);
+  } catch (err) {
+    console.error("Patch member error:", String(err));
+    return json({ ok: false, message: "Update failed", error: String(err) }, 500, origin);
+  }
+}
+
+async function handleCreateOrder(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const member_id = Number(body.member_id || body.memberId);
+  const applyCoupon = (body.coupon || body.coupon_code || body.couponCode || null);
+  const simulate = body.simulate || false;
+  if (!member_id) { return json({ ok: false, message: "member_id required" }, 400, origin); }
+  const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+  if (!lookup || !lookup.results || !lookup.results[0]) { return json({ ok: false, message: "Member not found" }, 404, origin); }
+  const member = lookup.results[0];
+  if (member.activation_fee_status === 'paid') { return json({ ok: false, message: "Activation fee already paid for this member", reason: "already_paid" }, 409, origin); }
+  const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, applyCoupon);
+  if (totalsRes.error) { return json({ ok: false, message: totalsRes.error }, 400, origin); }
+
+  // Persist activation_created_at as UNIX seconds for order_created_at
+  try {
+    const nowSec = Math.floor(Date.now() / 1000);
+    await db.prepare("UPDATE members SET activation_created_at = COALESCE(activation_created_at, ?) WHERE id = ?;").bind(nowSec, member_id).run();
+  } catch (upErr) {
+    console.error("activation_created_at update failed:", String(upErr));
+  }
+
+  // Generate stable order_ref & order_url and persist (do not overwrite if exists)
+  const order_ref = generateRefFromMember(member_id);
+  // NEW: query-param style order URL to avoid subfolder routing issues on Cloudflare Pages
+  const order_url = `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+  try {
+    await db.prepare(`UPDATE members SET ref_id = COALESCE(ref_id, ?), order_url = COALESCE(order_url, ?), activation_order_token = COALESCE(activation_order_token, ?) WHERE id = ?;`).bind(order_ref, order_url, order_ref, member_id).run();
+  } catch (e) {
+    console.error("Could not persist order_url/ref_id:", String(e));
+  }
+
+  // Re-fetch member after potential updates
+  const afterSet = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+  const memberAfter = (afterSet && afterSet.results && afterSet.results[0]) ? afterSet.results[0] : member;
+
+  // If simulate -> return totals & order (no gateway interaction)
+  if (simulate) {
+    return json({ ok: true, razorpay_configured: !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET), message: "Simulated order totals", order: buildOrderObject(member_id, memberAfter, totalsRes) }, 200, origin);
+  }
+
+  // If Razorpay not configured, still return created order (order_url present)
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+    try {
+      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
+        const payload = { type: 'order_created', email: memberAfter.email, member_id, order_ref, order_url, totals: totalsRes, timestamp: new Date().toISOString() };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) { console.error('mail webhook error (no-razorpay):', String(e)); }
+
+    return json({ ok: true, razorpay_configured: false, message: "Payment options will appear here soon.", order: buildOrderObject(member_id, memberAfter, totalsRes) }, 200, origin);
+  }
+
+  // Create Razorpay order
+  try {
+    const createPayload = { amount: totalsRes.total * 100, currency: BASE_PRODUCT.currency, receipt: `ORDER-${order_ref}`, payment_capture: 1, notes: { member_id: String(member_id), order_ref } };
+    // Use btoa for Basic auth
+    const razorpayAuth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
+    const rpRes = await fetch("https://api.razorpay.com/v1/orders", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Basic ${razorpayAuth}` }, body: JSON.stringify(createPayload) });
+    if (!rpRes.ok) {
+      const txt = await rpRes.text();
+      console.error("Razorpay create-order failed:", rpRes.status, txt);
+      return json({ ok: false, message: "Failed to create payment order", razorpay_error: txt }, 502, origin);
+    }
+    const rpJson = await rpRes.json();
+
+    // Persist gateway order id/meta if not already set
+    try {
+      await db.prepare(`UPDATE members SET activation_gateway_order_id = COALESCE(activation_gateway_order_id, ?), activation_gateway_meta = COALESCE(activation_gateway_meta, ?) WHERE id = ?;`).bind(rpJson.id || null, JSON.stringify(rpJson) || null, member_id).run();
+    } catch (e) { console.error("Failed to persist gateway order id/meta:", String(e)); }
+
+    // Fire mailer webhook for order created (non-blocking)
+    try {
+      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
+        const payload = { type: 'order_created', email: memberAfter.email, member_id, order_ref, order_url, razorpay_order: rpJson, totals: totalsRes, timestamp: new Date().toISOString() };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) { console.error('mail webhook error (after-rp):', String(e)); }
+
+    return json({ ok: true, razorpay_configured: true, razorpay_order: rpJson, order: buildOrderObject(member_id, memberAfter, totalsRes) }, 200, origin);
+
+  } catch (err) {
+    console.error("Create-order error:", String(err));
+    return json({ ok: false, message: "Payment order creation failed", error: String(err) }, 500, origin);
+  }
+}
+
+async function handlePaymentConfirm(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const member_id = Number(body.member_id || body.memberId);
+  const razorpayPaymentId = body.razorpay_payment_id || body.razorpayPaymentId || null;
+  const razorpayOrderId = body.razorpay_order_id || body.razorpayOrderId || null;
+  const razorpaySignature = body.razorpay_signature || body.razorpaySignature || null;
+  const coupon = body.coupon || body.coupon_code || null;
+  if (!member_id) return json({ ok: false, message: "member_id required" }, 400, origin);
+
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) { return json({ ok: false, message: "Member not found" }, 404, origin); }
+    const member = lookup.results[0];
+    if (member.activation_fee_status === 'paid') { return json({ ok: true, message: "Already marked paid", reason: "already_paid" }, 200, origin); }
+    const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, coupon);
+    if (totalsRes.error) { return json({ ok: false, message: totalsRes.error }, 400, origin); }
+    const now = new Date().toISOString();
+
+    const updateSql = `UPDATE members SET activation_fee_status = 'paid', activation_fee_amount = ?, activation_coupon_code = ?, activation_fee_paid_at = ?, payment_gateway = ?, payment_gateway_payment_id = ? WHERE id = ?`;
+    await db.prepare(updateSql)
+      .bind(totalsRes.total, coupon || null, now, "razorpay", razorpayPaymentId || null, member_id)
+      .run();
+
+    // Generate unique_token + activation_url if not already present
+    let unique_token = null;
+    try {
+      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+      const existing = (after && after.results && after.results[0]) ? after.results[0] : null;
+      unique_token = existing && existing.unique_token ? existing.unique_token : null;
+      if (!unique_token) {
+        unique_token = generateUniqueToken(28);
+        const activation_url = `https://kenfolios.com/community/activation/${encodeURIComponent(unique_token)}`;
+        await db.prepare(`UPDATE members SET unique_token = ?, activation_url = ?, activated_at = ? WHERE id = ?;`).bind(unique_token, activation_url, now, member_id).run();
       } else {
-        // 2) Try common "chat area" or "community" containers that your template may use
-        const trySelectors = [
-          '#community', '#community-wrap', '#community-container',
-          '#main', '.main', '#content', '.content',
-          '#chat', '.chat-area', '.chatbox', '.chat-container'
-        ];
-        for (const sel of trySelectors) {
-          const el = document.querySelector(sel);
-          if (el) { container = el; break; }
-        }
+        // Ensure activation_url exists
+        const activation_url = `https://kenfolios.com/community/activation/${encodeURIComponent(unique_token)}`;
+        await db.prepare(`UPDATE members SET activation_url = COALESCE(activation_url, ?), activated_at = COALESCE(activated_at, ?) WHERE id = ?;`).bind(activation_url, now, member_id).run();
       }
+    } catch (tErr) { console.error("Failed to set unique_token/activation_url:", String(tErr)); }
 
-      // 3) Fallback: create a loader near top of body, but try to put it under .content if possible
-      let createdFallback = false;
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'kf-order-loader';
-        container.style.maxWidth = '980px';
-        container.style.margin = '18px auto';
-        // Place fallback near top of page content region if available
-        const main = document.querySelector('#main, .main, #content, .content') || document.body;
-        main.prepend(container);
-        createdFallback = true;
-      } else {
-        // If we found the form element, we'll replace that element (not its parent).
-        // If we found a container that is e.g. #content, we'll insert into it and remove earlier form if present.
-        // To be safe, convert the target into a wrapper node we can replace when order is ready:
-        if (container !== document.getElementById('kfJoinInfoForm')) {
-          // create a placeholder wrapper inside the container
-          const wrapper = document.createElement('div');
-          wrapper.id = 'kf-order-loader';
-          // place at top of container
-          container.prepend(wrapper);
-          container = wrapper;
-          createdFallback = true;
-        }
+    // Optionally track coupon usage
+    try {
+      if (coupon) {
+        const stamp = `${coupon}|${member_id}|${now}`;
+        await db.prepare(`INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = value || ',' || excluded.value;`).bind('coupon_usage', stamp).run().catch(()=>{});
       }
+    } catch (cuErr) { /* ignore */ }
 
-      // show temporary loading state
-      container.textContent = 'Loading order…';
+    // Re-fetch updated row
+    const updated = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1").bind(member_id).all();
+    const updatedRow = updated.results[0];
+    const order = buildOrderObject(member_id, updatedRow, totalsRes);
 
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref_id: ref })
-        });
-        const j = await res.json();
-
-        if (!res.ok || !j.ok) {
-          container.textContent = 'Order not found.';
-          return;
-        }
-
-        const order = j.order;
-
-        // Build UI the same way as after submit — replace the form element (if existed)
-        const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
-        const frag = document.createDocumentFragment();
-
-        // Saved notice + order box (re-using helper functions)
-        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
-          frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
-          const box = buildOrderBox(order);
-          frag.appendChild(box.wrap);
-
-          // Wire up apply & pay
-          const memberId = (order.member && order.member.id) ? order.member.id : null;
-          if (box.applyBtn && memberId) {
-            box.applyBtn.addEventListener('click', function(){
-              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
-            });
-          }
-          if (box.payBtn && memberId) {
-            box.payBtn.addEventListener('click', function(){
-              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
-            });
-          }
-
-        } else {
-          const el = document.createElement('div');
-          el.style.padding = '12px';
-          el.style.background = '#fff';
-          el.style.border = '1px solid #eee';
-          el.style.borderRadius = '8px';
-          el.textContent = 'Order: ' + order.order_ref + ' — Total ' + (order.totals ? ('₹' + order.totals.total) : '—');
-          frag.appendChild(el);
-        }
-
-        // Perform replace: if the original form exists, replace the form element with our UI.
-        if (targetToReplace) {
-          targetToReplace.replaceWith(frag);
-        } else if (!createdFallback) {
-          // If we inserted into an existing container wrapper (#kf-order-loader), clear and append.
-          const existingLoader = document.getElementById('kf-order-loader');
-          if (existingLoader) {
-            existingLoader.innerHTML = '';
-            existingLoader.appendChild(frag);
-          } else {
-            container.innerHTML = '';
-            container.appendChild(frag);
-          }
-        } else {
-          // fallback created wrapper — populate it
-          container.innerHTML = '';
-          container.appendChild(frag);
-        }
-
-        // Update title if available
-        try {
-          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
-        } catch(e){}
-      } catch (err) {
-        container.textContent = 'Network error loading order.';
-        console.error('Order loader error:', err);
+    // Fire mailer webhook for activation (non-blocking)
+    try {
+      if (env.MAILER_WEBHOOK && (updatedRow.email || member.email)) {
+        const payload = { type: 'activation', email: updatedRow.email || member.email, member_id, activation_url: updatedRow.activation_url || (`https://kenfolios.com/community/activation/${encodeURIComponent(unique_token)}`), order_ref: updatedRow.ref_id || null, totals: totalsRes, timestamp: new Date().toISOString() };
+        fireMailerWebhook(env, payload);
       }
-    })();
-  })();
+    } catch (e) { console.error('mail webhook error (activation):', String(e)); }
 
-})();
+    // Optionally send activation webhook/email here
+    return json({ ok: true, message: "Payment confirmed", member_id, order }, 200, origin);
+
+  } catch (err) {
+    console.error("Payment confirm error:", String(err));
+    return json({ ok: false, message: "Payment confirmation failed", error: String(err) }, 500, origin);
+  }
+}
+
+// ---------------- NEW handler: Fetch order by ref_id ----------------
+async function handleFetchOrderByRef(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const ref_id = (body.ref_id || body.refId || '').toString().trim();
+  if (!ref_id) { return json({ ok: false, message: "ref_id required" }, 400, origin); }
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE ref_id = ? LIMIT 1").bind(ref_id).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      console.warn('handleFetchOrderByRef: not found', ref_id);
+      return json({ ok: false, message: "Order not found" }, 404, origin);
+    }
+    const member = lookup.results[0];
+    const order = buildOrderObject(member.id, member, null);
+    return json({ ok: true, order }, 200, origin);
+  } catch (err) {
+    console.error('handleFetchOrderByRef error:', String(err));
+    return json({ ok: false, message: "Internal error" }, 500, origin);
+  }
+}
+
+// -------------------------------------------------------------------
+// ---------------- Order builder & helpers ----------------
+function buildOrderObject(memberId, memberRow, totalsOverride) {
+  const member = memberRow ? { id: memberRow.id, full_name: memberRow.full_name, email: memberRow.email, phone: memberRow.phone, city: memberRow.city, dob: memberRow.dob, gender: memberRow.gender, expectations: memberRow.expectations } : {};
+  const order_ref = memberRow && memberRow.ref_id ? memberRow.ref_id : generateRefFromMember(memberId);
+  const totals = totalsOverride ? totalsOverride : applyCouponAndTotals(BASE_PRODUCT.base_price, memberRow && memberRow.activation_coupon_code ? memberRow.activation_coupon_code : null);
+  const status = (memberRow && memberRow.activation_fee_status === 'paid') ? 'paid' : 'pending';
+  const editable = status !== 'paid';
+  const available_coupons = Object.values(COUPONS).map(c => ({ code: c.code, type: c.type, amount: c.amount || null, pct: c.pct || null, cap: c.cap || null, min: c.min || 0 }));
+
+  // Build order_created_at: prefer activation_created_at (UNIX secs), else created_at ISO, else now
+  let order_created_at = null;
+  if (memberRow && memberRow.activation_created_at) {
+    try { const sec = Number(memberRow.activation_created_at); if (!isNaN(sec)) order_created_at = new Date(sec * 1000).toISOString(); } catch (e) {}
+  }
+  if (!order_created_at && memberRow && memberRow.created_at) { order_created_at = (new Date(memberRow.created_at)).toISOString(); }
+  if (!order_created_at) order_created_at = (new Date()).toISOString();
+
+  // Ensure order_url uses query param style
+  const order_url = memberRow && memberRow.order_url ? memberRow.order_url : `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+  const activation_url = memberRow && memberRow.activation_url ? memberRow.activation_url : (memberRow && memberRow.unique_token ? `https://kenfolios.com/community/activation/${encodeURIComponent(memberRow.unique_token)}` : null);
+
+  return {
+    order_ref,
+    order_created_at,
+    order_url,
+    activation_url,
+    ref_id: order_ref,
+    member: member,
+    product: { name: BASE_PRODUCT.name, base_price: BASE_PRODUCT.base_price, currency: BASE_PRODUCT.currency },
+    available_coupons,
+    applied_coupon: totals.applied_coupon || null,
+    totals: { subtotal: totals.subtotal, discount: totals.discount, taxable: totals.taxable, gst: totals.gst, total: totals.total },
+    status,
+    editable,
+    company: buildCompanyBlock()
+  };
+}
+
+async function readMemberCountOrFallback(db) {
+  try {
+    const metaRes = await db.prepare("SELECT value FROM meta WHERE key = 'member_count' LIMIT 1").all();
+    if (metaRes && metaRes.results && metaRes.results[0] && metaRes.results[0].value != null) {
+      return Number(metaRes.results[0].value) || 0;
+    } else {
+      const cntRes = await db.prepare("SELECT COUNT(*) AS cnt FROM members").all();
+      if (cntRes && cntRes.results && cntRes.results[0] && cntRes.results[0].cnt != null) {
+        return Number(cntRes.results[0].cnt) || 0;
+      }
+    }
+  } catch (err) { console.error("count read failed:", String(err)); }
+  return null;
+}
