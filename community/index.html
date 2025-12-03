@@ -3527,6 +3527,17 @@ var delay = 1200 + Math.floor(Math.random()*1000);
     setTimeout(()=>{el.style.display='none';},3000);
   }
 
+  /* Central helper for coupon messages (always below Apply, centered) */
+  function showCouponMessage(box, msg, isError) {
+    if (!box || !box.couponError) return;
+    const el = box.couponError;
+    el.style.display = 'block';
+    el.style.textAlign = 'center';
+    el.style.fontWeight = '600';
+    el.style.color = isError ? '#b91c1c' : '#166534';
+    el.textContent = msg;
+  }
+
   /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
   function buildOrderBox(order) {
     const wrap = document.createElement('div');
@@ -3797,30 +3808,45 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
   async function applyCoupon(id,code,box){
     try{
+      // Clear any previous message
       if (box.couponError){
         box.couponError.style.display='none';
         box.couponError.textContent='';
       }
+
+      const trimmed = (code || '').trim();
+      if (!trimmed) {
+        // No coupon entered: don't hit API, show guidance message centered
+        showCouponMessage(box, 'Please enter a valid coupon code.', true);
+        return;
+      }
+
       box.applyBtn.disabled=true;
 
       const resp=await fetch(CREATE_ORDER_ENDPOINT,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({member_id:id, coupon:code, simulate:true})
+        body:JSON.stringify({member_id:id, coupon:trimmed, simulate:true})
       });
       const j=await resp.json();
 
       box.applyBtn.disabled=false;
 
       if(!resp.ok||!j.ok){
-        if(box.couponError){
-          box.couponError.textContent=j.message || 'Invalid coupon';
-          box.couponError.style.display='block';
-        }
+        showCouponMessage(box, j.message || 'Invalid coupon code. Please use a valid coupon.', true);
         return;
       }
 
-      box.couponApplied=j.order.applied_coupon || null;
+      const applied = j.order && j.order.applied_coupon;
+      const hasDiscount = j.order && j.order.totals && Number(j.order.totals.discount) > 0;
+
+      // If backend returns OK but no actual coupon/discount, treat as invalid
+      if (!applied && !hasDiscount) {
+        showCouponMessage(box, 'Invalid or ineligible coupon. Please use a valid coupon.', true);
+        return;
+      }
+
+      box.couponApplied = applied || trimmed;
 
       box.totalsBox.innerHTML=
         `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
@@ -3831,11 +3857,11 @@ var delay = 1200 + Math.floor(Math.random()*1000);
            <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
          </div>`;
 
-      showInlineSuccess(box.payMsg,'Coupon applied');
+      // Success message centered under Apply
+      showCouponMessage(box, 'Coupon applied successfully.', false);
     }catch{
       box.applyBtn.disabled=false;
-      box.couponError.textContent='Error applying coupon';
-      box.couponError.style.display='block';
+      showCouponMessage(box, 'Error applying coupon. Please try again.', true);
     }
   }
 
@@ -3949,8 +3975,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
         // If order_url present, change browser URL (replaceState), and set document.title
         if (j.order && j.order.order_url) {
           try {
-            // order_url now uses ?order=REF style (worker writes it that way)
-            history.replaceState({}, '', j.order.order_url);
+            // Normalize so it always uses /community/?order=REF
+            let targetUrl = j.order.order_url;
+            if (typeof targetUrl === 'string') {
+              targetUrl = targetUrl.replace('/community?','/community/?');
+            }
+            history.replaceState({}, '', targetUrl);
             if (j.order.order_ref) {
               document.title = `${j.order.order_ref} — KenFolios`;
             }
@@ -3999,6 +4029,12 @@ var delay = 1200 + Math.floor(Math.random()*1000);
 
     const ref = detectOrderRef();
     if (!ref) return;
+
+    // Ensure intro text is removed even when user lands directly on ?order=REF
+    try {
+      removeFormIntroMessage();
+      removeExtraWhitespaceAroundForm();
+    } catch (e) {}
 
     (async function loadOrder() {
       const WORKER_URL = FETCH_ORDER_BY_REF;
