@@ -2742,8 +2742,8 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 
   // Reveal after page load + small random delay (400–1000ms)
   window.addEventListener('load', function(){
-  // Delay between 1200 ms and 2200 ms (1.2s – 2.2s)
-var delay = 300 + Math.floor(Math.random() * 400);
+ // 150–450ms: blink-level, almost instant
+var delay = 150 + Math.floor(Math.random() * 300);
     // two RAFs ensure initial paint before hiding skeleton
     requestAnimationFrame(function(){ requestAnimationFrame(function(){
       setTimeout(revealChats, delay);
@@ -2808,7 +2808,7 @@ var delay = 300 + Math.floor(Math.random() * 400);
     failSafeT = setTimeout(revealNow, 3000);
 
     // Realistic delay (adjust to taste)
-    var delay = 1200 + Math.floor(Math.random() * 1200); // 1.2s – 2.4s
+    var delay = 300 + Math.floor(Math.random() * 400); // 0.3s – 0.7s
     setTimeout(revealNow, delay);
   }
 
