@@ -135,46 +135,6 @@
    END HEAD BLOCK
 ========================================================= -->
 
-<style>
-/* ---------------------------------------------------------
-   DEFENSIVE CSS FOR SKELETONS
-   ---------------------------------------------------------
-   WHY THIS EXISTS:
-   - When Cloudflare reorders JS/HTML, your skeletons (#leftSkeleton
-     and .chat-skeleton) sometimes appear temporarily as direct children
-     of <body>.
-   - This causes the "skeleton flashing at the top" problem.
-
-   WHAT THIS FIX DOES:
-   - Any skeleton that appears directly under <body> is immediately
-     pushed off-screen and hidden.
-   - Once the script relocates them into the correct container and marks
-     them with data-mounted="true", they become visible normally.
---------------------------------------------------------- */
-
-/* Hide any skeleton orphaned at the top (before proper mounting) */
-body > #leftSkeleton,
-body > .chat-skeleton {
-  position: absolute !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* When skeleton is mounted into the correct container,
-   the script adds data-mounted="true".  
-   This restores visibility. */
-#leftSkeleton[data-mounted="true"],
-.chat-skeleton[data-mounted="true"] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  visibility: visible;
-  opacity: 1;
-}
-</style>
 
 
   <style>
