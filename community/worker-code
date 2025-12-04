@@ -225,6 +225,39 @@ export default {
       if ((rawPath === "/api/order/by-ref" || rawPath.endsWith("/api/order/by-ref")) && request.method === "POST") {
         return await handleFetchOrderByRef(request, env, origin);
       }
+      // -----------------------------------------------
+// NEW: Telegram Webhook Endpoint (minimal version)
+// -----------------------------------------------
+if ((rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook")) 
+&& request.method === "POST") {
+
+// Telegram requests DO NOT send Origin header → bypass ALLOWED_ORIGINS check safely
+// Optional: verify Telegram webhook secret
+const tgSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+if (env.TELEGRAM_WEBHOOK_SECRET && tgSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
+return new Response("Unauthorized", { status: 401 });
+}
+
+// Read raw update JSON
+let update = {};
+try {
+update = await request.json();
+} catch (e) {
+console.error("Telegram webhook JSON parse error:", e);
+}
+
+// TEMP minimal response (we add real logic later)
+console.log("Telegram update received:", JSON.stringify(update));
+
+return new Response(JSON.stringify({ ok: true }), {
+status: 200,
+headers: { "Content-Type": "application/json" }
+});
+}
+
+
+
+
       // ----------------------------------------------------------------------
     } catch (err) {
       console.error("Unhandled error:", String(err));
