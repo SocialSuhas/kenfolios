@@ -2743,7 +2743,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   // Reveal after page load + small random delay (400–1000ms)
   window.addEventListener('load', function(){
   // Delay between 1200 ms and 2200 ms (1.2s – 2.2s)
-var delay = 1200 + Math.floor(Math.random()*1000);
+var delay = 300 + Math.floor(Math.random() * 400);
     // two RAFs ensure initial paint before hiding skeleton
     requestAnimationFrame(function(){ requestAnimationFrame(function(){
       setTimeout(revealChats, delay);
