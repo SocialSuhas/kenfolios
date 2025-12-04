@@ -690,14 +690,27 @@
 #chatArea.chats-ready .chat-msg,
 #chatArea.chats-ready .chat-notes{ opacity:1; }
 
-/* Skeleton block */
-.chat-skeleton{
-  position:absolute; inset:0 0 auto 0;
-  padding:1rem .75rem 1.25rem .75rem;
-  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
-  border-bottom:1px solid var(--border);
-  z-index:1;
+/* Ensure chatArea is always a positioning context */
+#chatArea {
+  position: relative;
 }
+
+/* Skeleton block (HIDDEN by default) */
+.chat-skeleton{
+  display: none;                 /* ← IMPORTANT FIX */
+  position: absolute;
+  inset: 0 0 auto 0;
+  padding: 1rem .75rem 1.25rem .75rem;
+  background: linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+
+/* Show skeleton only during loading */
+#chatArea.loading .chat-skeleton{
+  display: block;
+}
+
 
 /* Skeleton rows: avatar + two lines */
 .sk-row{ display:flex; align-items:center; gap:.6rem; margin:.6rem .25rem; }
