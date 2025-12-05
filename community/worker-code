@@ -1,4 +1,3 @@
-
 /**
  * kf-members-submit-z9p4x-worker — complete
  * - Generates & persists order_url/ref_id on create-order and on initial join
@@ -237,7 +236,7 @@ export default {
       }
 
       // -----------------------------------------------
-      // Telegram Webhook Endpoint — Activation Logic
+      // Telegram Webhook Endpoint — Activation & Auto-Approval
       // -----------------------------------------------
       if (
         (rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook")) &&
@@ -295,6 +294,100 @@ export default {
             text: text,
             parse_mode: "HTML",
             disable_web_page_preview: true
+          });
+        }
+
+        // Helper: approve / decline chat join requests
+        async function approveJoinRequest(chatId, userId) {
+          return await callTelegram("approveChatJoinRequest", {
+            chat_id: chatId,
+            user_id: userId
+          });
+        }
+
+        async function declineJoinRequest(chatId, userId) {
+          return await callTelegram("declineChatJoinRequest", {
+            chat_id: chatId,
+            user_id: userId
+          });
+        }
+
+        // --- Auto-approve join requests for paid & linked members ---
+        if (update.chat_join_request) {
+          const req = update.chat_join_request;
+          const chat = req.chat;
+          const user = req.from;
+
+          // If TELEGRAM_GROUP_ID is set, ensure this request is for our main group
+          if (GROUP_ID && String(chat.id) !== String(GROUP_ID)) {
+            return new Response(JSON.stringify({ ok: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+
+          let memberRow = null;
+          try {
+            const res = await db
+              .prepare("SELECT * FROM members WHERE telegram_user_id = ? LIMIT 1")
+              .bind(String(user.id))
+              .all();
+            if (res && res.results && res.results[0]) {
+              memberRow = res.results[0];
+            }
+          } catch (e) {
+            console.error("D1 lookup error (telegram_user_id for join_request):", String(e));
+          }
+
+          const isPaid =
+            memberRow &&
+            memberRow.activation_fee_status === "paid" &&
+            (!memberRow.telegram_revoked_at || memberRow.telegram_revoked_at === null);
+
+          if (!isPaid) {
+            // Optional: decline explicitly so freeloaders can't sit in pending forever
+            try {
+              await declineJoinRequest(chat.id, user.id);
+            } catch (e) {
+              console.error("declineJoinRequest failed:", String(e));
+            }
+
+            // Optional DM to explain
+            try {
+              await sendDM(
+                user.id,
+                "We could not approve your join request.\n\nPlease ensure your membership is activated using the link shared after payment, or contact support if you’ve already paid."
+              );
+            } catch (e) {
+              console.error("DM after decline failed:", String(e));
+            }
+
+            return new Response(JSON.stringify({ ok: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+
+          // Approve for paid + linked member
+          try {
+            await approveJoinRequest(chat.id, user.id);
+          } catch (e) {
+            console.error("approveJoinRequest failed:", String(e));
+          }
+
+          // Nice welcome DM
+          try {
+            await sendDM(
+              user.id,
+              "🎉 <b>Your membership is verified and your join request has been approved.</b>\n\nWelcome to the KenFolios Business Community!"
+            );
+          } catch (e) {
+            console.error("Welcome DM failed:", String(e));
+          }
+
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
           });
         }
 
