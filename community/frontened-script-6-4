@@ -1,0 +1,1016 @@
+/* kf-join-frontend v6.4 — full updated frontend script
+   - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
+   - Removes visible order URL / "pay later" copy from saved notice
+   - Coupon input + Apply button stacked (Apply centered)
+   - Editable fields responsive (stack on small screens)
+   - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
+   - NEW: Lazy-load Razorpay checkout.js only when order summary / payment is active
+*/
+(function(){
+  if (window.__KF_JOINFORM_V6_3) return;
+  window.__KF_JOINFORM_V6_3 = true;
+
+ /* -------- Auto-redirect activation URL → Telegram bot -------- */
+(function kfActivationAutoRedirect(){
+  try {
+    var url = new URL(window.location.href);
+    var token = url.searchParams.get('activation');
+
+    if (!token) return; // not an activation URL → do nothing
+
+    token = token.trim();
+    if (!token) return;
+
+    // Build Telegram deep link: @kfactivationbot
+    var telegramUrl = 'https://t.me/kfactivationbot?start=' + encodeURIComponent(token);
+
+    // Use replace() so the activation URL isn't left in browser history
+    window.location.replace(telegramUrl);
+  } catch (e) {
+    console.error('KF activation auto-redirect error:', e);
+  }
+})();
+
+ 
+  /* ------------------ CSS Injection (responsive classes) ------------------ */
+  (function injectKFStyles(){
+    const css = `
+/* Wrap entire order UI */
+.kf-order-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px;
+}
+
+/* Member fields grid – responsive */
+.kf-order-wrapper .kf-member-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* desktop */
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .kf-order-wrapper .kf-member-box {
+    grid-template-columns: 1fr !important; /* mobile stack */
+  }
+}
+
+/* Inputs never overflow */
+.kf-order-wrapper .kf-input,
+.kf-order-wrapper input,
+.kf-order-wrapper select {
+  width: 100% !important;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* APPLY BUTTON CENTERING */
+.kf-order-wrapper .kf-apply-btn {
+  display: inline-block;
+  margin: 0 auto;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+/* Coupon message – always centered under Apply */
+.kf-order-wrapper .kf-coupon-message {
+  text-align: center;
+  width: 100%;
+}
+
+/* Main confirm & pay button responsive */
+.kf-order-wrapper .kf-primary-btn {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  background: var(--kf-red, #d32f2f);
+}
+@media (max-width: 640px) {
+  .kf-order-wrapper .kf-primary-btn {
+    width: 100% !important;
+  }
+}
+
+/* Tighten padding on very small screens */
+@media (max-width: 420px) {
+  .kf-order-wrapper {
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .kf-order-wrapper .kf-member-box {
+    gap: 6px;
+  }
+}
+    `;
+    if (!document.getElementById('kf-join-v6-3-styles')) {
+      const s = document.createElement('style');
+      s.id = 'kf-join-v6-3-styles';
+      s.appendChild(document.createTextNode(css));
+      document.head.appendChild(s);
+    }
+  })();
+
+  const WRITE_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/join";
+  const PATCH_MEMBER_BASE = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/member/";
+  const CREATE_ORDER_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/create-order";
+  const PAYMENT_CONFIRM_ENDPOINT = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/payment/confirm";
+  const FETCH_ORDER_BY_REF = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
+
+  const COMPANY_NAME = "KenFolios Media Private Limited";
+  const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
+  const COMPANY_CIN = "U72900DL2017PTC321788";
+  const COMPANY_GSTIN = "07AAGCK7129K1Z7";
+
+  /* -------- NEW: Lazy-load Razorpay checkout script only when needed -------- */
+  let razorpayScriptPromise = null;
+  function loadRazorpayScript() {
+    if (window.Razorpay) return Promise.resolve();
+
+    if (razorpayScriptPromise) return razorpayScriptPromise;
+
+    razorpayScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[src*="checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => {
+          if (window.Razorpay) resolve();
+          else reject(new Error('Razorpay not available after load.'));
+        });
+        existing.addEventListener('error', () => reject(new Error('Failed to load Razorpay script.')));
+        return;
+      }
+
+      const s = document.createElement('script');
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.async = true;
+      s.onload = () => {
+        if (window.Razorpay) resolve();
+        else reject(new Error('Razorpay not available after load.'));
+      };
+      s.onerror = () => reject(new Error('Failed to load Razorpay script.'));
+      document.head.appendChild(s);
+    });
+
+    return razorpayScriptPromise;
+  }
+
+  const form = document.getElementById('kfJoinInfoForm');
+  // Note: form may not be present when user visits with ?order=REF — orderLoader handles that case too.
+  // But most flows have the form present.
+  // If form isn't present we still run the loader below.
+  // if (!form) return; <-- DO NOT early return
+
+  /* -----------------------------------------------
+     REMOVE INTRO MESSAGES / TEXT ABOVE THE FORM
+  ------------------------------------------------ */
+  function removeFormIntroMessage() {
+    const el1 = document.querySelector('.kf-form-intro');
+    if (el1) el1.remove();
+    const el2 = document.getElementById('kfFormIntro');
+    if (el2) el2.remove();
+    const prev = form && form.previousElementSibling;
+    if (prev && prev.textContent && prev.textContent.toLowerCase().includes('before you proceed')) {
+      prev.remove();
+    }
+  }
+  function removeExtraWhitespaceAroundForm() {
+    if (!form) return;
+    let sib=form.previousSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.previousSibling;
+      sib.remove();
+      sib=t;
+    }
+    sib=form.nextSibling;
+    while(sib && sib.nodeType===3){
+      let t=sib.nextSibling;
+      sib.remove();
+      sib=t;
+    }
+  }
+
+  function $id(id){ return document.getElementById(id); }
+  function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
+  function checkedValues(name){
+    if (!form) return [];
+    const list = form.querySelectorAll('input[name="'+name+'"]:checked');
+    return Array.from(list).map(i => i.value);
+  }
+
+  function styleInput(el){
+    el.style.width = '100%';
+    el.style.padding = '10px';
+    el.style.border = '1px solid #e6e6e6';
+    el.style.borderRadius = '8px';
+    el.style.background = '#fafafa';
+    el.style.boxSizing = 'border-box';
+    el.style.fontSize = '0.95rem';
+  }
+
+  function createProgressPill(text){
+    const pill = document.createElement('div');
+    pill.style.display='inline-flex';
+    pill.style.alignItems='center';
+    pill.style.gap='8px';
+    pill.style.padding='8px 12px';
+    pill.style.borderRadius='999px';
+    pill.style.fontWeight='600';
+    pill.style.fontSize='0.95rem';
+    pill.style.background='#e6f0ff';
+    pill.style.color='#111';
+
+    const spin = document.createElement('span');
+    spin.style.width='16px';
+    spin.style.height='16px';
+    spin.style.borderRadius='50%';
+    spin.style.border='2px solid rgba(0,0,0,0.20)';
+    spin.style.borderTopColor='rgba(0,0,0,0.55)';
+    spin.style.animation='kf-spin 0.8s linear infinite';
+
+    const txt = document.createElement('span');
+    txt.textContent = text || 'Processing…';
+
+    pill.appendChild(spin);
+    pill.appendChild(txt);
+
+    if (!$id('kf-spin-style')){
+      const style=document.createElement('style');
+      style.id='kf-spin-style';
+      style.textContent="@keyframes kf-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}";
+      document.head.appendChild(style);
+    }
+    return pill;
+  }
+
+  function replaceSubmitWithPill(btn,pill){
+    btn.dataset._old = btn.style.display || '';
+    btn.style.display='none';
+    btn.parentNode.insertBefore(pill,btn.nextSibling);
+  }
+
+  function restoreSubmitFromPill(btn,pill){
+    if (pill && pill.parentNode) pill.remove();
+    btn.style.display = btn.dataset._old || '';
+  }
+
+  /* -------- Saved notice above order box (now short — no visible URL) -------- */
+  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
+    const n = document.createElement('div');
+    n.style.padding = '12px';
+    n.style.borderRadius = '8px';
+    n.style.background = 'rgba(230,245,255,0.95)';
+    n.style.fontWeight = '600';
+    n.style.marginBottom = '14px';
+    n.style.display = 'flex';
+    n.style.flexDirection = 'column';
+    n.style.gap = '6px';
+
+    const line1 = document.createElement('div');
+    line1.textContent = `✅ Details saved. Order ID: ${ref}`;
+    n.appendChild(line1);
+
+    if (createdIso) {
+      const d = new Date(createdIso);
+      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      const dt = document.createElement('div');
+      dt.style.fontSize = '.9rem';
+      dt.style.color = '#444';
+      dt.textContent = `Order created: ${pretty}`;
+      n.appendChild(dt);
+    }
+
+    // Short confirmation copy — do NOT show the order_url or "pay later" messaging
+    const sub = document.createElement('div');
+    sub.style.fontSize = '.95rem';
+    sub.style.color = '#111';
+    sub.style.marginTop = '6px';
+    sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
+    n.appendChild(sub);
+
+    // If backend explicitly reports an email was sent we can optionally show that
+    if (emailed) {
+      const em = document.createElement('div');
+      em.style.fontSize = '.9rem';
+      em.style.color = '#444';
+      em.style.fontWeight = '500';
+      em.textContent = 'We have emailed this order link to you — use it to edit or complete payment.';
+      n.appendChild(em);
+    }
+
+    return n;
+  }
+
+  function formatINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+
+  function stylePrimaryButton(btn){
+    btn.style.background='var(--kf-red)';
+    btn.style.color='#fff';
+    btn.style.border='none';
+  }
+
+  function showInlineError(el,msg){
+    el.style.display='block';
+    el.style.color='#b45309';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},6000);
+  }
+
+  function showInlineSuccess(el,msg){
+    el.style.display='block';
+    el.style.color='#166534';
+    el.style.fontWeight='600';
+    el.textContent=msg;
+    setTimeout(()=>{el.style.display='none';},3000);
+  }
+
+  /* Central helper for coupon messages (always below Apply, centered) */
+  function showCouponMessage(box, msg, isError) {
+    if (!box || !box.couponError) return;
+    const el = box.couponError;
+    el.style.display = 'block';
+    el.style.fontWeight = '600';
+    el.style.color = isError ? '#b91c1c' : '#166534';
+    el.textContent = msg;
+  }
+
+  /* ---------------- Order Box (responsive, stacked coupon button) ---------------- */
+  function buildOrderBox(order) {
+    const wrap = document.createElement('div');
+    wrap.className = 'kf-order-wrapper';
+    wrap.style.width = '100%';
+    wrap.style.padding = '12px';
+    wrap.style.background = '#fff';
+    wrap.style.border = '1px solid #eee';
+    wrap.style.borderRadius = '12px';
+    wrap.style.boxSizing = 'border-box';
+
+    const headerWrap = document.createElement('div');
+    headerWrap.style.display = 'flex';
+    headerWrap.style.flexDirection = 'column';
+    headerWrap.style.gap = '6px';
+
+    const topRow = document.createElement('div');
+    topRow.style.display = 'flex';
+    topRow.style.justifyContent = 'space-between';
+
+    const left = document.createElement('div');
+    left.innerHTML = '<strong>Order Summary</strong>';
+
+    const right = document.createElement('div');
+    right.style.color = '#444';
+    right.style.fontWeight = '600';
+    right.textContent = `Order ID: ${order.order_ref}`;
+
+    topRow.appendChild(left);
+    topRow.appendChild(right);
+    headerWrap.appendChild(topRow);
+
+    if (order.order_created_at) {
+      const r2 = document.createElement('div');
+      r2.style.fontSize = '.85rem';
+      r2.style.color = '#666';
+      const d = new Date(order.order_created_at);
+      const pretty = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      r2.textContent = `Order created: ${pretty}`;
+      headerWrap.appendChild(r2);
+    }
+
+    wrap.appendChild(headerWrap);
+
+    const c = document.createElement('div');
+    c.style.marginTop = '14px';
+    c.innerHTML =
+      `<div style="font-weight:700">${COMPANY_NAME}</div>
+       <div style="color:#666">${COMPANY_ADDRESS}</div>
+       <div style="font-size:.85rem;color:#666;margin-top:4px">
+         GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
+       </div>`;
+    wrap.appendChild(c);
+
+    const compSep = document.createElement('div');
+    compSep.style.borderTop = '1px solid #e6e6e6';
+    compSep.style.marginTop = '12px';
+    compSep.style.paddingTop = '12px';
+    wrap.appendChild(compSep);
+
+    const notice = document.createElement('div');
+    notice.style.background = 'rgba(249,250,251,0.9)';
+    notice.style.border = '1px solid #f1f5f9';
+    notice.style.padding = '10px';
+    notice.style.borderRadius = '8px';
+    notice.style.color = '#334155';
+    notice.style.fontWeight = '600';
+    notice.style.fontSize = '.95rem';
+    notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
+    wrap.appendChild(notice);
+
+    // MEMBER BOX (responsive grid)
+    const box = document.createElement('div');
+    box.className = 'kf-member-box';
+    box.style.display = 'grid';
+    box.style.gridTemplateColumns = '1fr 1fr';
+    box.style.gap = '10px';
+    box.style.marginTop = '12px';
+
+    const editable = order.editable;
+
+    function mk(label, id, val) {
+      const f = document.createElement('div');
+
+      const l = document.createElement('label');
+      l.textContent = label;
+      l.style.fontSize = '.9rem';
+      l.style.display = 'block';
+      l.style.marginBottom = '6px';
+      f.appendChild(l);
+
+      if (editable) {
+        const i = document.createElement('input');
+        i.id = id;
+        i.value = val || '';
+        i.className = 'kf-input';
+        // basic inline fallback styling so class alone still looks ok
+        i.style.padding = '10px';
+        i.style.border = '1px solid #e6e6e6';
+        i.style.borderRadius = '8px';
+        i.style.background = '#fafafa';
+        i.style.boxSizing = 'border-box';
+        i.style.fontSize = '0.95rem';
+        f.appendChild(i);
+      } else {
+        const t = document.createElement('div');
+        t.textContent = val || '';
+        t.style.padding = '10px';
+        t.style.borderRadius = '8px';
+        t.style.background = '#fafafa';
+        t.style.border = '1px solid #e6e6e6';
+        f.appendChild(t);
+      }
+      return f;
+    }
+
+    box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
+    box.appendChild(mk('Email', 'ord_email', order.member.email));
+    box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
+    box.appendChild(mk('City', 'ord_city', order.member.city));
+    wrap.appendChild(box);
+
+    // PRODUCT + fee note
+    const prod = document.createElement('div');
+    prod.style.marginTop = '14px';
+    const basePrice = (order.product && order.product.base_price) ? order.product.base_price : null;
+    prod.innerHTML =
+      `<div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:12px">
+        <div><strong>${order.product ? order.product.name : 'Activation fee'}</strong><div style="font-size:.85rem;color:#666">Activation Fee</div></div>
+        <div style="font-weight:700">${basePrice ? formatINR(basePrice) : '—'}</div>
+      </div>`;
+    wrap.appendChild(prod);
+
+    const feeNote = document.createElement('div');
+    feeNote.style.fontSize = '.85rem';
+    feeNote.style.color = '#555';
+    feeNote.style.marginTop = '6px';
+    feeNote.textContent =
+      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
+      `This fee is the current prevailing rate and may change if you opt to pay later.`;
+    wrap.appendChild(feeNote);
+
+    // Coupon area — stacked layout: input above Apply button
+    const couponSep = document.createElement('div');
+    couponSep.style.borderTop = '1px dashed #ddd';
+    couponSep.style.marginTop = '14px';
+    couponSep.style.paddingTop = '10px';
+    wrap.appendChild(couponSep);
+
+    const couponWrap = document.createElement('div');
+    couponWrap.style.display = 'flex';
+    couponWrap.style.flexDirection = 'column';
+    couponWrap.style.gap = '8px';
+    couponWrap.style.marginTop = '8px';
+    couponWrap.style.alignItems = 'flex-start';
+
+    const couponInput = document.createElement('input');
+    couponInput.placeholder = 'Coupon code';
+    couponInput.className = 'kf-input';
+    couponInput.style.width = '100%';
+    couponInput.style.maxWidth = '100%';
+    couponInput.style.boxSizing = 'border-box';
+    couponInput.style.padding = '10px';
+    couponInput.style.border = '1px solid #e6e6e6';
+    couponInput.style.borderRadius = '8px';
+    couponWrap.appendChild(couponInput);
+
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = 'Apply';
+    applyBtn.type = 'button';
+    applyBtn.className = 'kf-apply-btn';
+    applyBtn.style.padding = '8px 14px';
+    applyBtn.style.fontSize = '.9rem';
+    applyBtn.style.border = '1px solid #ddd';
+    applyBtn.style.borderRadius = '6px';
+    applyBtn.style.background = '#fff';
+    applyBtn.style.cursor = 'pointer';
+
+    const applyWrap = document.createElement('div');
+    applyWrap.style.width = '100%';
+    applyWrap.style.display = 'flex';
+    applyWrap.style.justifyContent = 'center';
+    applyWrap.appendChild(applyBtn);
+    couponWrap.appendChild(applyWrap);
+
+    const couponError = document.createElement('div');
+    couponError.className = 'kf-coupon-message';
+    couponError.style.color = '#b91c1c';
+    couponError.style.marginTop = '6px';
+    couponError.style.fontWeight = '600';
+    couponError.style.display = 'none';
+    couponWrap.appendChild(couponError);
+
+    wrap.appendChild(couponWrap);
+
+    // totals
+    const totals = document.createElement('div');
+    totals.style.marginTop = '14px';
+    wrap.appendChild(totals);
+
+    function updateTotals(o) {
+      totals.innerHTML =
+        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(o.totals.subtotal)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(o.totals.discount)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(o.totals.taxable)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(o.totals.gst)}</span></div>
+         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+           <span>Total</span><span>${formatINR(o.totals.total)}</span>
+         </div>`;
+    }
+    updateTotals(order);
+
+    const payBox = document.createElement('div');
+    payBox.style.marginTop = '18px';
+
+    const payBtn = document.createElement('button');
+    payBtn.textContent = 'Confirm & Pay';
+    payBtn.className = 'kf-primary-btn';
+    payBtn.style.width = '100%';
+    payBtn.style.padding = '12px 20px';
+    payBtn.style.borderRadius = '8px';
+    payBtn.style.fontSize = '1rem';
+    payBtn.style.cursor = 'pointer';
+    payBtn.style.background = 'var(--kf-red, #d32f2f)';
+    payBtn.style.color = '#fff';
+    payBtn.style.border = 'none';
+    payBox.appendChild(payBtn);
+
+    const payMsg = document.createElement('div');
+    payMsg.style.display = 'none';
+    payMsg.style.marginTop = '10px';
+
+    wrap.appendChild(payBox);
+    wrap.appendChild(payMsg);
+
+    // Return references needed by event wiring
+    return {
+      wrap,
+      couponInput,
+      applyBtn,
+      payBtn,
+      payMsg,
+      totalsBox: totals,
+      editable,
+      couponError
+    };
+  }
+
+  /* ------------------ Networking helpers for coupon/payment ------------------ */
+  async function patchMember(id,box){
+    const body={
+      name:$id('ord_full_name').value.trim(),
+      email:$id('ord_email').value.trim(),
+      phone:$id('ord_phone').value.trim(),
+      city:$id('ord_city').value.trim()
+    };
+    try{
+      const resp=await fetch(PATCH_MEMBER_BASE+id,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      const j=await resp.json();
+      if(!resp.ok||!j.ok) return null;
+      return j.order;
+    }catch{return null;}
+  }
+
+  async function applyCoupon(id,code,box){
+    try{
+      // Clear any previous message
+      if (box.couponError){
+        box.couponError.style.display='none';
+        box.couponError.textContent='';
+      }
+
+      const trimmed = (code || '').trim();
+      if (!trimmed) {
+        // No coupon entered: don't hit API, show guidance message centered
+        showCouponMessage(box, 'Please enter a valid coupon code.', true);
+        return;
+      }
+
+      box.applyBtn.disabled=true;
+
+      const resp=await fetch(CREATE_ORDER_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({member_id:id, coupon:trimmed, simulate:true})
+      });
+      const j=await resp.json();
+
+      box.applyBtn.disabled=false;
+
+      if(!resp.ok||!j.ok){
+        showCouponMessage(box, j.message || 'Invalid coupon code. Please use a valid coupon.', true);
+        return;
+      }
+
+      const applied = j.order && j.order.applied_coupon;
+      const hasDiscount = j.order && j.order.totals && Number(j.order.totals.discount) > 0;
+
+      // If backend returns OK but no actual coupon/discount, treat as invalid
+      if (!applied && !hasDiscount) {
+        showCouponMessage(box, 'Invalid or ineligible coupon. Please use a valid coupon.', true);
+        return;
+      }
+
+      box.couponApplied = applied || trimmed;
+
+      box.totalsBox.innerHTML=
+        `<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatINR(j.order.totals.subtotal)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Discount</span><span>${formatINR(j.order.totals.discount)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>Taxable</span><span>${formatINR(j.order.totals.taxable)}</span></div>
+         <div style="display:flex;justify-content:space-between"><span>GST (18%)</span><span>${formatINR(j.order.totals.gst)}</span></div>
+         <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #ddd;margin-top:6px;padding-top:6px">
+           <span>Total</span><span>${formatINR(j.order.totals.total)}</span>
+         </div>`;
+
+      // Success message centered under Apply
+      showCouponMessage(box, 'Coupon applied successfully.', false);
+    }catch{
+      box.applyBtn.disabled=false;
+      showCouponMessage(box, 'Error applying coupon. Please try again.', true);
+    }
+  }
+
+  /* -------- UPDATED: confirmPay now lazy-loads Razorpay script -------- */
+ async function confirmPay(id, box){
+  const saved = await patchMember(id, box);
+  if (!saved) return;
+
+  const code = box.couponApplied || box.couponInput.value.trim() || null;
+
+  const btn = box.payBtn;
+  const msg = box.payMsg;
+
+  let pillWrap = null;
+
+  try {
+    // Create the pill and show it centered in place of the button
+    const pill = createProgressPill('Preparing payment…');
+
+    pillWrap = document.createElement('div');
+    pillWrap.style.width = '100%';
+    pillWrap.style.display = 'flex';
+    pillWrap.style.justifyContent = 'center';
+    pillWrap.style.marginTop = '10px';
+    pillWrap.appendChild(pill);
+
+    // Hide button but remember its display for restore
+    btn.dataset._oldDisplay = btn.style.display || '';
+    btn.style.display = 'none';
+    btn.disabled = true;
+
+    if (msg) {
+      msg.style.display = 'none';
+      msg.textContent = '';
+    }
+
+    // Insert the pill wrapper right after the button inside the same container
+    btn.parentNode.insertBefore(pillWrap, btn.nextSibling);
+
+    // Create order on backend
+    const resp = await fetch(CREATE_ORDER_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ member_id: id, coupon: code })
+    });
+
+    const j = await resp.json();
+
+    // Remove pill + restore button visual before we branch on result
+    if (pillWrap && pillWrap.parentNode) pillWrap.remove();
+    btn.style.display = btn.dataset._oldDisplay || '';
+    btn.disabled = false;
+
+    if (!resp.ok || !j.ok) {
+      showInlineError(msg, j.message || 'Could not initiate payment.');
+      return;
+    }
+
+    if (!j.razorpay_configured) {
+      msg.style.display = 'block';
+      msg.textContent = 'Payment options will appear here soon.';
+      return;
+    }
+
+    // Load Razorpay script
+    try {
+      await loadRazorpayScript();
+    } catch (loadErr) {
+      console.error('Razorpay script load error:', loadErr);
+      showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
+      return;
+    }
+
+    if (typeof Razorpay === 'undefined') {
+      showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
+      return;
+    }
+
+         const rp = j.razorpay_order;
+
+      const options = {
+        key: j.razorpay_key_id,  // ✅ use key from worker env
+        amount: rp.amount,
+        currency: rp.currency,
+        order_id: rp.id,
+        handler: async function(res){
+          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              member_id:id,
+              razorpay_payment_id:res.razorpay_payment_id,
+              razorpay_order_id:res.razorpay_order_id,
+              razorpay_signature:res.razorpay_signature,
+              coupon:code
+            })
+          });
+          box.payBtn.disabled = true;
+          box.payBtn.textContent = 'Paid';
+        }
+      };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.error('confirmPay error:', err);
+
+    // Clean up pill + restore button if something blows up
+    if (pillWrap && pillWrap.parentNode) pillWrap.remove();
+    if (btn) {
+      btn.style.display = btn.dataset._oldDisplay || '';
+      btn.disabled = false;
+    }
+    showInlineError(msg, 'Cannot initiate payment. Please try again.');
+  }
+}
+
+
+  /* ---------------- Form Submit (updated to change URL) ---------------- */
+  if (form) {
+    form.addEventListener('submit',async function(e){
+      e.preventDefault();
+
+      if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
+        alert('Complete all fields');
+        return;
+      }
+
+      const submitBtn=form.querySelector('button[type="submit"]');
+      const pill=createProgressPill('Saving…');
+      replaceSubmitWithPill(submitBtn,pill);
+
+      const payload={
+        name:val('fi_name'),
+        dob:val('fi_dob'),
+        gender:val('fi_gender'),
+        email:val('fi_email'),
+        phone:val('fi_phone'),
+        city:val('fi_city'),
+        expectations:checkedValues('expectations'),
+        accept:true,
+        source:'kenfolios-join-v2'
+      };
+
+      try{
+        const resp=await fetch(WRITE_ENDPOINT,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        const j=await resp.json();
+
+        restoreSubmitFromPill(submitBtn,pill);
+
+        if(!resp.ok||!j.ok){
+          alert(j.message||"Could not save");
+          return;
+        }
+
+        // Remove any intro/whitespace, then show order UI
+        removeFormIntroMessage();
+        removeExtraWhitespaceAroundForm();
+
+        // If order_url present, change browser URL (replaceState), and set document.title
+        if (j.order && j.order.order_url) {
+          try {
+            let targetUrl = j.order.order_url;
+            if (typeof targetUrl === 'string') {
+              targetUrl = targetUrl.replace('/community?','/community/?');
+            }
+            history.replaceState({}, '', targetUrl);
+            if (j.order.order_ref) {
+              document.title = `${j.order.order_ref} — KenFolios`;
+            }
+          } catch (e) {
+            // ignore if history API not allowed
+          }
+        }
+
+        const wrap=document.createElement('div');
+        const emailed = (j.email_sent === true) || false;
+        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
+
+        const box=buildOrderBox(j.order);
+        wrap.appendChild(box.wrap);
+
+        // Replace the form in-place so UI appears exactly where the form was
+        form.replaceWith(wrap);
+
+        // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
+        box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
+        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+
+        // Start loading Razorpay script in background once order summary is visible
+        if (typeof loadRazorpayScript === 'function') {
+          loadRazorpayScript().catch(console.error);
+        }
+
+      }catch{
+        restoreSubmitFromPill(submitBtn,pill);
+        alert('Save failed');
+      }
+    });
+  }
+
+  /* ---------------- Order loader: detect ?order=REF or /community/order/REF and load order ---------------- */
+  (function orderLoader(){
+    function detectOrderRef() {
+      try {
+        const sp = new URLSearchParams(window.location.search || '');
+        const q = sp.get('order');
+        if (q && q.trim()) return q.trim();
+        const m = (window.location.pathname || '').match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
+        if (m && m[1]) return m[1];
+      } catch (e) { /* ignore */ }
+      return null;
+    }
+
+    const ref = detectOrderRef();
+    if (!ref) return;
+
+    // Ensure intro text is removed even when user lands directly on ?order=REF
+    try {
+      removeFormIntroMessage();
+      removeExtraWhitespaceAroundForm();
+    } catch (e) {}
+
+    (async function loadOrder() {
+      const WORKER_URL = FETCH_ORDER_BY_REF;
+
+      let container = null;
+
+      const existingForm = document.getElementById('kfJoinInfoForm');
+      if (existingForm) {
+        container = existingForm;
+      } else {
+        const trySelectors = [
+          '#community', '#community-wrap', '#community-container',
+          '#main', '.main', '#content', '.content',
+          '#chat', '.chat-area', '.chatbox', '.chat-container'
+        ];
+        for (const sel of trySelectors) {
+          const el = document.querySelector(sel);
+          if (el) { container = el; break; }
+        }
+      }
+
+      let createdFallback = false;
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'kf-order-loader';
+        container.style.maxWidth = '980px';
+        container.style.margin = '18px auto';
+        const main = document.querySelector('#main, .main, #content, .content') || document.body;
+        main.prepend(container);
+        createdFallback = true;
+      } else {
+        if (container !== document.getElementById('kfJoinInfoForm')) {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'kf-order-loader';
+          container.prepend(wrapper);
+          container = wrapper;
+          createdFallback = true;
+        }
+      }
+
+      container.textContent = 'Loading order…';
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref_id: ref })
+        });
+        const j = await res.json();
+
+        if (!res.ok || !j.ok) {
+          container.textContent = 'Order not found.';
+          return;
+        }
+
+        const order = j.order;
+
+        const targetToReplace = (document.getElementById('kfJoinInfoForm')) ? document.getElementById('kfJoinInfoForm') : null;
+        const frag = document.createDocumentFragment();
+
+        if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
+          frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+          const box = buildOrderBox(order);
+          frag.appendChild(box.wrap);
+
+          const memberId = (order.member && order.member.id) ? order.member.id : null;
+          if (box.applyBtn && memberId) {
+            box.applyBtn.addEventListener('click', function(){
+              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
+            });
+          }
+          if (box.payBtn && memberId) {
+            box.payBtn.addEventListener('click', function(){
+              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
+            });
+          }
+
+          // Preload Razorpay script when showing existing order as well
+          if (typeof loadRazorpayScript === 'function') {
+            loadRazorpayScript().catch(console.error);
+          }
+
+        } else {
+          const el = document.createElement('div');
+          el.style.padding = '12px';
+          el.style.background = '#fff';
+          el.style.border = '1px solid #eee';
+          el.style.borderRadius = '8px';
+          el.textContent = 'Order: ' + order.order_ref + ' — Total ' + (order.totals ? ('₹' + order.totals.total) : '—');
+          frag.appendChild(el);
+        }
+
+        if (targetToReplace) {
+          targetToReplace.replaceWith(frag);
+        } else if (!createdFallback) {
+          const existingLoader = document.getElementById('kf-order-loader');
+          if (existingLoader) {
+            existingLoader.innerHTML = '';
+            existingLoader.appendChild(frag);
+          } else {
+            container.innerHTML = '';
+            container.appendChild(frag);
+          }
+        } else {
+          container.innerHTML = '';
+          container.appendChild(frag);
+        }
+
+        try {
+          if (order.order_ref) document.title = `${order.order_ref} — KenFolios`;
+        } catch(e){}
+      } catch (err) {
+        container.textContent = 'Network error loading order.';
+        console.error('Order loader error:', err);
+      }
+    })();
+  })();
+
+})();
+
+
