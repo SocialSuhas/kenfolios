@@ -51,7 +51,23 @@ const GST_RATE = 0.18;
 const COUPONS = {
   "KEN100": { code: "KEN100", type: "flat", amount: 100, min: 0, stackable: false },
   "VSTREET20": { code: "VSTREET20", type: "percent", pct: 20, cap: 400, min: 0, stackable: false },
-  "LAUNCH500": { code: "LAUNCH500", type: "flat", amount: 500, min: 1499, stackable: false }
+  "LAUNCH500": { code: "LAUNCH500", type: "flat", amount: 500, min: 1499, stackable: false },
+  "FOUNDER100": {                         // NEW: 100% discount coupon
+    code: "FOUNDER100",
+    type: "percent",
+    pct: 100,
+    cap: BASE_PRODUCT.base_price,         // cap at full base price (1999)
+    min: 0,
+    stackable: false
+  }
+};
+
+// --- Optional per-coupon limits (usage + expiry) ---
+const COUPON_LIMITS = {
+  FOUNDER100: {
+    maxUses: 99,                                       // maximum successful uses
+    expiresAt: "2025-12-31T23:59:59Z"                  // change as needed
+  }
 };
 
 function moneyRound(n) { return Math.round(n); }
@@ -1103,10 +1119,59 @@ async function handlePaymentConfirmV2(request, env, origin) {
       return json({ ok: false, message: "Invalid payment signature" }, 400, origin);
     }
 
+    // Normalize coupon code (prefer body, fallback to member record)
+    const rawCoupon = (coupon || member.activation_coupon_code || "").toString().trim();
+    const couponCode = rawCoupon ? rawCoupon.toUpperCase() : "";
+
+    // Enforce per-coupon limits for special coupons like FOUNDER100
+    if (couponCode && COUPON_LIMITS[couponCode]) {
+      const limitCfg = COUPON_LIMITS[couponCode];
+
+      // Check expiry time if configured
+      if (limitCfg.expiresAt) {
+        try {
+          const now = new Date();
+          const exp = new Date(limitCfg.expiresAt);
+          if (now > exp) {
+            return json({
+              ok: false,
+              message: `Coupon ${couponCode} has expired.`,
+              reason: "coupon_expired"
+            }, 400, origin);
+          }
+        } catch (e) {
+          console.error("Coupon expiry parse error:", String(e));
+        }
+      }
+
+      // Check max uses via meta table (key: coupon_used_<CODE>)
+      let usedCount = 0;
+      const metaKey = `coupon_used_${couponCode}`;
+      try {
+        const metaRes = await db
+          .prepare("SELECT value FROM meta WHERE key = ? LIMIT 1")
+          .bind(metaKey)
+          .all();
+        if (metaRes && metaRes.results && metaRes.results[0] && metaRes.results[0].value != null) {
+          usedCount = Number(metaRes.results[0].value) || 0;
+        }
+      } catch (e) {
+        console.error("Coupon usage lookup error:", String(e));
+      }
+
+      if (limitCfg.maxUses != null && usedCount >= limitCfg.maxUses) {
+        return json({
+          ok: false,
+          message: `Coupon ${couponCode} has reached its maximum usage limit.`,
+          reason: "coupon_usage_limit_reached"
+        }, 400, origin);
+      }
+    }
+
     // Totals (server-authoritative)
     const totalsRes = applyCouponAndTotals(
       BASE_PRODUCT.base_price,
-      coupon || member.activation_coupon_code || null
+      couponCode || null
     );
     if (totalsRes.error) {
       return json({ ok: false, message: totalsRes.error }, 400, origin);
@@ -1140,7 +1205,7 @@ async function handlePaymentConfirmV2(request, env, origin) {
         totalsRes.total,
         totalsRes.discount,
         totalsRes.total,
-        coupon || member.activation_coupon_code || null,
+        couponCode || member.activation_coupon_code || null,
         nowIso,
         razorpayPaymentId || null,
         razorpayOrderId || null,
@@ -1188,6 +1253,21 @@ async function handlePaymentConfirmV2(request, env, origin) {
       .bind(member_id).all();
     const updatedRow = (updated && updated.results && updated.results[0]) ? updated.results[0] : member;
     const order = buildOrderObject(member_id, updatedRow, totalsRes);
+
+    // If coupon has limits (e.g., FOUNDER100) and was used successfully, increment its usage count
+    if (couponCode && COUPON_LIMITS[couponCode]) {
+      const metaKey = `coupon_used_${couponCode}`;
+      try {
+        await db.prepare(`
+          INSERT INTO meta (key, value)
+          VALUES (?, '1')
+          ON CONFLICT(key) DO UPDATE
+          SET value = CAST(value AS INTEGER) + 1;
+        `).bind(metaKey).run();
+      } catch (e) {
+        console.error("Coupon usage increment error:", String(e));
+      }
+    }
 
     // Fire mailer webhook for activation (same pattern as old handler)
     try {
