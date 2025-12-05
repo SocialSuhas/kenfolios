@@ -1,3 +1,4 @@
+
 /**
  * kf-members-submit-z9p4x-worker — complete
  * - Generates & persists order_url/ref_id on create-order and on initial join
@@ -7,11 +8,18 @@
  *
  * Bindings required:
  * env.D1_WRITE_BINDING (Cloudflare D1)
+ *
  * Optional env vars:
  * env.RAZORPAY_KEY_ID
  * env.RAZORPAY_KEY_SECRET
  * env.ALLOWED_ORIGINS
  * env.MAILER_WEBHOOK
+ *
+ * Telegram-related env vars:
+ * env.TELEGRAM_BOT_TOKEN            // Bot token from BotFather
+ * env.TELEGRAM_WEBHOOK_SECRET       // Secret used in setWebhook secret_token
+ * env.TELEGRAM_GROUP_ID             // Optional: numeric group ID (if needed later)
+ * env.TELEGRAM_GROUP_INVITE_LINK    // Recommended: permanent invite link to the group
  */
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
@@ -185,6 +193,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "*";
+    const rawPath = url.pathname.replace(/\/+$/, "") || "/";
+    const isTelegramWebhookPath =
+      rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook");
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
@@ -194,14 +205,13 @@ export default {
       return json({ ok: false, message: "D1 binding not found (env.D1_WRITE_BINDING)" }, 500, origin);
     }
 
-    if (env.ALLOWED_ORIGINS && env.ALLOWED_ORIGINS.trim()) {
+    // Apply ALLOWED_ORIGINS check for browser/API calls, but NOT for Telegram webhook
+    if (!isTelegramWebhookPath && env.ALLOWED_ORIGINS && env.ALLOWED_ORIGINS.trim()) {
       const allowed = env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
       if (allowed.length && origin !== "*" && !allowed.includes(origin)) {
         return json({ ok: false, message: "Origin not allowed" }, 403, origin);
       }
     }
-
-    const rawPath = url.pathname.replace(/\/+$/, "") || "/";
 
     try {
       if ((rawPath === "/api/join" || rawPath.endsWith("/api/join")) && request.method === "POST") {
@@ -225,38 +235,219 @@ export default {
       if ((rawPath === "/api/order/by-ref" || rawPath.endsWith("/api/order/by-ref")) && request.method === "POST") {
         return await handleFetchOrderByRef(request, env, origin);
       }
+
       // -----------------------------------------------
-// NEW: Telegram Webhook Endpoint (minimal version)
-// -----------------------------------------------
-if ((rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook")) 
-&& request.method === "POST") {
+      // Telegram Webhook Endpoint — Activation Logic
+      // -----------------------------------------------
+      if (
+        (rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook")) &&
+        request.method === "POST"
+      ) {
+        // Verify webhook secret (set via setWebhook & TELEGRAM_WEBHOOK_SECRET)
+        const tgSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+        if (env.TELEGRAM_WEBHOOK_SECRET && tgSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
+          return new Response("Unauthorized", { status: 401 });
+        }
 
-// Telegram requests DO NOT send Origin header → bypass ALLOWED_ORIGINS check safely
-// Optional: verify Telegram webhook secret
-const tgSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
-if (env.TELEGRAM_WEBHOOK_SECRET && tgSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
-return new Response("Unauthorized", { status: 401 });
-}
+        let update = {};
+        try {
+          update = await request.json();
+        } catch (e) {
+          console.error("Telegram webhook JSON parse error:", e);
+          return new Response("Bad request", { status: 400 });
+        }
 
-// Read raw update JSON
-let update = {};
-try {
-update = await request.json();
-} catch (e) {
-console.error("Telegram webhook JSON parse error:", e);
-}
+        console.log("Telegram update received:", JSON.stringify(update));
 
-// TEMP minimal response (we add real logic later)
-console.log("Telegram update received:", JSON.stringify(update));
+        const db = env.D1_WRITE_BINDING;
+        const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+        const GROUP_ID = env.TELEGRAM_GROUP_ID;
+        const INVITE_LINK = env.TELEGRAM_GROUP_INVITE_LINK || null; // recommended: set this in env
 
-return new Response(JSON.stringify({ ok: true }), {
-status: 200,
-headers: { "Content-Type": "application/json" }
-});
-}
+        // Helper: call Telegram API
+        async function callTelegram(method, payload) {
+          if (!BOT_TOKEN) {
+            console.error("TELEGRAM_BOT_TOKEN missing");
+            return null;
+          }
+          try {
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok || !j.ok) {
+              console.error("Telegram API error", method, res.status, JSON.stringify(j));
+            }
+            return j;
+          } catch (e) {
+            console.error("Telegram API fetch error", method, String(e));
+            return null;
+          }
+        }
 
+        // Helper: send a DM to a user
+        async function sendDM(chatId, text) {
+          if (!BOT_TOKEN || !chatId) return;
+          return await callTelegram("sendMessage", {
+            chat_id: chatId,
+            text: text,
+            parse_mode: "HTML",
+            disable_web_page_preview: true
+          });
+        }
 
+        // We only handle private messages with /start <token>
+        const msg = update.message || update.edited_message || null;
+        if (!msg || !msg.from || !msg.chat || msg.chat.type !== "private") {
+          // Not a private chat message — just ack
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
 
+        const from = msg.from;
+        const chatId = msg.chat.id;
+        const username = from.username || null;
+        const telegramUserId = from.id;
+
+        const text = (msg.text || "").trim();
+        if (!text.startsWith("/start")) {
+          // Optional: small helper reply
+          await sendDM(
+            chatId,
+            "Please use the activation link from your browser so we can connect your membership to Telegram."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // /start or /start <token>
+        const parts = text.split(/\s+/);
+        const activationToken = (parts[1] || "").trim();
+
+        if (!activationToken) {
+          await sendDM(
+            chatId,
+            "This activation link is incomplete. Please tap the activation button from your browser again."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Look up member by unique_token
+        let memberRow = null;
+        try {
+          const res = await db
+            .prepare("SELECT * FROM members WHERE unique_token = ? LIMIT 1")
+            .bind(activationToken)
+            .all();
+          if (res && res.results && res.results[0]) {
+            memberRow = res.results[0];
+          }
+        } catch (e) {
+          console.error("D1 lookup error (unique_token):", String(e));
+        }
+
+        if (!memberRow) {
+          await sendDM(
+            chatId,
+            "This activation link is invalid or expired. Please contact support if you believe this is an error."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Check payment status
+        if (memberRow.activation_fee_status !== "paid") {
+          await sendDM(
+            chatId,
+            "Your activation fee is not marked as paid yet. If you have already paid, please wait a minute and try again, or contact support."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Enforce one-telegram-user-per-token
+        if (memberRow.telegram_user_id && Number(memberRow.telegram_user_id) !== Number(telegramUserId)) {
+          await sendDM(
+            chatId,
+            "This activation link is already linked to another Telegram account. Please contact support if this is unexpected."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const nowIso = new Date().toISOString();
+
+        // Update member with Telegram details
+        try {
+          await db.prepare(`
+            UPDATE members
+            SET
+              telegram_user_id = ?,
+              telegram_username = ?,
+              telegram_linked_at = ?,
+              telegram_revoked_at = NULL,
+              telegram_revocation_reason = NULL
+            WHERE id = ?;
+          `).bind(
+            String(telegramUserId),
+            username,
+            nowIso,
+            memberRow.id
+          ).run();
+        } catch (e) {
+          console.error("D1 update error (telegram_*):", String(e));
+          await sendDM(
+            chatId,
+            "We could not connect your Telegram right now. Please try again in a bit."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Try to give user access to the group
+        if (!GROUP_ID && !INVITE_LINK) {
+          await sendDM(
+            chatId,
+            "Your activation is confirmed, but the group link is not configured yet. Please contact support."
+          );
+        } else {
+          if (INVITE_LINK) {
+            // Recommended path: send invite link
+            await sendDM(
+              chatId,
+              `🎉 <b>Activation successful!</b>\n\nYour membership is active.\n\nTap here to join the KenFolios Business Community:\n${INVITE_LINK}`
+            );
+          } else if (GROUP_ID) {
+            // Fallback message if only GROUP_ID is set (no direct add API used here)
+            await sendDM(
+              chatId,
+              "🎉 <b>Activation successful!</b>\n\nYour membership is active. Please contact support to receive the latest group link."
+            );
+          }
+        }
+
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
 
       // ----------------------------------------------------------------------
     } catch (err) {
@@ -761,7 +952,7 @@ async function handlePaymentConfirm(request, env, origin) {
 // ---------------- NEW: V2 handler: uses activation_* fields + signature check ----------------
 async function handlePaymentConfirmV2(request, env, origin) {
   const db = env.D1_WRITE_BINDING;
-  const body = await parseJsonSafe(request);
+  const body = await parseJsonSafe(request, env, origin);
 
   const member_id = Number(body.member_id || body.memberId);
   const razorpayPaymentId = body.razorpay_payment_id || body.razorpayPaymentId || null;
