@@ -55,29 +55,6 @@
   }
 </script>
 
-<!-- =========================================================
-   META PIXEL (Facebook / Meta)
-   Pixel ID: 2897024127219193
-========================================================= -->
-<script>
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '2897024127219193'); 
-  fbq('track', 'PageView');
-  function metaEvent(name, params) {
-    try { fbq('track', name, params || {}); } catch(e) { console.warn('Meta Pixel error', e); }
-  }
-</script>
-<noscript>
-  <img height="1" width="1" style="display:none"
-       src="https://www.facebook.com/tr?id=2897024127219193&ev=PageView&noscript=1"/>
-</noscript>
 
 <!-- =========================================================
    STRUCTURED DATA (SAFE JSON-LD INJECTOR)
@@ -4275,7 +4252,225 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   })();
 
 })();
+/**
+ * KenFolios Meta Events Bridge (browser-side)
+ * - Lazy-loads Meta Pixel only when needed
+ * - ViewContent  → when #kfJoinInfoForm is actually viewed
+ * - Lead         → when form is successfully submitted (order summary appears)
+ * - InitiateCheckout → when "Confirm & Pay" is clicked
+ * - Purchase     → when paid notice / "Activate Membership" block appears
+ *                  (now includes "value" read from DOM)
+ *
+ * NOTE:
+ * - Server-side Purchase via Razorpay → HyperGate → Meta CAPI remains
+ *   the primary source of truth. This browser Purchase just mirrors the
+ *   same total for better matching/dedup potential.
+ */
 
+(function() {
+  var META_PIXEL_ID = '2897024127219193';
+  var META_LOADED = false;
+  var META_BOOTSTRAPPED = false;
+
+  // ---------- Meta Pixel lazy bootstrap (no PageView) ----------
+  function ensureMetaPixel() {
+    if (META_BOOTSTRAPPED) return;
+    META_BOOTSTRAPPED = true;
+
+    (function(f,b,e,v,n,t,s){
+      if(f.fbq) return;
+      n=f.fbq=function(){ n.callMethod ?
+        n.callMethod.apply(n,arguments) : n.queue.push(arguments);
+      };
+      if(!f._fbq) f._fbq=n;
+      n.push=n; n.loaded=!0; n.version='2.0';
+      n.queue=[];
+      t=b.createElement(e); t.async=!0;
+      t.src=v;
+      s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s);
+    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+    if (typeof fbq === 'function') {
+      fbq('init', META_PIXEL_ID);
+      META_LOADED = true;
+    }
+  }
+
+  function metaEvent(name, params) {
+    try {
+      ensureMetaPixel();
+      if (typeof fbq === 'function') {
+        fbq('track', name, params || {});
+      }
+    } catch (e) {
+      console.warn('Meta event error', e);
+    }
+  }
+
+  // ---------- 1) ViewContent when form is actually viewed ----------
+  (function trackFormViewContent() {
+    var form = document.getElementById('kfJoinInfoForm');
+    if (!form) return;
+
+    var fired = false;
+
+    function fireOnce() {
+      if (fired) return;
+      fired = true;
+      metaEvent('ViewContent', {
+        content_name: 'Membership Join Form',
+        content_type: 'membership_registration',
+        step: 'form_view'
+      });
+    }
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0) {
+            fireOnce();
+            io.disconnect();
+          }
+        });
+      }, { threshold: 0.35 });
+      io.observe(form);
+    } else {
+      setTimeout(fireOnce, 2000);
+    }
+  })();
+
+  // ---------- 2) Lead after successful form save ----------
+  (function trackLeadOnFormSuccess() {
+    var form = document.getElementById('kfJoinInfoForm');
+    if (!form || !form.parentNode) return;
+
+    var parent = form.parentNode;
+    var leadSent = false;
+
+    var mo = new MutationObserver(function() {
+      if (leadSent) return;
+      var formStillThere = document.getElementById('kfJoinInfoForm');
+      if (formStillThere) return;
+
+      var orderBox = document.querySelector('.kf-order-wrapper');
+      if (orderBox) {
+        leadSent = true;
+        metaEvent('Lead', {
+          content_name: 'Membership Registration Complete',
+          step: 'form_submit_success'
+        });
+        mo.disconnect();
+      }
+    });
+
+    mo.observe(parent, { childList: true, subtree: true });
+  })();
+
+  // ---------- 3) InitiateCheckout when "Confirm & Pay" is clicked ----------
+  (function trackInitiateCheckout() {
+    var sent = false;
+
+    document.addEventListener('click', function(evt) {
+      if (sent) return;
+      var btn = evt.target && evt.target.closest && evt.target.closest('.kf-primary-btn');
+      if (!btn) return;
+
+      sent = true;
+      metaEvent('InitiateCheckout', {
+        content_name: 'Membership Checkout Initiated',
+        step: 'confirm_and_pay_click'
+      });
+    }, true);
+  })();
+
+  // Helper: extract total value (number) from nearest order wrapper
+  function extractOrderTotalValueFromDom(node) {
+    try {
+      var wrapper = node.closest && node.closest('.kf-order-wrapper');
+      if (!wrapper) {
+        wrapper = document.querySelector('.kf-order-wrapper');
+        if (!wrapper) return null;
+      }
+
+      // Look for a row containing "Total"
+      var divs = wrapper.querySelectorAll('div');
+      var totalText = null;
+
+      for (var i = divs.length - 1; i >= 0; i--) {
+        var txt = (divs[i].textContent || '').trim();
+        if (!txt) continue;
+        if (/total/i.test(txt)) {
+          totalText = txt;
+          break;
+        }
+      }
+
+      if (!totalText) return null;
+
+      // Extract number like ₹1,999.00 or 1,999 or 1999
+      var match = totalText.match(/₹?\s*([\d,]+(?:\.\d+)?)/);
+      if (!match || !match[1]) return null;
+
+      var numeric = match[1].replace(/,/g, '');
+      var val = parseFloat(numeric);
+      if (!isFinite(val)) return null;
+
+      return val;
+    } catch (e) {
+      console.warn('Failed to parse order total from DOM', e);
+      return null;
+    }
+  }
+
+  // ---------- 4) Purchase when paid notice / Activate Membership appears ----------
+  (function trackPurchaseOnPaidNotice() {
+    var purchaseSent = false;
+
+    function scanForPaidNotice(node) {
+      if (purchaseSent) return;
+      if (!node || node.nodeType !== 1) return;
+
+      var text = (node.textContent || '').toLowerCase();
+      var hasPaidText = text.includes('is fully paid');
+      var activateBtn = node.querySelector && node.querySelector('button');
+
+      if (hasPaidText && activateBtn && /activate/i.test(activateBtn.textContent || '')) {
+        purchaseSent = true;
+
+        var value = extractOrderTotalValueFromDom(node);
+
+        var payload = {
+          content_name: 'Membership Purchase',
+          currency: 'INR',
+          step: 'order_paid_notice'
+        };
+
+        if (value != null) {
+          payload.value = value;
+        }
+
+        metaEvent('Purchase', payload);
+      }
+    }
+
+    var mo = new MutationObserver(function(mutations) {
+      if (purchaseSent) {
+        mo.disconnect();
+        return;
+      }
+      mutations.forEach(function(m) {
+        if (!m.addedNodes) return;
+        Array.prototype.forEach.call(m.addedNodes, function(node) {
+          scanForPaidNotice(node);
+        });
+      });
+    });
+
+    mo.observe(document.body, { childList: true, subtree: true });
+  })();
+
+})();
 
 </script>
 
