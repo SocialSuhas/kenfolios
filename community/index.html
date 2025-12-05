@@ -2730,7 +2730,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   var chat = document.getElementById('chatArea');
   if(!chat) return;
 
-  // Mark chat as loading immediately
+  // Mark chat as loading immediately → skeleton shows via CSS
   chat.classList.add('loading');
 
   function revealChats(){
@@ -2740,14 +2740,17 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     if (sk) sk.remove();
   }
 
-  // Reveal after page load + small random delay (400–1000ms)
-  window.addEventListener('load', function(){
- // 150–450ms: blink-level, almost instant
-var delay = 150 + Math.floor(Math.random() * 300);
+  // Reveal after DOM is ready + short random delay (180–400ms)
+  document.addEventListener('DOMContentLoaded', function(){
+    // Still gives a noticeable skeleton, but feels snappy
+    var delay = 180 + Math.floor(Math.random() * 220); // 180–400ms
+
     // two RAFs ensure initial paint before hiding skeleton
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){
-      setTimeout(revealChats, delay);
-    });});
+    requestAnimationFrame(function(){ 
+      requestAnimationFrame(function(){
+        setTimeout(revealChats, delay);
+      });
+    });
   });
 })();
 
