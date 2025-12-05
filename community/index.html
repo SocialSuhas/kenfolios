@@ -3095,13 +3095,14 @@ var delay = 150 + Math.floor(Math.random() * 300);
    - Editable fields responsive (stack on small screens)
    - Adds order loader: detects ?order=REF and fetches order from worker, replaces form in-place
    - NEW: Lazy-load Razorpay checkout.js only when order summary / payment is active
+   - NEW v6.4-p: For PAID orders, hide payment button & show only “Activate Membership”
 */
 (function(){
   if (window.__KF_JOINFORM_V6_3) return;
   window.__KF_JOINFORM_V6_3 = true;
 
  /* -------- Auto-redirect activation URL → Telegram bot -------- */
-(function kfActivationAutoRedirect(){
+ (function kfActivationAutoRedirect(){
   try {
     var url = new URL(window.location.href);
     var token = url.searchParams.get('activation');
@@ -3119,9 +3120,8 @@ var delay = 150 + Math.floor(Math.random() * 300);
   } catch (e) {
     console.error('KF activation auto-redirect error:', e);
   }
-})();
+ })();
 
- 
   /* ------------------ CSS Injection (responsive classes) ------------------ */
   (function injectKFStyles(){
     const css = `
@@ -3219,6 +3219,102 @@ var delay = 150 + Math.floor(Math.random() * 300);
   const COMPANY_ADDRESS = "Second floor, F-328, Lado Sarai, New Delhi, New Delhi, Delhi, 110030";
   const COMPANY_CIN = "U72900DL2017PTC321788";
   const COMPANY_GSTIN = "07AAGCK7129K1Z7";
+
+  /* ---- NEW: helper to derive activation URL from order/member ---- */
+  function getActivationUrlFromOrder(order) {
+    if (!order) return null;
+
+    if (order.activation_url && typeof order.activation_url === 'string') {
+      return order.activation_url;
+    }
+
+    if (order.member && order.member.activation_url) {
+      return order.member.activation_url;
+    }
+
+    if (order.member && order.member.unique_token) {
+      return 'https://kenfolios.com/community?activation=' +
+        encodeURIComponent(order.member.unique_token);
+    }
+
+    if (order.member && order.member.activation_token) {
+      return 'https://kenfolios.com/community?activation=' +
+        encodeURIComponent(order.member.activation_token);
+    }
+
+    if (order.activation_token) {
+      return 'https://kenfolios.com/community?activation=' +
+        encodeURIComponent(order.activation_token);
+    }
+
+    return null;
+  }
+
+  /* ---- NEW: helper to create paid notice + Activate Membership button ---- */
+  function createPaidNotice(orderRef, activationUrl) {
+    const paidNoticeBox = document.createElement('div');
+    paidNoticeBox.style.marginTop = '18px';
+    paidNoticeBox.style.padding = '12px';
+    paidNoticeBox.style.borderRadius = '10px';
+    paidNoticeBox.style.background = 'rgba(220,252,231,0.9)';
+    paidNoticeBox.style.border = '1px solid rgba(22,163,74,0.35)';
+    paidNoticeBox.style.color = '#166534';
+    paidNoticeBox.style.fontSize = '.95rem';
+    paidNoticeBox.style.fontWeight = '600';
+
+    const m1 = document.createElement('div');
+    m1.innerHTML =
+      `✅ This order <strong>${orderRef || ''}</strong> is fully paid.`;
+    paidNoticeBox.appendChild(m1);
+
+    const m2 = document.createElement('div');
+    m2.style.marginTop = '4px';
+    m2.style.fontWeight = '500';
+    m2.textContent =
+      'You can now activate your membership and secure access to our community groups.';
+    paidNoticeBox.appendChild(m2);
+
+    const m3 = document.createElement('div');
+    m3.style.marginTop = '6px';
+    m3.style.fontSize = '.9rem';
+    m3.style.fontWeight = '500';
+    m3.textContent =
+      'The central community group is currently hosted on Telegram. Our city, industry, and interest-based groups will continue on WhatsApp, as before.';
+    paidNoticeBox.appendChild(m3);
+
+    const activateBtn = document.createElement('button');
+    activateBtn.type = 'button';
+    activateBtn.textContent = 'Activate Membership';
+    activateBtn.style.marginTop = '10px';
+    activateBtn.style.padding = '10px 18px';
+    activateBtn.style.borderRadius = '999px';
+    activateBtn.style.border = 'none';
+    activateBtn.style.fontSize = '.95rem';
+    activateBtn.style.fontWeight = '600';
+    activateBtn.style.cursor = activationUrl ? 'pointer' : 'default';
+    activateBtn.style.background = '#16a34a';
+    activateBtn.style.color = '#fff';
+    activateBtn.style.display = 'inline-flex';
+    activateBtn.style.alignItems = 'center';
+    activateBtn.style.gap = '6px';
+
+    const arrow = document.createElement('span');
+    arrow.textContent = '↗';
+    activateBtn.appendChild(arrow);
+
+    activateBtn.addEventListener('click', function () {
+      const url = activationUrl;
+      if (!url) {
+        alert('Activation link is not ready yet. Please try again in a few moments.');
+        return;
+      }
+      window.location.href = url;
+    });
+
+    paidNoticeBox.appendChild(activateBtn);
+
+    return { notice: paidNoticeBox, activateBtn };
+  }
 
   /* -------- NEW: Lazy-load Razorpay checkout script only when needed -------- */
   let razorpayScriptPromise = null;
@@ -3644,28 +3740,50 @@ var delay = 150 + Math.floor(Math.random() * 300);
     }
     updateTotals(order);
 
-    const payBox = document.createElement('div');
-    payBox.style.marginTop = '18px';
+    // ---------------- PAID / UNPAID STATE HANDLING ----------------
+    const isPaid =
+      order.payment_status === 'paid' ||
+      order.status === 'paid' ||
+      order.is_paid === true;
 
-    const payBtn = document.createElement('button');
-    payBtn.textContent = 'Confirm & Pay';
-    payBtn.className = 'kf-primary-btn';
-    payBtn.style.width = '100%';
-    payBtn.style.padding = '12px 20px';
-    payBtn.style.borderRadius = '8px';
-    payBtn.style.fontSize = '1rem';
-    payBtn.style.cursor = 'pointer';
-    payBtn.style.background = 'var(--kf-red, #d32f2f)';
-    payBtn.style.color = '#fff';
-    payBtn.style.border = 'none';
-    payBox.appendChild(payBtn);
+    let activateBtn = null;
+    let paidNoticeBox = null;
+    let payBtn = null;
+    let payMsg = null;
 
-    const payMsg = document.createElement('div');
-    payMsg.style.display = 'none';
-    payMsg.style.marginTop = '10px';
+    if (isPaid) {
+      // ✅ PAID ORDER → only show success notice + Activate button, no payment button
+      const activationUrl = getActivationUrlFromOrder(order);
+      const paid = createPaidNotice(order.order_ref, activationUrl);
+      paidNoticeBox = paid.notice;
+      activateBtn = paid.activateBtn;
+      wrap.appendChild(paidNoticeBox);
+    } else {
+      // UNPAID → show Confirm & Pay button + message area
+      const payBox = document.createElement('div');
+      payBox.style.marginTop = '18px';
 
-    wrap.appendChild(payBox);
-    wrap.appendChild(payMsg);
+      payBtn = document.createElement('button');
+      payBtn.textContent = 'Confirm & Pay';
+      payBtn.className = 'kf-primary-btn';
+      payBtn.style.width = '100%';
+      payBtn.style.padding = '12px 20px';
+      payBtn.style.borderRadius = '8px';
+      payBtn.style.fontSize = '1rem';
+      payBtn.style.cursor = 'pointer';
+      payBtn.style.background = 'var(--kf-red, #d32f2f)';
+      payBtn.style.color = '#fff';
+      payBtn.style.border = 'none';
+
+      payBox.appendChild(payBtn);
+
+      payMsg = document.createElement('div');
+      payMsg.style.display = 'none';
+      payMsg.style.marginTop = '10px';
+
+      wrap.appendChild(payBox);
+      wrap.appendChild(payMsg);
+    }
 
     // Return references needed by event wiring
     return {
@@ -3676,7 +3794,11 @@ var delay = 150 + Math.floor(Math.random() * 300);
       payMsg,
       totalsBox: totals,
       editable,
-      couponError
+      couponError,
+      orderRef: order.order_ref || null,
+      activationUrl: getActivationUrlFromOrder(order) || null,
+      paidNoticeBox,
+      activateBtn
     };
   }
 
@@ -3759,82 +3881,85 @@ var delay = 150 + Math.floor(Math.random() * 300);
     }
   }
 
-  /* -------- UPDATED: confirmPay now lazy-loads Razorpay script -------- */
- async function confirmPay(id, box){
-  const saved = await patchMember(id, box);
-  if (!saved) return;
+  /* -------- UPDATED: confirmPay now lazy-loads Razorpay script AND turns UI into "Activate Membership" -------- */
+  async function confirmPay(id, box){
+    // If there is no pay button (paid order), or it’s disabled, do nothing
+    if (!box || !box.payBtn || box.payBtn.disabled) return;
 
-  const code = box.couponApplied || box.couponInput.value.trim() || null;
+    const saved = await patchMember(id, box);
+    if (!saved) return;
 
-  const btn = box.payBtn;
-  const msg = box.payMsg;
+    const code = box.couponApplied || box.couponInput.value.trim() || null;
 
-  let pillWrap = null;
+    const btn = box.payBtn;
+    const msg = box.payMsg;
 
-  try {
-    // Create the pill and show it centered in place of the button
-    const pill = createProgressPill('Preparing payment…');
+    let pillWrap = null;
 
-    pillWrap = document.createElement('div');
-    pillWrap.style.width = '100%';
-    pillWrap.style.display = 'flex';
-    pillWrap.style.justifyContent = 'center';
-    pillWrap.style.marginTop = '10px';
-    pillWrap.appendChild(pill);
-
-    // Hide button but remember its display for restore
-    btn.dataset._oldDisplay = btn.style.display || '';
-    btn.style.display = 'none';
-    btn.disabled = true;
-
-    if (msg) {
-      msg.style.display = 'none';
-      msg.textContent = '';
-    }
-
-    // Insert the pill wrapper right after the button inside the same container
-    btn.parentNode.insertBefore(pillWrap, btn.nextSibling);
-
-    // Create order on backend
-    const resp = await fetch(CREATE_ORDER_ENDPOINT, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ member_id: id, coupon: code })
-    });
-
-    const j = await resp.json();
-
-    // Remove pill + restore button visual before we branch on result
-    if (pillWrap && pillWrap.parentNode) pillWrap.remove();
-    btn.style.display = btn.dataset._oldDisplay || '';
-    btn.disabled = false;
-
-    if (!resp.ok || !j.ok) {
-      showInlineError(msg, j.message || 'Could not initiate payment.');
-      return;
-    }
-
-    if (!j.razorpay_configured) {
-      msg.style.display = 'block';
-      msg.textContent = 'Payment options will appear here soon.';
-      return;
-    }
-
-    // Load Razorpay script
     try {
-      await loadRazorpayScript();
-    } catch (loadErr) {
-      console.error('Razorpay script load error:', loadErr);
-      showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
-      return;
-    }
+      // Create the pill and show it centered in place of the button
+      const pill = createProgressPill('Preparing payment…');
 
-    if (typeof Razorpay === 'undefined') {
-      showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
-      return;
-    }
+      pillWrap = document.createElement('div');
+      pillWrap.style.width = '100%';
+      pillWrap.style.display = 'flex';
+      pillWrap.style.justifyContent = 'center';
+      pillWrap.style.marginTop = '10px';
+      pillWrap.appendChild(pill);
 
-         const rp = j.razorpay_order;
+      // Hide button but remember its display for restore
+      btn.dataset._oldDisplay = btn.style.display || '';
+      btn.style.display = 'none';
+      btn.disabled = true;
+
+      if (msg) {
+        msg.style.display = 'none';
+        msg.textContent = '';
+      }
+
+      // Insert the pill wrapper right after the button inside the same container
+      btn.parentNode.insertBefore(pillWrap, btn.nextSibling);
+
+      // Create order on backend
+      const resp = await fetch(CREATE_ORDER_ENDPOINT, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ member_id: id, coupon: code })
+      });
+
+      const j = await resp.json();
+
+      // Remove pill + restore button visual before we branch on result
+      if (pillWrap && pillWrap.parentNode) pillWrap.remove();
+      btn.style.display = btn.dataset._oldDisplay || '';
+      btn.disabled = false;
+
+      if (!resp.ok || !j.ok) {
+        showInlineError(msg, j.message || 'Could not initiate payment.');
+        return;
+      }
+
+      if (!j.razorpay_configured) {
+        msg.style.display = 'block';
+        msg.textContent = 'Payment options will appear here soon.';
+        return;
+      }
+
+      // Load Razorpay script
+      try {
+        await loadRazorpayScript();
+      } catch (loadErr) {
+        console.error('Razorpay script load error:', loadErr);
+        showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
+        return;
+      }
+
+      if (typeof Razorpay === 'undefined') {
+        showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
+        return;
+      }
+
+      const rp = j.razorpay_order;
 
       const options = {
         key: j.razorpay_key_id,  // ✅ use key from worker env
@@ -3842,38 +3967,81 @@ var delay = 150 + Math.floor(Math.random() * 300);
         currency: rp.currency,
         order_id: rp.id,
         handler: async function(res){
-          await fetch(PAYMENT_CONFIRM_ENDPOINT,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              member_id:id,
-              razorpay_payment_id:res.razorpay_payment_id,
-              razorpay_order_id:res.razorpay_order_id,
-              razorpay_signature:res.razorpay_signature,
-              coupon:code
-            })
-          });
-          box.payBtn.disabled = true;
-          box.payBtn.textContent = 'Paid';
+          try {
+            const confirmResp = await fetch(PAYMENT_CONFIRM_ENDPOINT,{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({
+                member_id:id,
+                razorpay_payment_id:res.razorpay_payment_id,
+                razorpay_order_id:res.razorpay_order_id,
+                razorpay_signature:res.razorpay_signature,
+                coupon:code
+              })
+            });
+
+            let confirmJson = null;
+            try { confirmJson = await confirmResp.json(); } catch(e){}
+
+            // Determine activation URL from confirm response (if worker provides it) or existing box
+            let activationUrl = null;
+            if (confirmJson) {
+              if (confirmJson.activation_url) {
+                activationUrl = confirmJson.activation_url;
+              } else if (confirmJson.activation_token) {
+                activationUrl =
+                  'https://kenfolios.com/community?activation=' +
+                  encodeURIComponent(confirmJson.activation_token);
+              } else if (confirmJson.order) {
+                activationUrl = getActivationUrlFromOrder(confirmJson.order);
+              }
+            }
+            if (!activationUrl && box.activationUrl) {
+              activationUrl = box.activationUrl;
+            }
+
+            // Remove pay button + message from DOM completely
+            if (box.payBtn && box.payBtn.parentNode) {
+              const payBoxNode = box.payBtn.parentNode;
+              if (payBoxNode.parentNode) {
+                payBoxNode.parentNode.removeChild(payBoxNode);
+              }
+            }
+            if (box.payMsg && box.payMsg.parentNode) {
+              box.payMsg.parentNode.removeChild(box.payMsg);
+            }
+            box.payBtn = null;
+            box.payMsg = null;
+
+            // Add paid notice + Activate Membership at the end of the wrapper
+            const orderRef = box.orderRef || (confirmJson && confirmJson.order_ref) || '';
+            const paid = createPaidNotice(orderRef, activationUrl);
+            if (box.wrap) {
+              box.wrap.appendChild(paid.notice);
+            }
+            box.paidNoticeBox = paid.notice;
+            box.activateBtn = paid.activateBtn;
+          } catch (err) {
+            console.error('payment confirm handler error:', err);
+          }
         }
       };
 
-    const rzp = new Razorpay(options);
-    rzp.open();
+      const rzp = new Razorpay(options);
+      rzp.open();
 
-  } catch (err) {
-    console.error('confirmPay error:', err);
+    } catch (err) {
+      console.error('confirmPay error:', err);
 
-    // Clean up pill + restore button if something blows up
-    if (pillWrap && pillWrap.parentNode) pillWrap.remove();
-    if (btn) {
-      btn.style.display = btn.dataset._oldDisplay || '';
-      btn.disabled = false;
+      // Clean up pill + restore button if something blows up
+      if (pillWrap && pillWrap.parentNode) pillWrap.remove();
+      if (btn) {
+        btn.style.display = btn.dataset._oldDisplay || '';
+        btn.disabled = false;
+      }
+      showInlineError(msg, 'Cannot initiate payment. Please try again.');
     }
-    showInlineError(msg, 'Cannot initiate payment. Please try again.');
   }
-}
-
 
   /* ---------------- Form Submit (updated to change URL) ---------------- */
   if (form) {
@@ -3948,7 +4116,9 @@ var delay = 150 + Math.floor(Math.random() * 300);
 
         // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
-        box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+        if (box.payBtn) {
+          box.payBtn.addEventListener('click',()=>confirmPay(j.member_id,box));
+        }
 
         // Start loading Razorpay script in background once order summary is visible
         if (typeof loadRazorpayScript === 'function') {
@@ -4102,8 +4272,6 @@ var delay = 150 + Math.floor(Math.random() * 300);
   })();
 
 })();
-
-
 
 
 </script>
