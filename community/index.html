@@ -3948,6 +3948,11 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
         order_id: rp.id,
         handler: async function(res){
           try {
+            // 🔴 Set global Meta event ID based on Razorpay payment id
+            if (res && res.razorpay_payment_id) {
+              window.__KF_META_EVENT_ID = 'rzp_' + res.razorpay_payment_id;
+            }
+
             const confirmResp = await fetch(PAYMENT_CONFIRM_ENDPOINT,{
               method:'POST',
               headers:{'Content-Type':'application/json'},
@@ -4252,6 +4257,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   })();
 
 })();
+
 /**
  * KenFolios Meta Events Bridge (browser-side)
  * - Lazy-loads Meta Pixel only when needed
@@ -4297,11 +4303,15 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     }
   }
 
-  function metaEvent(name, params) {
+  function metaEvent(name, params, eventId) {
     try {
       ensureMetaPixel();
       if (typeof fbq === 'function') {
-        fbq('track', name, params || {});
+        if (eventId) {
+          fbq('track', name, params || {}, { eventID: eventId });
+        } else {
+          fbq('track', name, params || {});
+        }
       }
     } catch (e) {
       console.warn('Meta event error', e);
@@ -4450,7 +4460,17 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
           payload.value = value;
         }
 
-        metaEvent('Purchase', payload);
+        // 🔴 Use shared event_id if available (for dedup with CAPI)
+        var eventId = null;
+        try {
+          if (window.__KF_META_EVENT_ID) {
+            eventId = window.__KF_META_EVENT_ID;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        metaEvent('Purchase', payload, eventId);
       }
     }
 
@@ -4471,7 +4491,26 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   })();
 
 })();
+ // 🔴 AddToCart when form is submitted ("Submit Details & Continue")
+  (function trackAddToCartOnFormSubmit() {
+    var form = document.getElementById('kfJoinInfoForm');
+    if (!form) return;
 
+    var sent = false;
+
+    form.addEventListener('submit', function () {
+      if (sent) return;
+      sent = true;
+
+      metaEvent('AddToCart', {
+        content_name: 'Membership Add to Cart',
+        content_type: 'membership_registration',
+        step: 'submit_details_continue',
+        value: 1999,
+        currency: 'INR'
+      });
+    });
+  })();
 </script>
 
 </body>
