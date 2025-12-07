@@ -1,0 +1,342 @@
+// RzpCAPI HyperGate - Razorpay → Meta CAPI bridge
+// URL: https://rzpcapihypergate.ksn-nvl.workers.dev/
+//
+// Required environment vars (add in Cloudflare dashboard / wrangler.toml):
+// - RAZORPAY_WEBHOOK_SECRET
+// - META_PIXEL_ID
+// - META_ACCESS_TOKEN
+// Optional:
+// - DEFAULT_EVENT_SOURCE_URL
+// - META_TEST_EVENT_CODE
+// - DEBUG (set to "true" to enable verbose logs)
+
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      if (request.method !== "POST") {
+        return new Response(
+          JSON.stringify({ error: "Method not allowed" }),
+          { status: 405, headers: jsonHeaders() }
+        );
+      }
+
+      // Read raw body once for signature verification + JSON parsing
+      const bodyText = await request.text();
+
+      // Verify Razorpay signature
+      const razorpaySignature = request.headers.get("x-razorpay-signature");
+      if (!razorpaySignature) {
+        return new Response(
+          JSON.stringify({ error: "Missing X-Razorpay-Signature header" }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+
+      const isValid = await verifyRazorpaySignature(
+        bodyText,
+        razorpaySignature,
+        env.RAZORPAY_WEBHOOK_SECRET
+      );
+
+      if (!isValid) {
+        if (env.DEBUG === "true") {
+          console.log("Invalid Razorpay signature");
+        }
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: jsonHeaders() }
+        );
+      }
+
+      // Now it's safe to parse
+      let payload;
+      try {
+        payload = JSON.parse(bodyText);
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: "Invalid JSON payload" }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+
+      if (env.DEBUG === "true") {
+        console.log("Razorpay Webhook Payload:", payload);
+      }
+
+      const eventType = payload?.event || "unknown";
+      const createdAt = payload?.created_at || Math.floor(Date.now() / 1000);
+
+      // Map Razorpay event → Meta CAPI event_name
+      const eventName = mapRazorpayEventToMeta(eventType);
+
+      // Extract payment / order data for payment.captured (extend as needed)
+      const paymentEntity = payload?.payload?.payment?.entity || {};
+      const orderId = paymentEntity?.order_id || null;
+      const paymentId = paymentEntity?.id || null;
+      const amountPaise = paymentEntity?.amount || 0;
+      const amountRupee = amountPaise / 100.0;
+      const currency = paymentEntity?.currency || "INR";
+
+      // Razorpay notes can carry fbp/fbc/user info from frontend
+      const notes = paymentEntity?.notes || {};
+
+      // User identifiers
+      const emailRaw = paymentEntity?.email || notes?.email || "";
+      const contactRaw = paymentEntity?.contact || notes?.phone || "";
+
+      const fbp = notes?.fbp || null;
+      const fbc = notes?.fbc || null;
+
+      // Event source URL: from notes if passed, else default from env
+      const eventSourceUrl =
+        notes?.event_source_url ||
+        notes?.page_url ||
+        env.DEFAULT_EVENT_SOURCE_URL ||
+        "https://example.com/thank-you";
+
+      // Build Meta CAPI payload
+      const metaPayload = await buildMetaCapiPayload({
+        eventName,
+        eventTime: createdAt,
+        eventSourceUrl,
+        value: amountRupee,
+        currency,
+        orderId,
+        paymentId,
+        email: emailRaw,
+        phone: contactRaw,
+        fbp,
+        fbc,
+        testEventCode: env.META_TEST_EVENT_CODE,
+      });
+
+      if (env.DEBUG === "true") {
+        console.log("Meta CAPI Payload:", JSON.stringify(metaPayload, null, 2));
+      }
+
+      // Send to Meta CAPI
+      const metaRes = await sendToMetaCapi(
+        metaPayload,
+        env.META_PIXEL_ID,
+        env.META_ACCESS_TOKEN
+      );
+
+      const metaText = await metaRes.text();
+
+      if (env.DEBUG === "true") {
+        console.log("Meta CAPI Response Status:", metaRes.status);
+        console.log("Meta CAPI Response Body:", metaText);
+      }
+
+      // Even if Meta fails, usually we still return 200 so Razorpay
+      // does not spam retries. You can change this if you want stricter behavior.
+      const ok = metaRes.ok;
+
+      return new Response(
+        JSON.stringify({
+          status: ok ? "ok" : "meta_error",
+          meta_status: metaRes.status,
+          meta_body: safeJsonParse(metaText),
+        }),
+        { status: 200, headers: jsonHeaders() }
+      );
+    } catch (err) {
+      console.error("RzpCAPI HyperGate Fatal Error:", err);
+      return new Response(
+        JSON.stringify({ error: "Internal error" }),
+        { status: 500, headers: jsonHeaders() }
+      );
+    }
+  },
+};
+
+/**
+ * Helpers
+ */
+
+function jsonHeaders() {
+  return {
+    "Content-Type": "application/json; charset=utf-8",
+  };
+}
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+/**
+ * Map Razorpay event names to Meta CAPI event names
+ */
+function mapRazorpayEventToMeta(razorpayEvent) {
+  switch (razorpayEvent) {
+    case "payment.captured":
+    case "order.paid":
+      return "Purchase";
+    case "payment.failed":
+      return "PaymentFailed";
+    // add as needed
+    default:
+      return "CustomRazorpayEvent";
+  }
+}
+
+/**
+ * Verify Razorpay signature: HMAC_SHA256(body, secret) (hex) == header
+ */
+async function verifyRazorpaySignature(bodyText, signature, secret) {
+  if (!secret) {
+    console.error("RAZORPAY_WEBHOOK_SECRET is not configured");
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const bodyData = encoder.encode(bodyText);
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    {
+      name: "HMAC",
+      hash: { name: "SHA-256" },
+    },
+    false,
+    ["sign"]
+  );
+
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, bodyData);
+  const signatureHex = bufferToHex(signatureBuffer);
+
+  // Razorpay signature is lowercase hex
+  return safeConstantTimeCompare(signatureHex, signature);
+}
+
+function bufferToHex(buffer) {
+  const byteArray = new Uint8Array(buffer);
+  let hexString = "";
+  for (let i = 0; i < byteArray.length; i++) {
+    const hex = byteArray[i].toString(16).padStart(2, "0");
+    hexString += hex;
+  }
+  return hexString;
+}
+
+/**
+ * Constant-time string compare (best-effort in JS)
+ */
+function safeConstantTimeCompare(a, b) {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Build Meta CAPI payload
+ */
+async function buildMetaCapiPayload({
+  eventName,
+  eventTime,
+  eventSourceUrl,
+  value,
+  currency,
+  orderId,
+  paymentId,
+  email,
+  phone,
+  fbp,
+  fbc,
+  testEventCode,
+}) {
+  const userData = {};
+
+  if (email) {
+    const normalizedEmail = email.trim().toLowerCase();
+    userData.em = [await sha256Hex(normalizedEmail)];
+  }
+
+  if (phone) {
+    // Normalize phone to digits only, Meta wants E.164 (with country code).
+    // Here we just strip non-digits; ideally prepend country code on frontend.
+    const normalizedPhone = phone.replace(/\D/g, "");
+    if (normalizedPhone) {
+      userData.ph = [await sha256Hex(normalizedPhone)];
+    }
+  }
+
+  if (fbp) {
+    userData.fbp = fbp;
+  }
+  if (fbc) {
+    userData.fbc = fbc;
+  }
+
+  const customData = {
+    currency,
+    value,
+  };
+
+  if (orderId) customData.order_id = orderId;
+  if (paymentId) customData.payment_id = paymentId;
+
+  const event = {
+    event_name: eventName,
+    event_time: eventTime || Math.floor(Date.now() / 1000),
+    event_source_url: eventSourceUrl,
+    action_source: "website",
+    user_data: userData,
+    custom_data: customData,
+  };
+
+  const payload = {
+    data: [event],
+  };
+
+  if (testEventCode) {
+    payload.test_event_code = testEventCode;
+  }
+
+  return payload;
+}
+
+/**
+ * SHA-256 hex helper for Meta user_data hashing
+ */
+async function sha256Hex(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return bufferToHex(hashBuffer);
+}
+
+/**
+ * Send to Meta Conversions API
+ */
+async function sendToMetaCapi(payload, pixelId, accessToken) {
+  if (!pixelId || !accessToken) {
+    console.error("META_PIXEL_ID or META_ACCESS_TOKEN not configured");
+    // Fake a Response-like object to avoid breaking handler
+    return new Response(
+      JSON.stringify({ error: "Meta credentials missing" }),
+      { status: 500 }
+    );
+  }
+
+  const url = `https://graph.facebook.com/v18.0/${pixelId}/events?access_token=${encodeURIComponent(
+    accessToken
+  )}`;
+
+  return fetch(url, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
