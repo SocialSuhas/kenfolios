@@ -19,6 +19,12 @@
  * env.TELEGRAM_WEBHOOK_SECRET       // Secret used in setWebhook secret_token
  * env.TELEGRAM_GROUP_ID             // Optional: numeric group ID (if needed later)
  * env.TELEGRAM_GROUP_INVITE_LINK    // Recommended: permanent invite link to the group
+ *
+ * Brevo-related env vars:
+ * env.BREVO_API_KEY                 // Brevo SMTP & API key
+ * env.BREVO_SENDER_EMAIL            // no-reply@kenfolios.com
+ * env.BREVO_SENDER_NAME             // KenFolios Media Private Limited
+ * env.BREVO_TEMPLATE_ID             // 1 (activation template)
  */
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
@@ -200,6 +206,100 @@ async function fireMailerWebhook(env, payload) {
     });
   } catch (e) {
     console.error('Mailer webhook error:', String(e));
+  }
+}
+
+// --- Brevo helper: send activation email via template or fallback HTML ---
+async function sendActivationEmail(env, toEmail, fullName, activationUrl) {
+  try {
+    if (!env.BREVO_API_KEY) {
+      console.error("Brevo: BREVO_API_KEY missing, skip email.");
+      return null;
+    }
+    if (!toEmail || !activationUrl) {
+      console.error("Brevo: missing toEmail or activationUrl, skip email.");
+      return null;
+    }
+
+    const name = fullName && fullName.trim() ? fullName.trim() : "Member";
+    const senderEmail = env.BREVO_SENDER_EMAIL || "no-reply@kenfolios.com";
+    const senderName = env.BREVO_SENDER_NAME || "KenFolios Business Community";
+
+    let payload;
+
+    const templateIdNum = env.BREVO_TEMPLATE_ID ? Number(env.BREVO_TEMPLATE_ID) : NaN;
+
+    if (!isNaN(templateIdNum) && templateIdNum > 0) {
+      // Use Brevo saved template (recommended)
+      payload = {
+        to: [{ email: toEmail, name }],
+        templateId: templateIdNum,
+        params: {
+          name,
+          activation_link: activationUrl
+        }
+      };
+    } else {
+      // Fallback: inline HTML email (simple but safe)
+      payload = {
+        sender: { email: senderEmail, name: senderName },
+        to: [{ email: toEmail, name }],
+        subject: "Activate Your KenFolios Business Community Account",
+        htmlContent: `
+<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;">
+<head>
+  <meta charset="UTF-8" />
+  <title>KenFolios Activation</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#333;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:30px;border-radius:6px;">
+    <h1 style="font-size:22px;font-weight:700;color:#111;margin-bottom:20px;">
+      Activate Your KenFolios Business Community Account
+    </h1>
+    <p>Hi ${name},</p>
+    <p>
+      Your KenFolios Business Community account is almost ready.<br/>
+      To complete your registration and join the community, please click the button below:
+    </p>
+    <p>
+      <a href="${activationUrl}" style="display:inline-block;background:#E11D2E;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:6px;font-size:16px;font-weight:600;margin:25px 0;">
+        Activate My Account
+      </a>
+    </p>
+    <p>If the button above doesn’t work, copy and paste this link into your browser:</p>
+    <p style="word-break:break-all;font-size:14px;">${activationUrl}</p>
+    <p>This link is unique to your account and can only be used once.</p>
+    <p>
+      Welcome to the KenFolios Business Community.<br/>
+      We’re excited to have you on board.
+    </p>
+    <div style="font-size:12px;text-align:center;color:#777;margin-top:35px;">
+      © ${new Date().getFullYear()} KenFolios Media Private Limited. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`
+      };
+    }
+
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": env.BREVO_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("Brevo send email failed:", res.status, JSON.stringify(data));
+    }
+    return data;
+  } catch (e) {
+    console.error("Brevo sendActivationEmail error:", String(e));
+    return null;
   }
 }
 
@@ -985,21 +1085,24 @@ async function handlePaymentConfirm(request, env, origin) {
 
     // Generate unique_token + activation_url if not already present
     let unique_token = null;
+    let activation_url = null;
     try {
-      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email FROM members WHERE id = ? LIMIT 1")
+      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email, full_name FROM members WHERE id = ? LIMIT 1")
         .bind(member_id).all();
       const existing = (after && after.results && after.results[0]) ? after.results[0] : null;
       unique_token = existing && existing.unique_token ? existing.unique_token : null;
+      activation_url = existing && existing.activation_url ? existing.activation_url : null;
+
       if (!unique_token) {
         unique_token = generateUniqueToken(28);
-        const activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
         await db.prepare(`
           UPDATE members
           SET unique_token = ?, activation_url = ?, activated_at = ?
           WHERE id = ?;
         `).bind(unique_token, activation_url, now, member_id).run();
-      } else {
-        const activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+      } else if (!activation_url) {
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
         await db.prepare(`
           UPDATE members
           SET
@@ -1039,7 +1142,7 @@ async function handlePaymentConfirm(request, env, origin) {
           type: 'activation',
           email: updatedRow.email || member.email,
           member_id,
-          activation_url: updatedRow.activation_url || (`https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`),
+          activation_url: updatedRow.activation_url || (activation_url || (`https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`)),
           order_ref: updatedRow.ref_id || null,
           totals: totalsRes,
           timestamp: new Date().toISOString()
@@ -1048,6 +1151,24 @@ async function handlePaymentConfirm(request, env, origin) {
       }
     } catch (e) {
       console.error('mail webhook error (activation):', String(e));
+    }
+
+    // Send activation email via Brevo (best-effort, non-critical)
+    try {
+      const emailTo = updatedRow.email || member.email;
+      const fullName = updatedRow.full_name || member.full_name || "Member";
+      const finalActivationUrl =
+        updatedRow.activation_url ||
+        activation_url ||
+        (unique_token
+          ? `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`
+          : null);
+
+      if (emailTo && finalActivationUrl) {
+        await sendActivationEmail(env, emailTo, fullName, finalActivationUrl);
+      }
+    } catch (e) {
+      console.error("Brevo activation email error (confirm v1):", String(e));
     }
 
     return json({ ok: true, message: "Payment confirmed", member_id, order }, 200, origin);
@@ -1222,7 +1343,7 @@ async function handlePaymentConfirmV2(request, env, origin) {
     let unique_token = null;
     let activation_url = null;
     try {
-      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email FROM members WHERE id = ? LIMIT 1")
+      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email, full_name FROM members WHERE id = ? LIMIT 1")
         .bind(member_id).all();
       const existing = (after && after.results && after.results[0]) ? after.results[0] : null;
       unique_token = existing && existing.unique_token ? existing.unique_token : null;
@@ -1285,6 +1406,24 @@ async function handlePaymentConfirmV2(request, env, origin) {
       }
     } catch (e) {
       console.error('mail webhook error (activation-v2):', String(e));
+    }
+
+    // Send activation email via Brevo (best-effort)
+    try {
+      const emailTo = updatedRow.email || member.email;
+      const fullName = updatedRow.full_name || member.full_name || "Member";
+      const finalActivationUrl =
+        updatedRow.activation_url ||
+        activation_url ||
+        (unique_token
+          ? `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`
+          : null);
+
+      if (emailTo && finalActivationUrl) {
+        await sendActivationEmail(env, emailTo, fullName, finalActivationUrl);
+      }
+    } catch (e) {
+      console.error("Brevo activation email error (confirm v2):", String(e));
     }
 
     return json({ ok: true, message: "Payment confirmed", member_id, order }, 200, origin);
