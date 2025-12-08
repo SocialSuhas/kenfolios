@@ -4282,12 +4282,13 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 
 /**
  * KenFolios Meta Events Bridge (browser-side)
- * - Lazy-loads Meta Pixel only when needed
- * - ViewContent  → when #kfJoinInfoForm is actually viewed
- * - Lead         → when form is successfully submitted (order summary appears)
+ * - PageView       → when main CTA (.kfplan-btn) is actually viewed
+ * - ViewContent    → when #kfJoinInfoForm is actually viewed
+ * - Lead           → when join form is submitted ("Submit Details & Continue")
+ * - AddToCart      → when order summary (.kf-order-wrapper) appears
  * - InitiateCheckout → when "Confirm & Pay" is clicked
- * - Purchase     → when paid notice / "Activate Membership" block appears
- *                  (now includes "value" read from DOM)
+ * - Purchase       → when paid notice / "Activate Membership" block appears
+ *                    (includes "value" read from DOM, with shared event_id for CAPI dedup)
  *
  * NOTE:
  * - Server-side Purchase via Razorpay → HyperGate → Meta CAPI remains
@@ -4300,23 +4301,23 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   var META_LOADED = false;
   var META_BOOTSTRAPPED = false;
 
-  // ---------- Meta Pixel lazy bootstrap (no PageView) ----------
+  // ---------- Meta Pixel lazy bootstrap ----------
   function ensureMetaPixel() {
     if (META_BOOTSTRAPPED) return;
     META_BOOTSTRAPPED = true;
 
     (function(f,b,e,v,n,t,s){
-      if(f.fbq) return;
-      n=f.fbq=function(){ n.callMethod ?
-        n.callMethod.apply(n,arguments) : n.queue.push(arguments);
+      if (f.fbq) return;
+      n = f.fbq = function(){
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
       };
-      if(!f._fbq) f._fbq=n;
-      n.push=n; n.loaded=!0; n.version='2.0';
-      n.queue=[];
-      t=b.createElement(e); t.async=!0;
-      t.src=v;
-      s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s);
+      if (!f._fbq) f._fbq = n;
+      n.push = n; n.loaded = !0; n.version = '2.0';
+      n.queue = [];
+      t = b.createElement(e); t.async = !0;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s);
     })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
 
     if (typeof fbq === 'function') {
@@ -4339,6 +4340,35 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
       console.warn('Meta event error', e);
     }
   }
+
+  // ---------- 0) PageView when main CTA button is actually viewed ----------
+  (function trackPageViewOnCTA() {
+    var btn = document.querySelector('.kfplan-btn');
+    if (!btn) return;
+
+    var sent = false;
+
+    function fireOnce() {
+      if (sent) return;
+      sent = true;
+      metaEvent('PageView');
+    }
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0) {
+            fireOnce();
+            io.disconnect();
+          }
+        });
+      }, { threshold: 0.25 });
+      io.observe(btn);
+    } else {
+      // Fallback: assume CTA becomes visible shortly after load
+      setTimeout(fireOnce, 1500);
+    }
+  })();
 
   // ---------- 1) ViewContent when form is actually viewed ----------
   (function trackFormViewContent() {
@@ -4372,46 +4402,20 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     }
   })();
 
-  // ---------- 2) Lead after successful form save ----------
-  (function trackLeadOnFormSuccess() {
-    var form = document.getElementById('kfJoinInfoForm');
-    if (!form || !form.parentNode) return;
-
-    var parent = form.parentNode;
-    var leadSent = false;
-
-    var mo = new MutationObserver(function() {
-      if (leadSent) return;
-      var formStillThere = document.getElementById('kfJoinInfoForm');
-      if (formStillThere) return;
-
-      var orderBox = document.querySelector('.kf-order-wrapper');
-      if (orderBox) {
-        leadSent = true;
-        metaEvent('Lead', {
-          content_name: 'Membership Registration Complete',
-          step: 'form_submit_success'
-        });
-        mo.disconnect();
-      }
-    });
-
-    mo.observe(parent, { childList: true, subtree: true });
-  })();
-
-  // ---------- 3) InitiateCheckout when "Confirm & Pay" is clicked ----------
-  (function trackInitiateCheckout() {
+  // ---------- 2) Lead when join form is submitted ("Submit Details & Continue") ----------
+  (function trackLeadOnFormSubmit() {
     var sent = false;
 
-    document.addEventListener('click', function(evt) {
+    document.addEventListener('submit', function(e) {
       if (sent) return;
-      var btn = evt.target && evt.target.closest && evt.target.closest('.kf-primary-btn');
-      if (!btn) return;
+      var form = e.target;
+      if (!form || form.id !== 'kfJoinInfoForm') return;
 
       sent = true;
-      metaEvent('InitiateCheckout', {
-        content_name: 'Membership Checkout Initiated',
-        step: 'confirm_and_pay_click'
+      metaEvent('Lead', {
+        content_name: 'Membership Lead',
+        content_type: 'membership_registration',
+        step: 'submit_details_continue'
       });
     }, true);
   })();
@@ -4419,7 +4423,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   // Helper: extract total value (number) from nearest order wrapper
   function extractOrderTotalValueFromDom(node) {
     try {
-      var wrapper = node.closest && node.closest('.kf-order-wrapper');
+      var wrapper = node && node.closest && node.closest('.kf-order-wrapper');
       if (!wrapper) {
         wrapper = document.querySelector('.kf-order-wrapper');
         if (!wrapper) return null;
@@ -4455,7 +4459,71 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     }
   }
 
-  // ---------- 4) Purchase when paid notice / Activate Membership appears ----------
+  // ---------- 3) AddToCart when order summary (.kf-order-wrapper) appears ----------
+  (function trackAddToCartOnOrderSummary() {
+    var sent = false;
+
+    function scanForOrderBox(node) {
+      if (sent || !node || node.nodeType !== 1) return;
+
+      var box = node.matches && node.matches('.kf-order-wrapper')
+        ? node
+        : (node.querySelector && node.querySelector('.kf-order-wrapper'));
+
+      if (!box) return;
+
+      sent = true;
+
+      var payload = {
+        content_name: 'Membership Add to Cart',
+        content_type: 'membership_registration',
+        step: 'order_summary_loaded'
+      };
+
+      var value = extractOrderTotalValueFromDom(box);
+      if (value != null) {
+        payload.value = value;
+        payload.currency = 'INR';
+      }
+
+      metaEvent('AddToCart', payload);
+    }
+
+    var mo = new MutationObserver(function(mutations) {
+      if (sent) {
+        mo.disconnect();
+        return;
+      }
+      mutations.forEach(function(m) {
+        if (!m.addedNodes) return;
+        Array.prototype.forEach.call(m.addedNodes, function(node) {
+          scanForOrderBox(node);
+        });
+      });
+    });
+
+    mo.observe(document.body, { childList: true, subtree: true });
+  })();
+
+  // ---------- 4) InitiateCheckout when "Confirm & Pay" is clicked ----------
+  (function trackInitiateCheckout() {
+    var sent = false;
+
+    document.addEventListener('click', function(evt) {
+      if (sent) return;
+      var btn = evt.target && evt.target.closest && evt.target.closest('.kf-primary-btn');
+      if (!btn) return;
+
+      sent = true;
+      metaEvent('InitiateCheckout', {
+        content_name: 'Membership Checkout Initiated',
+        content_type: 'membership_registration',
+        step: 'confirm_and_pay_click'
+      });
+    }, true);
+  })();
+
+  // ---------- 5) Purchase when paid notice / Activate Membership appears ----------
   (function trackPurchaseOnPaidNotice() {
     var purchaseSent = false;
 
@@ -4474,6 +4542,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 
         var payload = {
           content_name: 'Membership Purchase',
+          content_type: 'membership_registration',
           currency: 'INR',
           step: 'order_paid_notice'
         };
@@ -4482,7 +4551,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
           payload.value = value;
         }
 
-        // 🔴 Use shared event_id if available (for dedup with CAPI)
+        // Use shared event_id if available (for dedup with CAPI)
         var eventId = null;
         try {
           if (window.__KF_META_EVENT_ID) {
@@ -4513,26 +4582,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   })();
 
 })();
- // 🔴 AddToCart when form is submitted ("Submit Details & Continue")
-  (function trackAddToCartOnFormSubmit() {
-    var form = document.getElementById('kfJoinInfoForm');
-    if (!form) return;
 
-    var sent = false;
-
-    form.addEventListener('submit', function () {
-      if (sent) return;
-      sent = true;
-
-      metaEvent('AddToCart', {
-        content_name: 'Membership Add to Cart',
-        content_type: 'membership_registration',
-        step: 'submit_details_continue',
-        value: 1999,
-        currency: 'INR'
-      });
-    });
-  })();
 </script>
 
 </body>
