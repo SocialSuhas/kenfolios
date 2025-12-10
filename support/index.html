@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Support — Coming Soon</title>
+
+  <!-- Prevent indexing by search engines -->
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="googlebot" content="noindex, nofollow" />
+  <meta name="bingbot" content="noindex, nofollow" />
+
+  <!-- Basic page theming -->
+  <meta name="theme-color" content="#E11D2E" />
+
+  <!-- Simple favicon (SVG data URI) -->
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%25%22 height=%22100%25%22 rx=%2216%22 fill=%22%23E11D2E%22/></svg>'>
+
+  <!-- Styles -->
+  <style>
+    :root{
+      --brand: #E11D2E;
+      --bg-1: rgba(225,29,46,0.06);
+      --card-bg: white;
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(800px 400px at 10% 10%, rgba(225,29,46,0.08), transparent),
+        linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,250,251,1) 100%);
+      padding:28px;
+      color:#0f172a;
+    }
+
+    .wrap{
+      max-width:1100px;
+      width:100%;
+      border-radius:20px;
+      padding:28px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:24px;
+      box-shadow: 0 10px 30px rgba(12,18,27,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.95));
+      align-items:center;
+      backdrop-filter: blur(6px);
+      overflow:hidden;
+    }
+
+    /* Responsive */
+    @media (max-width:920px){
+      .wrap{ grid-template-columns: 1fr; padding:20px; gap:18px;}
+    }
+
+    .left{
+      padding:18px 24px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      font-weight:600;
+      color:var(--brand);
+      margin-bottom:12px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      font-size:12px;
+    }
+    .headline{
+      font-size:28px;
+      line-height:1.06;
+      margin:0 0 12px 0;
+      font-weight:700;
+      color:#0b1220;
+    }
+    .lead{
+      color:var(--muted);
+      margin:0 0 18px 0;
+      font-size:15px;
+    }
+
+    .features{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .pill{
+      background:var(--bg-1);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:600;
+      font-size:13px;
+      color:var(--brand);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .community{
+      margin-top:18px;
+    }
+    .community p{ margin:0 0 12px 0; color:var(--muted) }
+
+    .groups{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
+    }
+    @media (max-width:560px){ .groups{ grid-template-columns: 1fr; } }
+
+    .group-card{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px;
+      border-radius:12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(249,250,251,0.9));
+      border:1px solid rgba(13,18,25,0.04);
+      cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease;
+      text-decoration:none;
+      color:inherit;
+    }
+    .group-card:hover{ transform:translateY(-6px); box-shadow:0 8px 20px rgba(12,18,27,0.08) }
+
+    .group-icon{
+      width:44px; height:44px; border-radius:10px;
+      background: linear-gradient(180deg, var(--brand), #b1131b);
+      color:white; display:inline-flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:16px;
+    }
+
+    .group-title{ font-weight:700; font-size:14px }
+    .group-sub{ font-size:12px; color:var(--muted) }
+
+    .right{
+      padding:18px;
+      border-radius:12px;
+      background: linear-gradient(180deg, rgba(225,29,46,0.03), rgba(225,29,46,0.01));
+      border:1px solid rgba(225,29,46,0.06);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:stretch;
+    }
+
+    .support-card{
+      padding:14px;
+      border-radius:12px;
+      background:var(--card-bg);
+      box-shadow: 0 6px 18px rgba(12,18,27,0.04);
+      border:1px solid rgba(12,18,27,0.03);
+    }
+    .support-card h4{ margin:0 0 6px 0; font-size:15px }
+    .support-card p{ margin:0; color:var(--muted); font-size:13px }
+
+    .contact-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-top:12px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      border:0;
+      box-shadow: 0 6px 18px rgba(225,29,46,0.12);
+    }
+    .btn-primary{
+      background: linear-gradient(90deg, var(--brand), #b1131b);
+      color:white;
+    }
+    .btn-ghost{
+      background:transparent;
+      border:1px solid rgba(12,18,27,0.06);
+      color:#0b1220;
+    }
+
+    .small-muted{ font-size:12px; color:var(--muted) }
+
+    /* Decorative SVG area */
+    .visual{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:240px;
+      max-height:360px;
+    }
+    .logo-plate{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .logo-mark{
+      width:48px; height:48px; border-radius:10px;
+      background: linear-gradient(180deg, var(--brand), #b1131b);
+      display:inline-flex; align-items:center; justify-content:center;
+      color:white; font-weight:800; font-size:18px;
+      box-shadow: 0 6px 18px rgba(225,29,46,0.12);
+    }
+
+    footer{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+    }
+
+    .disclaimer{
+      background: linear-gradient(90deg, rgba(13,18,27,0.02), transparent);
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:13px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap" role="main" aria-labelledby="support-heading">
+    <section class="left" aria-hidden="false">
+      <div class="logo-plate" aria-hidden="true">
+        <div class="logo-mark" aria-hidden="true">KF</div>
+        <div>
+          <div style="font-weight:800; font-size:16px; line-height:1">KenFolios Support</div>
+          <div style="font-size:13px; color:var(--muted)">Temporary support landing</div>
+        </div>
+      </div>
+
+      <div class="eyebrow">We're updating support</div>
+      <h1 id="support-heading" class="headline">A better support experience is on the way</h1>
+      <p class="lead">We're building a more helpful, easier-to-use support area. While we finish it, our community is ready to help — moderators and members can answer common questions quickly.</p>
+
+      <div class="features" aria-hidden="true">
+        <span class="pill">Live community help</span>
+        <span class="pill">Moderators & admins</span>
+        <span class="pill">Faster responses</span>
+      </div>
+
+      <div class="community" aria-labelledby="community-heading">
+        <h3 id="community-heading" style="margin:14px 0 8px 0; font-size:16px">Join community help</h3>
+        <p>Use our community groups for support and tips. Moderators and experienced members monitor these spaces — drop a message and they'll help you out.</p>
+
+        <div class="groups" role="list">
+          <!-- Replace href="#" with actual group links -->
+          <a class="group-card" role="listitem" href="#" onclick="openLink(event, 'https://t.me/your-telegram-group')">
+            <div class="group-icon">TG</div>
+            <div>
+              <div class="group-title">Telegram — Community</div>
+              <div class="group-sub">Active moderators & quick replies</div>
+            </div>
+          </a>
+
+          <a class="group-card" role="listitem" href="#" onclick="openLink(event, 'https://chat.whatsapp.com/your-whatsapp-link')">
+            <div class="group-icon" style="background:linear-gradient(180deg,#0f766e, #085f55)">WA</div>
+            <div>
+              <div class="group-title">WhatsApp — Support Group</div>
+              <div class="group-sub">Peer help & announcements</div>
+            </div>
+          </a>
+
+          <a class="group-card" role="listitem" href="#" onclick="openLink(event, 'https://discord.gg/your-discord')">
+            <div class="group-icon" style="background:linear-gradient(180deg,#7c3aed,#5b21b6)">DC</div>
+            <div>
+              <div class="group-title">Discord — Discussion</div>
+              <div class="group-sub">Searchable threads & specialists</div>
+            </div>
+          </a>
+
+          <a class="group-card" role="listitem" href="#" onclick="openLink(event, 'https://community.yoursite.com')">
+            <div class="group-icon" style="background:linear-gradient(180deg,#0ea5a4,#0b7285)">FG</div>
+            <div>
+              <div class="group-title">Forum — Knowledge base</div>
+              <div class="group-sub">Archived Q&A and guides</div>
+            </div>
+          </a>
+        </div>
+
+        <div style="margin-top:14px;">
+          <p class="small-muted">If you need private help, email <strong><a href="mailto:support@yoursite.com">support@yoursite.com</a></strong> or use the in-app contact form (when available).</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right" aria-label="Support summary and status">
+      <div class="visual" role="img" aria-label="Support coming soon illustration">
+        <!-- Decorative friendly SVG illustration (inlined) -->
+        <svg width="320" height="240" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="0" y="0" width="640" height="480" rx="24" fill="url(#g1)"/>
+          <g transform="translate(80,60)">
+            <rect x="0" y="0" width="320" height="210" rx="18" fill="white" opacity="0.96"/>
+            <path d="M28 46h264v6H28z" fill="#F3F4F6"/>
+            <circle cx="48" cy="108" r="36" fill="#FEE2E2"/>
+            <path d="M120 96c0 26-20 48-44 48s-44-22-44-48 20-48 44-48 44 22 44 48z" fill="#FFEDEF"/>
+            <rect x="140" y="36" width="140" height="32" rx="8" fill="#FEF2F2"/>
+            <rect x="140" y="76" width="120" height="18" rx="8" fill="#FFF7F7"/>
+            <rect x="140" y="102" width="180" height="16" rx="8" fill="#FFF7F7"/>
+          </g>
+          <defs>
+            <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stop-color="#fff"/>
+              <stop offset="1" stop-color="#fff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="support-card">
+        <h4>What to expect</h4>
+        <p>We are rebuilding the support experience to include improved search, ticketing, and richer guide articles. We're prioritizing speed and clearer self-service flows.</p>
+      </div>
+
+      <div class="support-card">
+        <h4>Need quicker help?</h4>
+        <p class="small-muted">Join one of the community groups above — moderators and experienced members typically respond faster than email for common issues.</p>
+
+        <div class="contact-row" style="margin-top:12px;">
+          <button class="btn btn-primary" onclick="openLink(event,'mailto:support@yoursite.com')">Email Support</button>
+          <button class="btn btn-ghost" onclick="openLink(event,'#')">Open Community</button>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <strong>Note:</strong> This page is temporary and intentionally not indexed by search engines. Replace the group links and support email in the source with your real links.
+      </div>
+
+      <footer>
+        <div class="small-muted">© <span id="year"></span> KenFolios</div>
+        <div class="small-muted">Support ETA: <em>Coming soon</em></div>
+      </footer>
+    </aside>
+  </main>
+
+  <script>
+    // small helpers
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    function openLink(event, url){
+      event.preventDefault();
+      // if it's a mailto or anchor for same page just open normally
+      try {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch(e) {
+        location.href = url;
+      }
+    }
+
+    // Extra: ensure crawlers that ignore meta tags are discouraged via <link rel="canonical" disabled>
+    // (note: true crawler blocking should be done in HTTP headers / robots.txt for full effect)
+    // We add a comment for devs to also add server header: X-Robots-Tag: noindex, nofollow
+  </script>
+</body>
+</html>
