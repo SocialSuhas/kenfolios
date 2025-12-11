@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reactivate your membership — KenFolios / VStreet</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --accent: #E11D2E;
+      --bg: #0f1724;
+      --card: #0b1220;
+      --muted: #9aa4b2;
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, #081025 0%, #07121a 50%), radial-gradient(800px 400px at 10% 10%, rgba(225,29,46,0.06), transparent 10%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+    }
+
+    .container{
+      width:100%;
+      max-width:920px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:28px;
+      align-items:center;
+    }
+
+    .brand{
+      padding:32px;
+    }
+
+    .hero{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.03);
+      border-radius: var(--radius);
+      padding:36px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+    }
+
+    h1{
+      margin:0 0 8px 0;
+      font-size:28px;
+      line-height:1.05;
+      letter-spacing:-0.2px;
+      color: #ffffff;
+    }
+    p.lead{
+      margin:0 0 18px 0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border-radius:12px;
+      padding:20px;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    form{display:flex;flex-direction:column;gap:12px}
+
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    input[type=text], input[type=email]{
+      width:100%;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.06);
+      background:transparent;
+      color:inherit;
+      outline:none;
+      font-size:15px;
+      transition:box-shadow .12s, border-color .12s;
+    }
+    input:focus{box-shadow:0 6px 18px rgba(225,29,46,0.08);border-color:var(--accent)}
+
+    .hint{font-size:13px;color:var(--muted)}
+
+    .actions{display:flex;gap:12px;align-items:center;margin-top:6px}
+    button.cta{
+      background:var(--accent);
+      color:white;
+      border:none;
+      padding:12px 18px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow: 0 8px 20px rgba(225,29,46,0.18);
+      transition:transform .08s ease, box-shadow .12s;
+    }
+    button.cta:active{transform:translateY(1px)}
+
+    button.ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.03);
+      padding:10px 14px;border-radius:10px;cursor:pointer
+    }
+
+    .note{font-size:13px;color:var(--muted);margin-top:8px}
+
+    .side-visual{
+      padding:32px;
+      display:flex;flex-direction:column;gap:18px;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:600;color:var(--accent);border:1px solid rgba(225,29,46,0.08)
+    }
+
+    .illustration{
+      width:100%;max-width:260px;height:190px;border-radius:12px;background:linear-gradient(180deg, rgba(225,29,46,0.12), rgba(225,29,46,0.02));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,0.02)
+    }
+
+    .success{display:none;padding:18px;border-radius:10px;background:linear-gradient(180deg, rgba(16,185,129,0.06), rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.14);color:#a8f7d2}
+
+    .footer{margin-top:14px;font-size:13px;color:var(--muted);}
+
+    @media (max-width:880px){
+      .container{grid-template-columns:1fr;}
+      .side-visual{order:-1}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="brand">
+        <div class="badge">Re-activate • Members before 4 Dec 2025</div>
+        <h1>We miss you — ready to come back?</h1>
+        <p class="lead">On <strong>October 25, 2025</strong> we began moving our central community groups from WhatsApp to Telegram, and the migration was completed w.e.f. <strong>December 4, 2025</strong>. If you registered with us before <strong>December 4, 2025</strong> you can quickly re-activate your membership by confirming your email below — we’ll verify your details and email the next steps.<br><br>If you <strong>paid for KenFolios Business Community membership before October 4, 2025</strong> and missed earlier invitations or emails to join the Telegram community, use this form to request re-activation. Existing paid members who submit this form will receive the Telegram activation link by email if their account is eligible.</p>
+
+        <div class="card" aria-live="polite">
+          <form id="reactivateForm" autocomplete="on" novalidate>
+            <div>
+              <label for="name">Name</label>
+              <input id="name" name="name" type="text" placeholder="Your full name" />
+            </div>
+
+            <div>
+              <label for="email">Email <span aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" placeholder="you@example.com" required />
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="cta">Re-activate</button>
+              <button type="button" class="ghost" id="clearBtn">Clear</button>
+            </div>
+
+            <div class="note">We collect only the minimum information (name + email) to keep the process quick. If your account is eligible we’ll send a confirmation and — for paid members — the Telegram activation link to your email. Backend verification and re-activation are handled securely by our worker.</div>
+          </form>
+
+          <div id="success" class="success" role="status">
+            🎉 Thanks — we’ve received your request. If your account matches our records we’ll email next steps.
+          </div>
+        </div>
+
+        <div class="footer">Prefer phone or other help? Reply to any old mail or contact support@kenfolios.example</div>
+      </div>
+    </div>
+
+    <aside class="side-visual">
+      <div class="illustration" aria-hidden="true">
+        RE-ACTIVATE
+      </div>
+      <div style="max-width:300px">
+        <h3 style="margin:0 0 6px 0">Fast — private — secure</h3>
+        <p style="margin:0;color:var(--muted);font-size:14px">We only collect the minimum (email) to re-establish your membership. Backend verification happens on our worker.</p>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    (function(){
+      const form = document.getElementById('reactivateForm');
+      const success = document.getElementById('success');
+      const clearBtn = document.getElementById('clearBtn');
+
+      clearBtn.addEventListener('click', () => {
+        form.reset();
+        success.style.display = 'none';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        success.style.display = 'none';
+
+        const email = document.getElementById('email').value.trim();
+        const name = document.getElementById('name').value.trim();
+
+        if(!email){
+          alert('Please enter your email — it\'s required.');
+          document.getElementById('email').focus();
+          return;
+        }
+
+        // Basic email pattern check
+        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if(!pattern.test(email)){
+          alert('Please enter a valid email address.');
+          document.getElementById('email').focus();
+          return;
+        }
+
+        // Show a quick optimistic UX change
+        const submitBtn = form.querySelector('button.cta');
+        const oldText = submitBtn.textContent;
+        submitBtn.textContent = 'Sending...';
+        submitBtn.disabled = true;
+
+        try{
+          // TODO: replace the URL below with the worker endpoint that verifies membership
+          const resp = await fetch('/api/reactivate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email })
+          });
+
+          if(resp.ok){
+            success.style.display = 'block';
+            form.reset();
+          } else {
+            const json = await resp.json().catch(()=>({message:'Server error'}));
+            alert(json.message || 'Unable to submit — please try again later.');
+          }
+        }catch(err){
+          console.error(err);
+          alert('Network error — check your connection and try again.');
+        }finally{
+          submitBtn.textContent = oldText;
+          submitBtn.disabled = false;
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
