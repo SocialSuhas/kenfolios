@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Legacy Members - CSV/JSON Uploader</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body{font-family:system-ui, -apple-system, Arial; max-width:900px; margin:22px auto; padding:10px}
+    h1{font-size:20px; margin:0 0 12px}
+    label{display:block; margin:8px 0 4px}
+    input[type=text], input[type=number], select { width:100%; padding:8px; box-sizing:border-box }
+    button{padding:10px 14px; margin-top:10px}
+    pre{background:#f6f7fb;padding:12px;border-radius:6px;overflow:auto}
+    .flex{display:flex;gap:8px}
+    .muted{color:#666;font-size:13px}
+    .progress-bar{height:14px;background:#eee;border-radius:7px;overflow:hidden}
+    .progress-fill{height:100%; width:0%; transition:width .2s ease}
+    .warn{color: #8a2b0a; font-weight:600}
+    .success{color: #0a6a2b; font-weight:600}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    td,th{border:1px solid #ddd;padding:6px;font-size:13px}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>Legacy Members — Upload CSV / JSON</h1>
+  <p class="muted">This page will parse a CSV (header row required with <code>name</code> and <code>email</code>) or a JSON array and upload it in chunks to your Worker.</p>
+
+  <label>Worker upload URL</label>
+  <input id="workerUrl" type="text" value="https://legacy-member-import.ksn-nvl.workers.dev/l" />
+
+  <label>Upload file (CSV or JSON)</label>
+  <input id="file" type="file" accept=".csv,application/json,text/csv" />
+
+  <div class="flex" style="margin-top:8px">
+    <div style="flex:1">
+      <label>Chunk size (records per request)</label>
+      <input id="chunkSize" type="number" value="500" min="10" />
+    </div>
+    <div style="width:220px">
+      <label>Preview rows</label>
+      <select id="previewCount"><option>5</option><option selected>10</option><option>20</option></select>
+    </div>
+  </div>
+
+  <div style="margin-top:10px" class="flex">
+    <button id="parseBtn">Parse & Preview</button>
+    <button id="uploadBtn" disabled>Upload (disabled until parse)</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <div id="status" class="muted">No file parsed yet.</div>
+    <div style="margin-top:8px">
+      <div class="progress-bar"><div id="progressFill" cla
