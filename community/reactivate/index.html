@@ -143,7 +143,7 @@
       <div class="brand">
         <div class="badge">Re-activate • Members before 4 Dec 2025</div>
         <h1>We miss you — ready to come back?</h1>
-        <p class="lead">On <strong>October 25, 2025</strong> we began moving our central community groups from WhatsApp to Telegram, and the migration was completed w.e.f. <strong>December 4, 2025</strong>. If you registered with us before <strong>December 4, 2025</strong> you can quickly re-activate your membership by confirming your email below — we’ll verify your details and email the next steps.<br><br>If you <strong>paid for KenFolios Business Community membership before October 4, 2025</strong> and missed earlier invitations or emails to join the Telegram community, use this form to request re-activation. Existing paid members who submit this form will receive the Telegram activation link by email if their account is eligible.</p>
+        <p class="lead">On <strong>October 25, 2025</strong> we began moving our central community groups from WhatsApp to Telegram, and the migration was completed w.e.f. <strong>December 4, 2025</strong>. If you registered with us before <strong>December 4, 2025</strong> you can quickly re-activate your membership by confirming your email below — we’ll verify your details and email the next steps.<br><br>If you <strong>paid for KenFolios Business Community membership before October 4, 2025</strong> and missed earlier invitations or emails to join the Telegram community, use this form to request re-activation. Existing paid members who submit this form will receive the Telegram activation link by email if their account is eligible.<br><br>WhatsApp remains our preferred platform for **city-wise, industry-wise, and interest-based groups**, as those groups continue to function separately and actively.</p>
 
         <div class="card" aria-live="polite">
           <form id="reactivateForm" autocomplete="on" novalidate>
@@ -170,7 +170,7 @@
           </div>
         </div>
 
-        <div class="footer">Prefer phone or other help? Reply to any old mail or contact support@kenfolios.example</div>
+        <div class="footer">Prefer phone or other help? Reply to any old mail or contact </div>
       </div>
     </div>
 
@@ -224,8 +224,8 @@
         submitBtn.disabled = true;
 
         try{
-          // TODO: replace the URL below with the worker endpoint that verifies membership
-          const resp = await fetch('/api/reactivate', {
+          // 
+          const resp = await fetch('', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email })
