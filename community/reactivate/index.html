@@ -1,252 +1,387 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta name="robots" content="noindex, nofollow" />
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Reactivate your membership — KenFolios / VStreet</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Page should not be indexed until SEO is ready -->
+  <meta name="robots" content="noindex,nofollow" />
+  <title>KenFolios — Reactivate</title>
+
+  <!-- Theme color -->
+  <meta name="theme-color" content="#E11D2E" />
+
   <style>
     :root{
-      --accent: #E11D2E;
-      --bg: #0f1724;
-      --card: #0b1220;
-      --muted: #9aa4b2;
-      --radius: 14px;
+      --brand:#E11D2E;
+      --bg:#fafafa;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --radius:14px;
+      --glass: rgba(255,255,255,0.6);
+      --max-width:880px;
+      --shadow: 0 8px 30px rgba(16,24,40,0.08);
+      --transition: 180ms cubic-bezier(.2,.9,.3,1);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
+
+    html,body{
+      height:100%;
       margin:0;
-      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: linear-gradient(180deg, #081025 0%, #07121a 50%), radial-gradient(800px 400px at 10% 10%, rgba(225,29,46,0.06), transparent 10%);
-      color:#e6eef6;
+      background:
+        radial-gradient(1200px 400px at 10% 10%, rgba(225,29,46,0.06), transparent 8%),
+        radial-gradient(900px 300px at 90% 90%, rgba(225,29,46,0.03), transparent 6%),
+        var(--bg);
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
+      color: #0f172a;
+      line-height:1.35;
+    }
+
+    .wrap{
+      min-height:100vh;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:32px;
-    }
-
-    .container{
-      width:100%;
-      max-width:920px;
-      display:grid;
-      grid-template-columns: 1fr 420px;
-      gap:28px;
-      align-items:center;
-    }
-
-    .brand{
-      padding:32px;
-    }
-
-    .hero{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.03);
-      border-radius: var(--radius);
-      padding:36px;
-      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
-    }
-
-    h1{
-      margin:0 0 8px 0;
-      font-size:28px;
-      line-height:1.05;
-      letter-spacing:-0.2px;
-      color: #ffffff;
-    }
-    p.lead{
-      margin:0 0 18px 0;
-      color:var(--muted);
-      font-size:15px;
+      padding:40px 20px;
+      box-sizing:border-box;
     }
 
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
-      border-radius:12px;
-      padding:20px;
-      border: 1px solid rgba(255,255,255,0.03);
+      width:100%;
+      max-width:var(--max-width);
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:0;
     }
 
-    form{display:flex;flex-direction:column;gap:12px}
+    /* Left panel: info */
+    .panel-left{
+      padding:44px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:18px;
+      min-width:260px;
+    }
 
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-    input[type=text], input[type=email]{
+    .logo {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+      color:inherit;
+    }
+    .brand-mark{
+      width:46px;
+      height:46px;
+      border-radius:10px;
+      display:inline-grid;
+      place-items:center;
+      font-weight:700;
+      color:white;
+      background: linear-gradient(135deg, var(--brand), #b30e18);
+      box-shadow: 0 6px 18px rgba(225,29,46,0.18);
+      font-family: ui-rounded, Inter, system-ui;
+      font-size:18px;
+      letter-spacing:0.4px;
+    }
+    .brand-text{
+      font-size:18px;
+      font-weight:700;
+      letter-spacing:0.2px;
+    }
+
+    h1{
+      margin:0;
+      font-size:28px;
+      line-height:1.05;
+    }
+    p.lead{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+      max-width:46ch;
+    }
+
+    .badge{
+      display:inline-block;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(225,29,46,0.08);
+      color:var(--brand);
+      font-weight:600;
+      width:max-content;
+    }
+
+    /* Right panel: form */
+    .panel-right{
+      padding:36px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9));
+    }
+
+    form.card-form{
       width:100%;
+      max-width:380px;
+      background:var(--card);
+      border-radius:12px;
+      padding:22px;
+      box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+      border:1px solid rgba(15,23,42,0.03);
+    }
+
+    .form-row{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:14px;
+    }
+
+    label{
+      font-size:13px;
+      color:#0f172a;
+      font-weight:600;
+    }
+
+    input[type="text"],
+    input[type="email"]{
+      appearance:none;
+      border:1px solid #e6e9ef;
       padding:12px 14px;
       border-radius:10px;
-      border:1px solid rgba(255,255,255,0.06);
-      background:transparent;
-      color:inherit;
-      outline:none;
       font-size:15px;
-      transition:box-shadow .12s, border-color .12s;
+      outline:none;
+      transition:box-shadow var(--transition), border-color var(--transition);
     }
-    input:focus{box-shadow:0 6px 18px rgba(225,29,46,0.08);border-color:var(--accent)}
+    input:focus{
+      border-color: rgba(225,29,46,0.7);
+      box-shadow: 0 6px 20px rgba(225,29,46,0.08);
+    }
 
-    .hint{font-size:13px;color:var(--muted)}
+    .hint{
+      font-size:13px;
+      color:var(--muted);
+    }
 
-    .actions{display:flex;gap:12px;align-items:center;margin-top:6px}
-    button.cta{
-      background:var(--accent);
+    .actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:6px;
+    }
+
+    button[type="submit"]{
+      background: linear-gradient(90deg, var(--brand), #c31725);
       color:white;
-      border:none;
-      padding:12px 18px;
+      border:0;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      font-size:15px;
+      box-shadow: 0 10px 24px rgba(225,29,46,0.12);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    button[type="submit"]:active{ transform:translateY(1px) }
+    button[type="submit"]:hover{ box-shadow: 0 14px 32px rgba(225,29,46,0.16) }
+
+    button[type="button"].ghost{
+      background:transparent;
+      border:1px solid rgba(15,23,42,0.06);
+      padding:10px 12px;
       border-radius:10px;
       font-weight:600;
       cursor:pointer;
-      box-shadow: 0 8px 20px rgba(225,29,46,0.18);
-      transition:transform .08s ease, box-shadow .12s;
     }
-    button.cta:active{transform:translateY(1px)}
 
-    button.ghost{
-      background:transparent;
+    .small{
+      font-size:13px;
       color:var(--muted);
-      border:1px solid rgba(255,255,255,0.03);
-      padding:10px 14px;border-radius:10px;cursor:pointer
     }
 
-    .note{font-size:13px;color:var(--muted);margin-top:8px}
-
-    .side-visual{
-      padding:32px;
-      display:flex;flex-direction:column;gap:18px;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-    }
-    .badge{
-      display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:600;color:var(--accent);border:1px solid rgba(225,29,46,0.08)
+    .footer-note{
+      margin-top:12px;
+      font-size:13px;
+      color:var(--muted);
     }
 
-    .illustration{
-      width:100%;max-width:260px;height:190px;border-radius:12px;background:linear-gradient(180deg, rgba(225,29,46,0.12), rgba(225,29,46,0.02));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,0.02)
+    .success{
+      display:none;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:8px;
+      background: rgba(34,197,94,0.08);
+      color: #065f46;
+      font-weight:600;
+      font-size:14px;
     }
 
-    .success{display:none;padding:18px;border-radius:10px;background:linear-gradient(180deg, rgba(16,185,129,0.06), rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.14);color:#a8f7d2}
-
-    .footer{margin-top:14px;font-size:13px;color:var(--muted);}
-
+    /* Responsive */
     @media (max-width:880px){
-      .container{grid-template-columns:1fr;}
-      .side-visual{order:-1}
+      .card{
+        grid-template-columns:1fr;
+      }
+      .panel-left{
+        padding:28px;
+      }
+      .panel-right{
+        padding:26px;
+      }
+    }
+
+    @media (max-width:420px){
+      h1{ font-size:22px }
+      .brand-text{ font-size:16px }
+      .panel-left{ padding:20px }
+      .panel-right{ padding:18px }
+      form.card-form{ padding:16px }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="hero">
-      <div class="brand">
-        <div class="badge">Re-activate • Members before 4 Dec 2025</div>
-        <h1>We miss you — ready to come back?</h1>
-        <p class="lead">On <strong>October 25, 2025</strong> we began moving our central community groups from WhatsApp to Telegram, and the migration was completed w.e.f. <strong>December 4, 2025</strong>. If you registered with us before <strong>December 4, 2025</strong> you can quickly re-activate your membership by confirming your email below — we’ll verify your details and email the next steps.<br><br>If you <strong>paid for KenFolios Business Community membership before October 4, 2025</strong> and missed earlier invitations or emails to join the Telegram community, use this form to request re-activation. Existing paid members who submit this form will receive the Telegram activation link by email if their account is eligible.<br><br>WhatsApp remains our preferred platform for **city-wise, industry-wise, and interest-based groups**, as those groups continue to function separately and actively.</p>
+  <div class="wrap">
+    <main class="card" role="main" aria-labelledby="page-title">
+      <!-- LEFT: Info -->
+      <section class="panel-left" aria-label="Information">
+        <a class="logo" href="/" aria-label="KenFolios home">
+          <span class="brand-mark" aria-hidden="true">K</span>
+          <span class="brand-text">KenFolios</span>
+        </a>
 
-        <div class="card" aria-live="polite">
-          <form id="reactivateForm" autocomplete="on" novalidate>
-            <div>
-              <label for="name">Name</label>
-              <input id="name" name="name" type="text" placeholder="Your full name" />
-            </div>
-
-            <div>
-              <label for="email">Email <span aria-hidden="true">*</span></label>
-              <input id="email" name="email" type="email" placeholder="you@example.com" required />
-            </div>
-
-            <div class="actions">
-              <button type="submit" class="cta">Re-activate</button>
-              <button type="button" class="ghost" id="clearBtn">Clear</button>
-            </div>
-
-            <div class="note">We collect only the minimum information (name + email) to keep the process quick. If your account is eligible we’ll send a confirmation and — for paid members — the Telegram activation link to your email. Backend verification and re-activation are handled securely by our worker.</div>
-          </form>
-
-          <div id="success" class="success" role="status">
-            🎉 Thanks — we’ve received your request. If your account matches our records we’ll email next steps.
-          </div>
+        <div>
+          <span class="badge" aria-hidden="true">Reactivation</span>
         </div>
 
-        <div class="footer">Prefer phone or other help? Reply to any old mail or contact </div>
-      </div>
-    </div>
+        <h1 id="page-title">Welcome back — Reactivate your membership</h1>
 
-    <aside class="side-visual">
-      <div class="illustration" aria-hidden="true">
-        RE-ACTIVATE
-      </div>
-      <div style="max-width:300px">
-        <h3 style="margin:0 0 6px 0">Fast — private — secure</h3>
-        <p style="margin:0;color:var(--muted);font-size:14px">We only collect the minimum (email) to re-establish your membership. Backend verification happens on our worker.</p>
-      </div>
-    </aside>
+        <p class="lead">This form is for members who joined the KenFolios Business Community before <strong>4 Dec 2025</strong>. If your membership qualifies, enter your name and email below to request reactivation. No demo data will be submitted — only your name and email are required.</p>
+
+        <p class="footer-note"><strong>Preferred groups:</strong> WhatsApp remains our preferred medium for city, industry and interest-based groups.</p>
+      </section>
+
+      <!-- RIGHT: Form -->
+      <aside class="panel-right" aria-label="Reactivation form">
+        <form class="card-form" id="reactivateForm" autocomplete="off" novalidate>
+          <div class="form-row">
+            <label for="name">Full name</label>
+            <input id="name" name="name" type="text" inputmode="text" placeholder="Your full name" required aria-required="true" />
+            <span class="hint" id="nameHint">Please enter the name on your membership.</span>
+          </div>
+
+          <div class="form-row">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" inputmode="email" placeholder="you@example.com" required aria-required="true" />
+            <span class="hint" id="emailHint">We'll use this to find your membership record and reply.</span>
+          </div>
+
+          <div class="actions" role="group" aria-label="Form actions">
+            <button type="submit">Request Reactivation</button>
+            <button type="button" class="ghost" id="clearBtn">Clear</button>
+          </div>
+
+          <p class="small" style="margin-top:10px;">
+            We will only use this information to process your reactivation request. No demo or dummy data included.
+          </p>
+
+          <div class="success" id="successMsg" role="status" aria-live="polite"></div>
+        </form>
+      </aside>
+    </main>
   </div>
 
   <script>
     (function(){
       const form = document.getElementById('reactivateForm');
-      const success = document.getElementById('success');
+      const nameInput = document.getElementById('name');
+      const emailInput = document.getElementById('email');
+      const successMsg = document.getElementById('successMsg');
       const clearBtn = document.getElementById('clearBtn');
 
-      clearBtn.addEventListener('click', () => {
+      function showMessage(text, success=true){
+        successMsg.style.display = 'block';
+        successMsg.textContent = text;
+        successMsg.style.background = success ? 'rgba(34,197,94,0.08)' : 'rgba(225,29,46,0.06)';
+        successMsg.style.color = success ? '#065f46' : '#7f1d1d';
+      }
+
+      clearBtn.addEventListener('click', function(){
         form.reset();
-        success.style.display = 'none';
+        successMsg.style.display = 'none';
+        nameInput.focus();
       });
 
-      form.addEventListener('submit', async (e) => {
+      form.addEventListener('submit', async function(e){
         e.preventDefault();
-        success.style.display = 'none';
+        successMsg.style.display = 'none';
 
-        const email = document.getElementById('email').value.trim();
-        const name = document.getElementById('name').value.trim();
+        // Basic client validation
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
 
+        if(!name){
+          nameInput.focus();
+          showMessage('Please enter your full name.', false);
+          return;
+        }
         if(!email){
-          alert('Please enter your email — it\'s required.');
-          document.getElementById('email').focus();
+          emailInput.focus();
+          showMessage('Please enter a valid email address.', false);
+          return;
+        }
+        // Email simple pattern check
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if(!emailPattern.test(email)){
+          emailInput.focus();
+          showMessage('That email address looks invalid.', false);
           return;
         }
 
-        // Basic email pattern check
-        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if(!pattern.test(email)){
-          alert('Please enter a valid email address.');
-          document.getElementById('email').focus();
-          return;
-        }
-
-        // Show a quick optimistic UX change
-        const submitBtn = form.querySelector('button.cta');
-        const oldText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
+        // Disable inputs while submitting
+        const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
+        submitBtn.style.opacity = 0.9;
+        submitBtn.textContent = 'Sending...';
 
-        try{
-          // 
-          const resp = await fetch('', {
+        try {
+          // Default: POST to /api/reactivate (change to your endpoint)
+          const endpoint = '/api/reactivate'; // <-- replace with your Worker / server endpoint
+          const payload = { name, email, source: 'reactivate-page' };
+
+          // Try sending if the endpoint exists — it's tolerant: if 404 or network fails, we'll still show a helpful message.
+          const resp = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email })
+            body: JSON.stringify(payload),
           });
 
           if(resp.ok){
-            success.style.display = 'block';
+            showMessage('Thanks — your request has been submitted. We will contact you on the email provided.');
             form.reset();
+          } else if (resp.status === 404) {
+            // Backend not wired yet — show friendly fallback
+            showMessage('Request note: endpoint not found. Your inputs are validated locally. Wire the POST URL at /api/reactivate to process requests.', false);
           } else {
-            const json = await resp.json().catch(()=>({message:'Server error'}));
-            alert(json.message || 'Unable to submit — please try again later.');
+            const text = await resp.text().catch(()=>resp.statusText||'Unknown error');
+            showMessage('Submission failed: ' + text, false);
           }
-        }catch(err){
-          console.error(err);
-          alert('Network error — check your connection and try again.');
-        }finally{
-          submitBtn.textContent = oldText;
+        } catch (err) {
+          // Network failure or endpoint not reachable
+          showMessage('Could not reach server to submit. Your data is validated — please wire the POST endpoint or submit manually to your backend.', false);
+        } finally {
           submitBtn.disabled = false;
+          submitBtn.textContent = 'Request Reactivation';
         }
       });
-
     })();
   </script>
 </body>
