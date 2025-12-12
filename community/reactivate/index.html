@@ -3,386 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Page should not be indexed until SEO is ready -->
-  <meta name="robots" content="noindex,nofollow" />
-  <title>KenFolios — Reactivate</title>
-
-  <!-- Theme color -->
-  <meta name="theme-color" content="#E11D2E" />
-
+  <title>KenFolios — Reactivation</title>
   <style>
-    :root{
-      --brand:#E11D2E;
-      --bg:#fafafa;
-      --card:#ffffff;
-      --muted:#6b7280;
-      --radius:14px;
-      --glass: rgba(255,255,255,0.6);
-      --max-width:880px;
-      --shadow: 0 8px 30px rgba(16,24,40,0.08);
-      --transition: 180ms cubic-bezier(.2,.9,.3,1);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-
-    html,body{
-      height:100%;
-      margin:0;
-      background:
-        radial-gradient(1200px 400px at 10% 10%, rgba(225,29,46,0.06), transparent 8%),
-        radial-gradient(900px 300px at 90% 90%, rgba(225,29,46,0.03), transparent 6%),
-        var(--bg);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      color: #0f172a;
-      line-height:1.35;
-    }
-
-    .wrap{
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:40px 20px;
-      box-sizing:border-box;
-    }
-
-    .card{
-      width:100%;
-      max-width:var(--max-width);
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      display:grid;
-      grid-template-columns: 1fr 420px;
-      gap:0;
-    }
-
-    /* Left panel: info */
-    .panel-left{
-      padding:44px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:18px;
-      min-width:260px;
-    }
-
-    .logo {
-      display:flex;
-      align-items:center;
-      gap:12px;
-      text-decoration:none;
-      color:inherit;
-    }
-    .brand-mark{
-      width:46px;
-      height:46px;
-      border-radius:10px;
-      display:inline-grid;
-      place-items:center;
-      font-weight:700;
-      color:white;
-      background: linear-gradient(135deg, var(--brand), #b30e18);
-      box-shadow: 0 6px 18px rgba(225,29,46,0.18);
-      font-family: ui-rounded, Inter, system-ui;
-      font-size:18px;
-      letter-spacing:0.4px;
-    }
-    .brand-text{
-      font-size:18px;
-      font-weight:700;
-      letter-spacing:0.2px;
-    }
-
-    h1{
-      margin:0;
-      font-size:28px;
-      line-height:1.05;
-    }
-    p.lead{
-      margin:0;
-      color:var(--muted);
-      font-size:15px;
-      max-width:46ch;
-    }
-
-    .badge{
-      display:inline-block;
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      background: rgba(225,29,46,0.08);
-      color:var(--brand);
-      font-weight:600;
-      width:max-content;
-    }
-
-    /* Right panel: form */
-    .panel-right{
-      padding:36px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9));
-    }
-
-    form.card-form{
-      width:100%;
-      max-width:380px;
-      background:var(--card);
-      border-radius:12px;
-      padding:22px;
-      box-shadow: 0 6px 18px rgba(16,24,40,0.04);
-      border:1px solid rgba(15,23,42,0.03);
-    }
-
-    .form-row{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      margin-bottom:14px;
-    }
-
-    label{
-      font-size:13px;
-      color:#0f172a;
-      font-weight:600;
-    }
-
-    input[type="text"],
-    input[type="email"]{
-      appearance:none;
-      border:1px solid #e6e9ef;
-      padding:12px 14px;
-      border-radius:10px;
-      font-size:15px;
-      outline:none;
-      transition:box-shadow var(--transition), border-color var(--transition);
-    }
-    input:focus{
-      border-color: rgba(225,29,46,0.7);
-      box-shadow: 0 6px 20px rgba(225,29,46,0.08);
-    }
-
-    .hint{
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .actions{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      margin-top:6px;
-    }
-
-    button[type="submit"]{
-      background: linear-gradient(90deg, var(--brand), #c31725);
-      color:white;
-      border:0;
-      padding:10px 14px;
-      border-radius:10px;
-      font-weight:700;
-      cursor:pointer;
-      font-size:15px;
-      box-shadow: 0 10px 24px rgba(225,29,46,0.12);
-      transition: transform var(--transition), box-shadow var(--transition);
-    }
-    button[type="submit"]:active{ transform:translateY(1px) }
-    button[type="submit"]:hover{ box-shadow: 0 14px 32px rgba(225,29,46,0.16) }
-
-    button[type="button"].ghost{
-      background:transparent;
-      border:1px solid rgba(15,23,42,0.06);
-      padding:10px 12px;
-      border-radius:10px;
-      font-weight:600;
-      cursor:pointer;
-    }
-
-    .small{
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .footer-note{
-      margin-top:12px;
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    .success{
-      display:none;
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:8px;
-      background: rgba(34,197,94,0.08);
-      color: #065f46;
-      font-weight:600;
-      font-size:14px;
-    }
-
-    /* Responsive */
-    @media (max-width:880px){
-      .card{
-        grid-template-columns:1fr;
-      }
-      .panel-left{
-        padding:28px;
-      }
-      .panel-right{
-        padding:26px;
-      }
-    }
-
-    @media (max-width:420px){
-      h1{ font-size:22px }
-      .brand-text{ font-size:16px }
-      .panel-left{ padding:20px }
-      .panel-right{ padding:18px }
-      form.card-form{ padding:16px }
-    }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 28px; background:#f7f7f8; color:#111; }
+    .card { max-width:520px; margin:24px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    label { display:block; margin-bottom:8px; font-weight:600; font-size:14px; }
+    input[type="text"], input[type="email"] { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px; font-size:15px; }
+    button { background:#E11D2E; color:white; border:none; padding:12px 16px; border-radius:8px; font-weight:700; cursor:pointer; }
+    .hint { font-size:13px; color:#666; margin-bottom:12px; }
+    .msg { margin-top:14px; padding:12px; border-radius:8px; }
+    .msg.success { background:#e6ffef; color:#064e3b; border:1px solid #d1fae5; }
+    .msg.error { background:#fff1f2; color:#7f1d1d; border:1px solid #fecaca; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <main class="card" role="main" aria-labelledby="page-title">
-      <!-- LEFT: Info -->
-      <section class="panel-left" aria-label="Information">
-        <a class="logo" href="/" aria-label="KenFolios home">
-          <span class="brand-mark" aria-hidden="true">K</span>
-          <span class="brand-text">KenFolios</span>
-        </a>
+  <div class="card" role="main">
+    <h2>Reactivate your KenFolios membership</h2>
+    <p class="hint">Enter the email you used earlier; if eligible we will send an activation link to the email.</p>
 
-        <div>
-          <span class="badge" aria-hidden="true">Reactivation</span>
-        </div>
+    <form id="reactForm">
+      <label for="name">Full name (optional)</label>
+      <input id="name" name="name" type="text" placeholder="Your full name (optional)" />
 
-        <h1 id="page-title">Welcome back — Reactivate your membership</h1>
+      <label for="email">Email (required)</label>
+      <input id="email" name="email" type="email" placeholder="name@example.com" required />
 
-        <p class="lead">This form is for members who joined the KenFolios Business Community before <strong>4 Dec 2025</strong>. If your membership qualifies, enter your name and email below to request reactivation. No demo data will be submitted — only your name and email are required.</p>
+      <!-- Honeypot (bots will fill) -->
+      <div class="hidden" aria-hidden="true">
+        <label for="company">Company</label>
+        <input id="company" name="company" type="text" autocomplete="off" />
+      </div>
 
-        <p class="footer-note"><strong>Preferred groups:</strong> WhatsApp remains our preferred medium for city, industry and interest-based groups.</p>
-      </section>
+      <button type="submit">Request reactivation</button>
+    </form>
 
-      <!-- RIGHT: Form -->
-      <aside class="panel-right" aria-label="Reactivation form">
-        <form class="card-form" id="reactivateForm" autocomplete="off" novalidate>
-          <div class="form-row">
-            <label for="name">Full name</label>
-            <input id="name" name="name" type="text" inputmode="text" placeholder="Your full name" required aria-required="true" />
-            <span class="hint" id="nameHint">Please enter the name on your membership.</span>
-          </div>
-
-          <div class="form-row">
-            <label for="email">Email address</label>
-            <input id="email" name="email" type="email" inputmode="email" placeholder="you@example.com" required aria-required="true" />
-            <span class="hint" id="emailHint">We'll use this to find your membership record and reply.</span>
-          </div>
-
-          <div class="actions" role="group" aria-label="Form actions">
-            <button type="submit">Request Reactivation</button>
-            <button type="button" class="ghost" id="clearBtn">Clear</button>
-          </div>
-
-          <p class="small" style="margin-top:10px;">
-            We will only use this information to process your reactivation request. No demo or dummy data included.
-          </p>
-
-          <div class="success" id="successMsg" role="status" aria-live="polite"></div>
-        </form>
-      </aside>
-    </main>
+    <div id="output" aria-live="polite"></div>
   </div>
 
   <script>
-    (function(){
-      const form = document.getElementById('reactivateForm');
-      const nameInput = document.getElementById('name');
-      const emailInput = document.getElementById('email');
-      const successMsg = document.getElementById('successMsg');
-      const clearBtn = document.getElementById('clearBtn');
+    const form = document.getElementById('reactForm');
+    const out = document.getElementById('output');
 
-      function showMessage(text, success=true){
-        successMsg.style.display = 'block';
-        successMsg.textContent = text;
-        successMsg.style.background = success ? 'rgba(34,197,94,0.08)' : 'rgba(225,29,46,0.06)';
-        successMsg.style.color = success ? '#065f46' : '#7f1d1d';
+    function showMsg(text, type='success') {
+      out.innerHTML = '';
+      const el = document.createElement('div');
+      el.className = 'msg ' + (type === 'error' ? 'error' : 'success');
+      el.textContent = text;
+      out.appendChild(el);
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      out.innerHTML = '';
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const company = form.company.value || ''; // honeypot
+
+      if (!email || !email.includes('@')) {
+        showMsg('Please enter a valid email', 'error');
+        return;
       }
 
-      clearBtn.addEventListener('click', function(){
-        form.reset();
-        successMsg.style.display = 'none';
-        nameInput.focus();
-      });
+      // disable button
+      const btn = form.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
 
-      form.addEventListener('submit', async function(e){
-        e.preventDefault();
-        successMsg.style.display = 'none';
-
-        // Basic client validation
-        const name = nameInput.value.trim();
-        const email = emailInput.value.trim();
-
-        if(!name){
-          nameInput.focus();
-          showMessage('Please enter your full name.', false);
-          return;
+      try {
+        const resp = await fetch('/api/reactivate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, company })
+        });
+        const j = await resp.json().catch(() => ({}));
+        if (resp.ok && j.ok !== false) {
+          showMsg(j.message || 'If eligible, an activation link will be emailed to you.');
+          form.reset();
+        } else {
+          const message = j.message || 'Request failed. Please try again later.';
+          showMsg(message, 'error');
         }
-        if(!email){
-          emailInput.focus();
-          showMessage('Please enter a valid email address.', false);
-          return;
-        }
-        // Email simple pattern check
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if(!emailPattern.test(email)){
-          emailInput.focus();
-          showMessage('That email address looks invalid.', false);
-          return;
-        }
-
-        // Disable inputs while submitting
-        const submitBtn = form.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = 0.9;
-        submitBtn.textContent = 'Sending...';
-
-        try {
-          // Default: POST to /api/reactivate (change to your endpoint)
-          const endpoint = '/api/reactivate'; // <-- replace with your Worker / server endpoint
-          const payload = { name, email, source: 'reactivate-page' };
-
-          // Try sending if the endpoint exists — it's tolerant: if 404 or network fails, we'll still show a helpful message.
-          const resp = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-
-          if(resp.ok){
-            showMessage('Thanks — your request has been submitted. We will contact you on the email provided.');
-            form.reset();
-          } else if (resp.status === 404) {
-            // Backend not wired yet — show friendly fallback
-            showMessage('Request note: endpoint not found. Your inputs are validated locally. Wire the POST URL at /api/reactivate to process requests.', false);
-          } else {
-            const text = await resp.text().catch(()=>resp.statusText||'Unknown error');
-            showMessage('Submission failed: ' + text, false);
-          }
-        } catch (err) {
-          // Network failure or endpoint not reachable
-          showMessage('Could not reach server to submit. Your data is validated — please wire the POST endpoint or submit manually to your backend.', false);
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Request Reactivation';
-        }
-      });
-    })();
+      } catch (e) {
+        console.error(e);
+        showMsg('Network error. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Request reactivation';
+      }
+    });
   </script>
 </body>
 </html>
