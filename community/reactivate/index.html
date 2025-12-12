@@ -4,158 +4,94 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>KenFolios — Reactivation</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0f1724; /* deep navy */
-      --card:#0b1220; /* card background */
-      --muted:#94a3b8;
-      --accent:#ff4d57; /* brand red */
-      --success:#10b981;
-      --danger:#ef4444;
-      --glass: rgba(255,255,255,0.03);
-      --radius:12px;
-      --max-w:640px;
-    }
-    html,body{height:100%;}
-    body{
-      margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:linear-gradient(180deg,var(--bg),#051226 60%); color:#e6eef6; display:flex; align-items:center; justify-content:center; padding:28px;
-    }
-    .wrap{width:100%; max-width:var(--max-w);}    
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:var(--radius); padding:28px; box-shadow: 0 10px 30px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03);
-    }
-    h1{margin:0 0 8px; font-size:20px; font-weight:700; color:#fff}
-    p.lead{margin:0 0 18px; color:var(--muted); font-size:14px}
-
-    .field{margin-bottom:14px}
-    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:600}
-    input[type=text], input[type=email] {
-      width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:#eaf2ff; font-size:15px; outline:none; box-sizing:border-box;
-    }
-    input::placeholder{color:rgba(230,238,246,0.25)}
-
-    .row{display:flex; gap:12px}
-    .col{flex:1}
-
-    .hint{font-size:13px; color:var(--muted); margin-bottom:12px}
-
-    .actions{display:flex; gap:10px; align-items:center; margin-top:8px}
-    button.primary{
-      background:linear-gradient(90deg,var(--accent), #ff2b3a); border:none; color:white; padding:12px 18px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow: 0 6px 18px rgba(255,45,60,0.12);
-    }
-    button.primary[disabled]{opacity:0.6; cursor:not-allowed}
-
-    .msg{margin-top:16px; padding:12px; border-radius:10px; font-size:14px}
-    .msg.success{background:rgba(16,185,129,0.12); color:var(--success); border:1px solid rgba(16,185,129,0.18)}
-    .msg.error{background:rgba(239,68,68,0.08); color:var(--danger); border:1px solid rgba(239,68,68,0.12)}
-
-    .foot{font-size:13px; color:var(--muted); margin-top:12px}
-
-    /* small devices */
-    @media (max-width:520px){ .card{padding:18px} h1{font-size:18px} }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 28px; background:#f7f7f8; color:#111; }
+    .card { max-width:520px; margin:24px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    label { display:block; margin-bottom:8px; font-weight:600; font-size:14px; }
+    input[type="text"], input[type="email"] { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; margin-bottom:12px; font-size:15px; }
+    button { background:#E11D2E; color:white; border:none; padding:12px 16px; border-radius:8px; font-weight:700; cursor:pointer; }
+    .hint { font-size:13px; color:#666; margin-bottom:12px; }
+    .msg { margin-top:14px; padding:12px; border-radius:8px; }
+    .msg.success { background:#e6ffef; color:#064e3b; border:1px solid #d1fae5; }
+    .msg.error { background:#fff1f2; color:#7f1d1d; border:1px solid #fecaca; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" role="main" aria-labelledby="react-title">
-      <h1 id="react-title">Reactivate your KenFolios membership</h1>
-      <p class="lead">Enter the email you used earlier. If eligible, we'll email you a secure activation link.</p>
+  <div class="card" role="main">
+    <h2>Reactivate your KenFolios membership</h2>
+    <p class="hint">Enter the email you used earlier; if eligible we will send an activation link to the email.</p>
 
-      <form id="reactForm" novalidate>
-        <div class="field">
-          <label for="name">Full name <span aria-hidden="true" style="color:var(--muted); font-weight:600; font-size:12px">(optional)</span></label>
-          <input id="name" name="name" type="text" placeholder="Your full name" autocomplete="name" />
-        </div>
+    <form id="reactForm">
+      <label for="name">Full name (optional)</label>
+      <input id="name" name="name" type="text" placeholder="Your full name (optional)" />
 
-        <div class="field">
-          <label for="email">Email <span style="color:var(--danger)">*</span></label>
-          <input id="email" name="email" type="email" placeholder="name@example.com" autocomplete="email" required />
-        </div>
+      <label for="email">Email (required)</label>
+      <input id="email" name="email" type="email" placeholder="name@example.com" required />
 
-        <!-- Honeypot (bots will fill) -->
-        <div style="display:none" aria-hidden="true">
-          <label for="company">Company</label>
-          <input id="company" name="company" type="text" autocomplete="off" />
-        </div>
+      <!-- Honeypot (bots will fill) -->
+      <div class="hidden" aria-hidden="true">
+        <label for="company">Company</label>
+        <input id="company" name="company" type="text" autocomplete="off" />
+      </div>
 
-        <div class="actions">
-          <button id="submitBtn" class="primary" type="submit">Request reactivation</button>
-          <div id="spinner" aria-hidden="true" style="display:none">⏳</div>
-        </div>
+      <button type="submit">Request reactivation</button>
+    </form>
 
-        <div id="output" aria-live="polite"></div>
-        <div class="foot">We respect your privacy. Your email will only be used to verify membership.</div>
-      </form>
-    </div>
+    <div id="output" aria-live="polite"></div>
   </div>
 
   <script>
-    (function(){
-      const form = document.getElementById('reactForm');
-      const out = document.getElementById('output');
-      const btn = document.getElementById('submitBtn');
-      const spinner = document.getElementById('spinner');
+    const form = document.getElementById('reactForm');
+    const out = document.getElementById('output');
 
-      // If your worker is bound to same origin route (kenfolios.com/api/reactivate) keep as '/api/reactivate'.
-      // Otherwise set WORKER_URL to the full worker url.
-      const WORKER_URL = '/api/reactivate';
+    function showMsg(text, type='success') {
+      out.innerHTML = '';
+      const el = document.createElement('div');
+      el.className = 'msg ' + (type === 'error' ? 'error' : 'success');
+      el.textContent = text;
+      out.appendChild(el);
+    }
 
-      function showMsg(text, type='success'){
-        out.innerHTML = '';
-        const el = document.createElement('div');
-        el.className = 'msg ' + (type === 'error' ? 'error' : 'success');
-        el.textContent = text;
-        out.appendChild(el);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      out.innerHTML = '';
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const company = form.company.value || ''; // honeypot
+
+      if (!email || !email.includes('@')) {
+        showMsg('Please enter a valid email', 'error');
+        return;
       }
 
-      function clearMsg(){ out.innerHTML = ''; }
+      // disable button
+      const btn = form.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
 
-      function setLoading(v){
-        btn.disabled = v;
-        if(v){ spinner.style.display = 'inline-block'; btn.textContent = 'Processing...'; }
-        else { spinner.style.display = 'none'; btn.textContent = 'Request reactivation'; }
-      }
-
-      form.addEventListener('submit', async (ev) => {
-        ev.preventDefault(); clearMsg();
-        const name = form.name.value.trim();
-        const email = form.email.value.trim();
-        const company = form.company.value || '';
-
-        if(!email || !email.includes('@')){ showMsg('Please enter a valid email address.', 'error'); return; }
-
-        setLoading(true);
-        try{
-          const resp = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, company })
-          });
-
-          const j = await resp.json().catch(()=>({}));
-          if(resp.ok && j.ok !== false){
-            showMsg(j.message || 'If eligible, an activation link will be emailed to you.');
-            form.reset();
-          } else {
-            const message = j.message || 'Request failed. Please try again later.';
-            showMsg(message, 'error');
-          }
-        } catch(e){
-          console.error(e);
-          showMsg('Network error. Please check your connection and try again.', 'error');
-        } finally{
-          setLoading(false);
+      try {
+        const resp = await fetch('/api/reactivate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, company })
+        });
+        const j = await resp.json().catch(() => ({}));
+        if (resp.ok && j.ok !== false) {
+          showMsg(j.message || 'If eligible, an activation link will be emailed to you.');
+          form.reset();
+        } else {
+          const message = j.message || 'Request failed. Please try again later.';
+          showMsg(message, 'error');
         }
-      });
-
-      // Optional: allow pressing Enter in email field to submit
-      document.getElementById('email').addEventListener('keydown', (e) => {
-        if(e.key === 'Enter') form.dispatchEvent(new Event('submit', { cancelable: true }));
-      });
-    })();
+      } catch (e) {
+        console.error(e);
+        showMsg('Network error. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Request reactivation';
+      }
+    });
   </script>
 </body>
 </html>
