@@ -1,9 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>KenFolios Membership Reactivation</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
   <!-- INLINE SVG FAVICON (KF) -->
   <link
@@ -23,6 +22,8 @@
     fill='white'>KF</text>
 </svg>"
   />
+
+  <title>KenFolios — Membership Reactivation</title>
 
   <style>
     body {
@@ -66,7 +67,7 @@
     input {
       width: 100%;
       padding: 11px 12px;
-      border: 1px solid #cbd5f5;
+      border: 1px solid #cbd5e1;
       border-radius: 10px;
       font-size: 15px;
       box-sizing: border-box;
@@ -80,13 +81,23 @@
 
     .info-note {
       margin-top: 16px;
-      padding: 14px;
+      padding: 14px 16px;
       background: #f8fafc;
       border: 1px dashed #cbd5e1;
       border-radius: 12px;
       font-size: 13px;
       color: #475569;
       line-height: 1.6;
+    }
+
+    .info-note strong {
+      color: #0f172a;
+    }
+
+    .info-note a {
+      color: #E11D2E;
+      font-weight: 600;
+      text-decoration: none;
     }
 
     button {
@@ -154,32 +165,48 @@
       font-size: 12px;
       color: #64748b;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 
 <body>
 
   <div class="card">
-    <h1>Membership Reactivation</h1>
+    <h1>Reactivate Your KenFolios Membership</h1>
+
     <p class="sub">
-      This page is intended only for members who have already completed payment
-      for the KenFolios Business Community and need to regain access.
+      This form is meant only for members who have already paid earlier
+      and need to regain access to the KenFolios Business Community.
     </p>
 
     <form id="reactForm">
 
       <label>Full name (optional)</label>
-      <input name="name" placeholder="Your full name">
+      <input name="name" placeholder="Your full name (optional)">
 
-      <label>Email address *</label>
-      <input type="email" name="email" required placeholder="Enter the email used during payment">
+      <label>Email (required)</label>
+      <input type="email" name="email" required placeholder="you@example.com">
+
+      <!-- Honeypot -->
+      <div class="hidden" aria-hidden="true">
+        <label>Company</label>
+        <input name="company">
+      </div>
 
       <div class="info-note">
         <strong>Please read carefully before proceeding:</strong><br><br>
         • Only <strong>one reactivation request per email is allowed within 24 hours</strong>.<br>
         • Please double-check your email address before submitting.<br>
         • Use this form <strong>only if you are a paid member</strong>.<br>
-        • If unsure, check your inbox for a KenFolios payment receipt or confirmation email before proceeding.
+        • If unsure, check your inbox for a KenFolios payment receipt or confirmation email before proceeding.<br><br>
+        <strong>
+          If you need any assistance or are unsure about your eligibility,
+          please contact us at
+          <a href="https://kenfolios.com/support" target="_blank">kenfolios.com/support</a>.
+        </strong>
       </div>
 
       <div class="terms">
@@ -188,8 +215,7 @@
           I agree to the
           <a href="/terms" target="_blank">Terms & Conditions</a>
           and
-          <a href="/privacy" target="_blank">Privacy Policy</a>,
-          and confirm that I am an existing paid member requesting reactivation.
+          <a href="/privacy" target="_blank">Privacy Policy</a>.
         </span>
       </div>
 
@@ -209,24 +235,25 @@
   const form = document.getElementById("reactForm");
   const result = document.getElementById("result");
   const button = form.querySelector("button");
-  const terms = document.getElementById("terms");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     result.style.display = "none";
-    button.disabled = true;
 
-    if (!terms.checked) {
+    if (!form.terms.checked) {
       result.className = "result error";
-      result.textContent = "You must agree to the Terms & Privacy Policy to proceed.";
+      result.textContent = "You must accept the Terms & Conditions to proceed.";
       result.style.display = "block";
-      button.disabled = false;
       return;
     }
 
+    button.disabled = true;
+    button.textContent = "Processing...";
+
     const payload = {
       name: form.name.value.trim(),
-      email: form.email.value.trim()
+      email: form.email.value.trim(),
+      company: form.company.value || ""
     };
 
     try {
@@ -237,20 +264,27 @@
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Request failed");
+
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.message || "Request failed");
+      }
 
       result.className = "result success";
-      result.textContent = data.message;
+      result.textContent =
+        data.message ||
+        "If eligible, your activation link has been sent to your email.";
+
       result.style.display = "block";
       form.reset();
-      terms.checked = true;
+      form.terms.checked = true;
 
     } catch (err) {
       result.className = "result error";
-      result.textContent = err.message;
+      result.textContent = err.message || "Something went wrong.";
       result.style.display = "block";
     } finally {
       button.disabled = false;
+      button.textContent = "Request reactivation";
     }
   });
 </script>
