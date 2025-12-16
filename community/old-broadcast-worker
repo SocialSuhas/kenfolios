@@ -1,0 +1,608 @@
+/**
+ * KENFOLIOS + VSTREET TELEGRAM BROADCAST WORKER
+ *
+ * Full worker file — drop into Cloudflare Workers (module).
+ * Make sure to set the environment secrets:
+ *   - TELEGRAM_BOT_TOKEN
+ *   - TELEGRAM_GROUP_ID
+ *   - TELEGRAM_WEBHOOK_SECRET
+ *
+ * Cron triggers to add (UTC cron lines):
+ *   30 02 * * *   -> 08:00 IST (morning)
+ *   30 06 * * *   -> 12:00 IST (noon)
+ *   30 10 * * *   -> 16:00 IST (afternoon)
+ *   30 14 * * *   -> 20:00 IST (evening)
+ *
+ * Note: keep tokens/secrets in Cloudflare secrets (not in code).
+ */
+
+///////////////////////////////////////////////////////////////
+// === PART 0: MESSAGE POOLS & CONFIG (UNCHANGED FROM YOUR SPEC)
+///////////////////////////////////////////////////////////////
+
+const SPECIAL_FULL_DAY = {
+  "01-26": {
+    morning: "Dear Members, good morning 🇮🇳 Today we celebrate Republic Day — a reminder of discipline, integrity and collective progress. Let’s move through the day with clarity and professionalism. 🌟",
+    noon: "Dear Members, good afternoon 🇮🇳 On Republic Day, let’s appreciate the systems that enable modern business and the responsibility we hold to strengthen them through ethical work. 🤝",
+    afternoon: "Dear Members, good evening 🇮🇳 As we wrap our workday, let’s close one meaningful task and strengthen our progress today. Small actions build strong culture. 🌿",
+    evening: "Dear Members, good evening 🇮🇳 Let's end Republic Day with gratitude and clarity as we prepare for a new day. Professionalism and respect build strong communities. 🌙"
+  },
+
+  "08-15": {
+    morning: "Dear Members, good morning 🇮🇳 Independence Day reminds us to build with purpose and honesty. Let’s use our work to strengthen India’s ecosystem and move forward with clarity. 🌅",
+    noon: "Dear Members, good afternoon 🇮🇳 On this day of freedom, let’s honour self-reliance by supporting one another through ethical collaboration and thoughtful communication. 🤝",
+    afternoon: "Dear Members, good evening 🇮🇳 As we close our workday, let’s complete one meaningful task that reflects growth and responsibility. Small wins matter. 🌿",
+    evening: "Dear Members, good evening 🇮🇳 Ending Independence Day with gratitude and renewed focus helps us build cleaner, stronger business culture. 🌙"
+  },
+
+  "12-31": {
+    morning: "Dear Members, good morning 🌅 It's the final day of the year. Let’s reflect on learnings and close the year with clarity. Small improvements today set a better tone for tomorrow. ✨",
+    noon: "Dear Members, good afternoon 🌞 Year-end is a great moment to finish pending tasks and clear space for new beginnings. A tidy mind creates strong outcomes. 📂",
+    afternoon: "Dear Members, good evening 🌇 The final hours of the year are here. If something is unresolved, share it — someone may offer a quick perspective. Collaboration builds clarity. 🤝",
+    evening: "Dear Members, good evening 🌙 As we close the year, let’s acknowledge progress and appreciate resilience. Wishing you a peaceful transition into the new year. 🌟",
+    midnight: "Dear Members, happy new year 🎉 Wishing you clarity, discipline and meaningful progress. Let’s build stronger systems and support each other’s journey. ✨"
+  },
+
+  "01-01": {
+    morning: "Dear Members, good morning 🎉 A new year begins with intention and clarity. Wishing you a meaningful and disciplined year ahead. Let’s build with purpose. 🌟",
+    noon: "Dear Members, good afternoon ✨ Today is a moment to outline simple, achievable priorities for the year. Consistency builds strong outcomes. 📘",
+    afternoon: "Dear Members, good evening 🌇 As the first workday progresses, complete one important task to set the tone for the year ahead. ✔️",
+    evening: "Dear Members, good evening 🌙 A peaceful close to Day 1. Reflect, reset and prepare for tomorrow. Growth is built daily. 🌿"
+  }
+};
+
+const SPECIAL_SINGLE_SLOT = {
+  "03-31": {
+    slot: "noon",
+    message: "Dear Members, good afternoon 📊 Today marks the financial year end — a strong moment to wrap pending tasks and prepare a clean slate for tomorrow. Steady clarity builds strong years. ✨"
+  },
+
+  "04-01": {
+    slot: "noon",
+    message: "Dear Members, good afternoon 🌱 A new financial year begins today. Let’s step in with disciplined planning, ethical intent and long-term focus. Wishing everyone a strong year ahead. 📈"
+  }
+};
+
+const OBSERVANCE_DAYS = {
+  "05-01": { slot: "noon", message: "Dear Members, good afternoon 💼 On Labour Day, we acknowledge the dignity of disciplined work and the value of collaboration. Let’s keep building a community rooted in clarity and professionalism. 🤝" },
+  "06-27": { slot: "noon", message: "Dear Members, good afternoon 📈 Today is MSME Day — a reminder that small and mid-sized businesses drive growth. Let’s support each other with knowledge and ethical collaboration. 🌟" },
+  "06-30": { slot: "noon", message: "Dear Members, good afternoon 🌐 Social Media Day reminds us that clarity and context build meaningful connections. Let’s communicate thoughtfully and professionally. ✨" },
+  "04-28": { slot: "noon", message: "Dear Members, good afternoon 🦺 Workplace Safety Day highlights the importance of safe, organised and healthy environments. Small improvements create long-term productivity. ✔️" },
+  "06-05": { slot: "morning", message: "Dear Members, good morning 🌱 World Environment Day reminds us how daily choices shape a healthier future. Let’s reduce waste and build responsible businesses. 🌍" },
+  "06-21": { slot: "morning", message: "Dear Members, good morning 🧘‍♂️ Yoga Day encourages balance in work and life. A few minutes of calm or stretching can improve clarity and energy. Start light today. 🌞" },
+  "01-24": { slot: "noon", message: "Dear Members, good afternoon 🎓 Education Day reminds us that continuous learning strengthens decisions and growth. Let’s share insights that elevate our community. 🌟" },
+  "04-07": { slot: "morning", message: "Dear Members, good morning ❤️ World Health Day reminds us that physical and mental well-being fuels strong decisions. Let’s stay mindful today. 🌿" },
+  "09-29": { slot: "morning", message: "Dear Members, good morning ❤️‍🩹 On World Heart Day, let’s be mindful of choices that support long-term health. Healthy decisions strengthen our clarity and work. 🌿" },
+  "10-10": { slot: "noon", message: "Dear Members, good afternoon 💚 On World Mental Health Day, let’s pause, reflect and maintain balance. Healthy minds build healthy decisions. 🌱" },
+  "11-14": { slot: "noon", message: "Dear Members, good afternoon 🌿 On Diabetes Day, let’s stay mindful of habits that support long-term well-being. Balanced living strengthens our clarity and focus. ✨" },
+  "02-04": { slot: "noon", message: "Dear Members, good afternoon 🎗️ World Cancer Day reminds us of compassion, awareness and support. Health and empathy strengthen communities. 🌼" },
+  "12-03": { slot: "noon", message: "Dear Members, good afternoon ♿ Disability Day highlights inclusion and thoughtful support. Respectful communication strengthens every professional space. 🤝" },
+  "12-01": { slot: "noon", message: "Dear Members, good afternoon 🎗️ Today is World AIDS Day — a reminder to stay informed, compassionate and responsible. Awareness builds safer societies. 🌿" },
+  "01-30": { slot: "noon", message: "Dear Members, good afternoon 🕊️ Martyrs’ Day invites quiet reflection. Let’s honour integrity and stay mindful of values that guide ethical work. ✨" },
+  "05-11": { slot: "noon", message: "Dear Members, good afternoon 🤖 National Technology Day celebrates innovation. Let’s explore ideas that make our work smarter, cleaner and more efficient. ⚡" },
+  "02-28": { slot: "noon", message: "Dear Members, good afternoon 🔬 National Science Day reminds us how curiosity and knowledge shape better solutions. Let’s keep learning. 🌟" },
+  "04-23": { slot: "noon", message: "Dear Members, good afternoon 📘 World Book Day reminds us of the power of reading. One strong idea can transform how we think and work. 🌱" },
+  "11-12": { slot: "noon", message: "Dear Members, good afternoon ⭐ World Quality Day highlights that clarity, precision and discipline create strong systems. Let’s improve one small thing today. ✔️" },
+  "09-15": { slot: "morning", message: "Dear Members, good morning 🛠️ Happy Engineers Day! Today we appreciate those who build and solve. Strong systems come from thoughtful engineering in work and life. 🌟" },
+  "09-08": { slot: "noon", message: "Dear Members, good afternoon 📖 On International Literacy Day, let’s value learning and clarity. Literacy strengthens decision-making and professional growth. ✨" },
+  "05-31": { slot: "noon", message: "Dear Members, good afternoon 🌿 World No Tobacco Day reminds us to prioritise long-term health. Healthy habits support strong thinking and sustainable performance. 🌱" },
+  "03-15": { slot: "noon", message: "Dear Members, good afternoon 🛡️ World Consumer Rights Day highlights transparency and fairness. Let’s maintain honest, ethical practices in all interactions. 🤝" },
+  "02-20": { slot: "noon", message: "Dear Members, good afternoon 🌍 World Social Justice Day reminds us that fairness and balance strengthen communities and workplaces. Let’s act responsibly. ✨" },
+  "03-08": { slot: "noon", message: "Dear Members, good afternoon 🌼 Today’s observance reminds us to build inclusive, respectful spaces where clarity, ethics and professionalism guide our actions." },
+  "06-14": { slot: "morning", message: "Dear Members, good morning ❤️ Today is World Blood Donor Day — a reminder of generosity and community strength. Let’s appreciate those who support life and health. 🌿" },
+  "12-05": { slot: "noon", message: "Dear Members, good afternoon 🌱 International Volunteer Day celebrates selfless service. Small acts of support strengthen community trust. 🤝" },
+  "06-08": { slot: "morning", message: "Dear Members, good morning 🌊 World Oceans Day reminds us to protect natural systems that support life and business. Mindful choices matter. 🌍" },
+  "03-21": { slot: "morning", message: "Dear Members, good morning 🌿 International Day of Forests highlights how natural resources support our future. Let’s value sustainability in decisions. 🌱" }
+};
+
+const MONDAY_MORNING = [
+  "Dear Members, good morning 🌅 It’s a fresh week — a clean slate to build clarity, discipline and steady momentum. Start meaningfully. ✨",
+  "Dear Members, good morning 🌞 A new week begins — reset lightly, organise your thoughts and take one calm step toward progress. Consistency builds strength. ✨",
+  "Dear Members, good morning 🌅 Mondays set the tone. Begin with clarity, refine priorities and move with steady focus. One strong start shapes the week. ✔️",
+  "Dear Members, good morning 🌼 Let’s enter the week with balance and structure. A simple plan today creates smoother days ahead. Build calmly and intentionally. 🌿"
+];
+
+const MONDAY_NOON = [
+  "Dear Members, good afternoon ☀️ Let’s gear up for the week. A quick plan and clean priorities build strong direction. ✔️",
+  "Dear Members, good afternoon 🌿 Midday check-ins help shape the week ahead. Review lightly, refine your path and move with calm confidence. ✨",
+  "Dear Members, good afternoon ☀️ If the week feels heavy, simplify your goals. Clear priorities strengthen momentum. Keep it structured. 📘",
+  "Dear Members, good afternoon 🌼 Mondays flow better with order. Realign tasks and continue your day with steady, productive clarity. ✔️"
+];
+
+const THURSDAY_MEETUP = [
+  "Dear Members, good afternoon 🤝 It’s Thursday — a great day to ideate meetups. Share light thoughts or locations if you’re interested. Collaboration begins with conversation. ✨",
+  "Dear Members, good afternoon 🌟 Thursdays are ideal for exploring meetup ideas. Share simple suggestions or interest. Organic conversations build good connections. 🤝",
+  "Dear Members, good afternoon 🤝 If you have meetup thoughts or plans, today’s a great moment to float them. Light sharing encourages collaboration. ✨",
+  "Dear Members, good afternoon 🌼 Thursday is for opening conversations. If you’re thinking about joining or hosting a meetup, drop a note. Community grows through clarity. 🤝"
+];
+
+const FRIDAY_MEETUP = [
+  "Dear Members, good afternoon 📍 Friday is for refining meetup ideas. Re-share clearly if you're interested so others can align smoothly. 🤝",
+  "Dear Members, good afternoon ✨ As we approach the weekend, refine your meetup details. Clear messages help others coordinate easily. 🤝",
+  "Dear Members, good afternoon 📍 Perfect day to finalise meetup thoughts. Share concise updates so groups can form smoothly. ✔️",
+  "Dear Members, good afternoon 🌼 Friday clarity helps weekend meetups align better. Reconfirm your interest or share short details. 🤝"
+];
+
+const SATURDAY_CONFIRM = [
+  "Dear Members, good morning 🌞 It’s Saturday — the right moment to confirm meetups. Share quick details if you’re planning or joining one. Clarity helps everyone. ✨",
+  "Dear Members, good morning 🌼 Saturday mornings are ideal for confirming meetups. Share simple plans so others can join easily. 🤝",
+  "Dear Members, good morning 🌞 If you're planning a meetup, send a quick confirmation. Clear updates help align the day smoothly. ✔️",
+  "Dear Members, good morning 🌿 A light Saturday reminder — finalize meetups early so coordination stays effortless. Share your plans briefly. ✨"
+];
+
+const SATURDAY_4PM = [
+  "Dear Members, good evening 🌇 Weekend is here. Prepare for your meetups or personal time. A short reset builds calm and balance. 🌿",
+  "Dear Members, good evening 🌤️ As the afternoon settles, take a moment to prepare for your evening plans or meetups. Calm organisation supports good experiences. ✨",
+  "Dear Members, good evening 🌇 Weekend rhythm begins now. Wrap light tasks and shift into a balanced, thoughtful evening. ✔️",
+  "Dear Members, good evening 🌆 A gentle nudge — prepare your meetup details or personal time for tonight. Small resets bring clarity. 🌿"
+];
+
+const SATURDAY_8PM = [
+  "Dear Members, good evening 📸 Saturday evenings are perfect for sharing meetup pictures or meaningful moments. These exchanges build community warmth. ✨",
+  "Dear Members, good evening 🌙 If you attended a meetup today, feel free to share a picture or highlight. These small shares bring us closer. 🤝",
+  "Dear Members, good evening ✨ Saturday nights are great for light reflections. Share a moment or photo if you’d like — it adds warmth to the space. 🌿",
+  "Dear Members, good evening 📸 A gentle reminder — meetup pictures or small moments from today are welcome. They help build community memories. ✨"
+];
+
+const SUNDAY_NOON = [
+  "Dear Members, good afternoon 🌼 Sunday is a great day to refresh mentally and physically. A light pause prepares you for the week ahead. 🌿",
+  "Dear Members, good afternoon ✨ Sundays are ideal for gentle resets. Organise lightly and give your mind space for the upcoming week. ✔️",
+  "Dear Members, good afternoon 🌿 Use today to unwind and reset. A small moment of clarity now supports a stronger Monday. 📘",
+  "Dear Members, good afternoon 🌼 Take a mindful pause today. A calm Sunday prepares the mind for structured progress ahead. ✨"
+];
+
+const SUNDAY_EVENING = [
+  "Dear Members, good evening 🌙 Let’s prepare calmly for the upcoming week. A simple plan or short reflection creates a strong Monday. ✨",
+  "Dear Members, good evening ✨ Wind down with clarity. A small plan tonight can make Monday smoother and more productive. ✔️",
+  "Dear Members, good evening 🌙 A gentle reminder — prepare lightly for tomorrow. Mindful planning supports a strong week. 🌿",
+  "Dear Members, good evening 🌌 Ending the weekend with a moment of reflection builds a more focused Monday. Stay calm and intentional. ✨"
+];
+
+const DEFAULT_MORNING = [
+  "Dear Members, good morning 🌅 Let’s begin the day with clarity and calm focus. A simple, intentional start sets strong momentum. ✨",
+  "Dear Members, good morning 🌞 Wishing you a steady and productive day ahead. Small wins early in the day build confidence. ✔️",
+  "Dear Members, good morning 🌼 Let’s approach the day with discipline and respectful communication. Strong habits create strong outcomes. 🌿",
+  "Dear Members, good morning 🌅 A clear plan reduces stress and increases quality. Take a moment to align your priorities today. 📘",
+  "Dear Members, good morning 🌞 Progress comes from quiet, consistent action. Start light, move steady and maintain clarity. ✨",
+  "Dear Members, good morning 🌅 Each day offers a chance to refine habits. Let’s use today well and stay mindful in our decisions. 🌿",
+  "Dear Members, good morning 🌼 Begin today with intention. A few minutes of planning can save hours later. 📈",
+  "Dear Members, good morning 🌞 Wishing everyone a balanced and meaningful start. Consistency builds strong results. ✨",
+  "Dear Members, good morning 🌅 Let’s stay organised and respectful in how we communicate today. Good culture builds good business. 🤝",
+  "Dear Members, good morning 🌿 Take a calm breath and focus on the first important task. Clear starts create strong endings. ✔️",
+  "Dear Members, good morning 🌞 A well-structured morning supports clarity throughout the day. Move gently, but purposefully. ✨",
+  "Dear Members, good morning 🌅 Let’s make today light, intentional and productive in small, meaningful steps. 🌿",
+  "Dear Members, good morning 🌼 Even one well-executed task sets a positive tone. Begin with something achievable. ✔️",
+  "Dear Members, good morning 🌞 May today bring clarity and smooth progress in your work. Stay steady and thoughtful. ✨",
+  "Dear Members, good morning 🌅 Let's aim for calm productivity, not rush. A clear mind builds better decisions. 🌿",
+  "Dear Members, good morning 🌞 Wishing you a mindful start. Let’s keep communication clean and purposeful today. 🤝",
+  "Dear Members, good morning 🌼 A quiet morning routine builds strength for the entire day. Start focused, finish strong. 📘",
+  "Dear Members, good morning 🌞 Stay intentional today — clarity compounds. Make one decision that reduces tomorrow’s load. ✔️",
+  "Dear Members, good morning 🌅 Let’s stay aligned, ethical and respectful. Culture is built through everyday behaviour. ✨",
+  "Dear Members, good morning 🌼 Wishing you a grounded and organised morning. Simple efforts create reliable progress. 🌿",
+  "Dear Members, good morning 🌞 Productivity begins with clear thinking. Take a moment to reset and begin meaningfully. 📘",
+  "Dear Members, good morning 🌅 Let’s move with balance today — focused, calm and consistent in our work. ✨",
+  "Dear Members, good morning 🌼 May today bring constructive conversations and valuable insights. Keep sharing thoughtfully. 🤝",
+  "Dear Members, good morning 🌞 Let’s uphold a modern, respectful communication style in all interactions today. 🌿",
+  "Dear Members, good morning 🌅 A strong morning builds a strong day. Start with clarity and steady intention. ✔️",
+  "Dear Members, good morning 🌼 Let’s use today to elevate our habits. Every good decision shapes tomorrow. ✨",
+  "Dear Members, good morning 🌞 Let’s keep this space professional, meaningful and noise-free. Quality over quantity. 🤝",
+  "Dear Members, good morning 🌅 Prioritise what matters and release what doesn’t. Mental clarity boosts performance. 🌿",
+  "Dear Members, good morning 🌞 A thoughtful start sets the rhythm for the entire day. Let’s move with purpose. ✔️",
+  "Dear Members, good morning 🌼 Wishing everyone a constructive day ahead. Share learnings that may help others. ✨",
+  "Dear Members, good morning 🌅 Clarity grows quietly. Let’s make room for organised thinking today. 📘",
+  "Dear Members, good morning 🌞 Let’s maintain a professional and supportive tone throughout the day. Community grows through consistency. 🤝",
+  "Dear Members, good morning 🌼 Begin today with calm determination. Steady progress beats rushed effort. 🌿",
+  "Dear Members, good morning 🌞 Wishing you a smooth and productive day. Keep things simple, focused and ethical. ✔️",
+  "Dear Members, good morning 🌅 A new day offers new clarity. Let’s build it intentionally and respectfully. ✨"
+];
+
+const DEFAULT_NOON = [
+  "Dear Members, good afternoon ☀️ Midday is a chance to reassess. What’s one task you can’t leave pending today? ✔️",
+  "Dear Members, good afternoon 🌿 A short pause helps realign priorities. Continue the day with mindful focus. ✨",
+  "Dear Members, good afternoon 📘 Review your progress and adjust your plan lightly. Clarity reduces stress. 🌼",
+  "Dear Members, good afternoon ☀️ If something feels stuck, simplify it. Break it into one actionable step. ✔️",
+  "Dear Members, good afternoon ✨ A balanced mindset supports better decisions. Move forward with calm clarity. 🌿",
+  "Dear Members, good afternoon 📈 Let’s maintain professional, meaningful communication throughout the day. 🤝",
+  "Dear Members, good afternoon ☀️ Midday resets help avoid evening overload. Realign and continue steadily. 🌼",
+  "Dear Members, good afternoon 🌿 Choose one small win for the second half of your day. Momentum matters. ✔️",
+  "Dear Members, good afternoon ✨ Even brief clarity can improve your entire workflow. Stay intentional. 📘",
+  "Dear Members, good afternoon ☀️ Keep communication thoughtful and respectful. It shapes our culture. 🤝",
+  "Dear Members, good afternoon 🌿 Consider finishing one meaningful task today. Lighten tomorrow’s load. ✔️",
+  "Dear Members, good afternoon 📈 Midday discipline builds long-term results. Stay steady and organised. ✨",
+  "Dear Members, good afternoon ☀️ Keep things structured. A clean process saves time and reduces stress. 🌼",
+  "Dear Members, good afternoon 🌿 A clear mind supports strong decisions. Step back for a moment if needed. ✨",
+  "Dear Members, good afternoon ✨ Stay focused on essentials. Small, consistent efforts compound beautifully. ✔️",
+  "Dear Members, good afternoon ☀️ Let’s maintain clarity and good behaviour. This space reflects our values. 🤝",
+  "Dear Members, good afternoon 🌿 A brief reflection now can prevent late-day pressure. Keep it simple. ✨",
+  "Dear Members, good afternoon 📘 Reshape the rest of your day by finishing one priority item first. ✔️",
+  "Dear Members, good afternoon ☀️ Re-check your to-do list and adjust lightly. Efficiency grows from clarity. 🌼",
+  "Dear Members, good afternoon 🌿 Take a breath and continue with sharp focus. Small resets help. ✨",
+  "Dear Members, good afternoon ✨ Let’s stay constructive and forward-looking in our conversations today. 🤝",
+  "Dear Members, good afternoon ☀️ A mindful pause supports stronger work in the evening. Stay balanced. 🌿",
+  "Dear Members, good afternoon 📈 Organised thinking builds stable growth. Clear your desk, clear your mind. ✔️",
+  "Dear Members, good afternoon ✨ Let’s aim for a smooth, productive second half of the day. Stay intentional. 📘",
+  "Dear Members, good afternoon ☀️ If anything important is pending, this is the perfect time to address it. 🌼",
+  "Dear Members, good afternoon 🌿 Strong habits outperform rush. Pace yourself with clarity. ✨",
+  "Dear Members, good afternoon ✨ Let’s keep our discussions meaningful and supportive. 🤝",
+  "Dear Members, good afternoon 📘 A well-timed check-in keeps the day on track. Identify your next best task. ✔️",
+  "Dear Members, good afternoon ☀️ Moving with calm focus builds confidence. Stay aligned with your goals. 🌿",
+  "Dear Members, good afternoon 🌼 End your midday with a sense of direction — small clarity, big difference. ✨"
+];
+
+const DEFAULT_AFTERNOON = [
+  "Dear Members, good evening 🌇 As 4 PM approaches, let’s close key tasks and end the day with clarity. ✔️",
+  "Dear Members, good evening 🌤️ A strong finish creates a smoother tomorrow. Complete one pending item today. 🌿",
+  "Dear Members, good evening 🌇 Bring calm focus to the last stretch of your day. Small closures reduce tomorrow’s load. ✨",
+  "Dear Members, good evening 🌆 If anything is troubling or pending, share it briefly — someone may offer perspective. 🤝",
+  "Dear Members, good evening 🌤️ Let’s wrap the day with purpose and clean communication. Professionalism builds trust. ✔️",
+  "Dear Members, good evening 🌇 Approaching the end of the day? Prioritise clarity over speed. Finish thoughtfully. 🌿",
+  "Dear Members, good evening 🌆 Let’s aim for a thoughtful close. Review what’s done and what can wait. ✨",
+  "Dear Members, good evening 🌤️ Ending your day with one meaningful completion strengthens tomorrow’s focus. ✔️",
+  "Dear Members, good evening 🌇 Keep things methodical and gentle in the last hour. Clarity beats urgency. 🌿",
+  "Dear Members, good evening 🌆 A calm close supports a clear evening. Wrap up lightly and intentionally. ✨",
+  "Dear Members, good evening 🌇 If you need help finishing something today, ask — collaboration speeds clarity. 🤝",
+  "Dear Members, good evening 🌤️ Slow the pace and stay steady. End-of-day discipline builds long-term ease. ✔️",
+  "Dear Members, good evening 🌆 A clean wrap-up supports a clear mind. Decide what truly must finish today. 🌿",
+  "Dear Members, good evening 🌇 Progress isn’t about speed — it’s about order. Close something small today. ✨",
+  "Dear Members, good evening 🌤️ Finish the day with clarity. Choose one item, complete it, and breathe easy. ✔️",
+  "Dear Members, good evening 🌇 As we wind down, let’s maintain a respectful, focused communication tone. 🤝",
+  "Dear Members, good evening 🌆 Close your workday with calm alignment. Light organisation creates tomorrow’s momentum. 🌿",
+  "Dear Members, good evening 🌇 A structured finish reduces next-day stress. Take a moment to tidy your mental space. ✨",
+  "Dear Members, good evening 🌤️ Make space for a smooth evening by completing what’s essential now. ✔️",
+  "Dear Members, good evening 🌆 Let’s stay thoughtful and finish the day with balance and intention. 🌿",
+  "Dear Members, good evening 🌇 Every small closure builds long-term stability. Wrap carefully. ✨",
+  "Dear Members, good evening 🌤️ If something is delayed, give it a final push or reassign it. Clarity matters. ✔️",
+  "Dear Members, good evening 🌆 Bring your day to a meaningful close. Thoughtful decisions now support tomorrow. 🌿",
+  "Dear Members, good evening 🌇 Let’s wind down consciously. Calm productivity strengthens our community culture. ✨"
+];
+
+const DEFAULT_EVENING = [
+  "Dear Members, good evening 🌙 As the day ends, share any challenge troubling you — someone here may offer quick perspective. 🤝",
+  "Dear Members, good evening ✨ Reflect and reset. A calm evening builds a stronger tomorrow. 🌿",
+  "Dear Members, good evening 🌌 Keep your night light and intentional. A peaceful end supports clarity. ✔️",
+  "Dear Members, good evening 🌙 Today’s progress — big or small — deserves recognition. Rest well and prepare gently. 🕊️",
+  "Dear Members, good evening ✨ Let’s close the day with thoughtful communication and calm focus. 🌿",
+  "Dear Members, good evening 🌌 A short reflection strengthens tomorrow’s clarity. What improved your day today? ✔️",
+  "Dear Members, good evening 🌙 Stay relaxed and composed. A light evening rhythm supports better decisions tomorrow. 🌿",
+  "Dear Members, good evening ✨ Let’s wind down respectfully and maintain the tone of our community. 🤝",
+  "Dear Members, good evening 🌌 If something remains unresolved, note it down for tomorrow. Free your mind tonight. 🕊️",
+  "Dear Members, good evening 🌙 A calming routine tonight supports a productive morning. Move slowly and purposefully. ✨",
+  "Dear Members, good evening ✨ Let’s appreciate the small wins of today. Progress compounds quietly. 🌿",
+  "Dear Members, good evening 🌌 Keep the night peaceful. A settled mind creates stronger clarity tomorrow. ✔️",
+  "Dear Members, good evening 🌙 Share a learning or insight if it may help someone. Collective progress matters. 🤝",
+  "Dear Members, good evening ✨ End the day with gentle reflection. Peace supports performance. 🌿",
+  "Dear Members, good evening 🌌 Let’s stay mindful and prepare for tomorrow with balance and clarity. ✔️",
+  "Dear Members, good evening 🌙 Set aside work calmly and allow yourself to unwind. A good close is as important as a good start. ✨",
+  "Dear Members, good evening ✨ Slow the pace and breathe. Consistent calm builds stronger outcomes. 🌿",
+  "Dear Members, good evening 🌌 A peaceful night strengthens tomorrow’s discipline. Stay gentle and focused. ✔️",
+  "Dear Members, good evening 🌙 End the day with gratitude and intention. It shapes your next steps. ✨",
+  "Dear Members, good evening ✨ Let’s maintain respectful communication through the evening. Good culture is built daily. 🤝",
+  "Dear Members, good evening 🌌 A thoughtful close reduces stress. Keep the night organised and calm. ✔️",
+  "Dear Members, good evening 🌙 Progress grows through balance. Rest well and start fresh tomorrow. 🌿",
+  "Dear Members, good evening ✨ Wishing you a calm and reflective evening. Gentle resets create strong days. 🌙",
+  "Dear Members, good evening 🌌 Let’s close the day lightly. Clarity comes from quiet moments. ✔️"
+];
+
+///////////////////////////////////////////////////////////////
+// === PART 1: DATE / TIME HELPERS (ROBUST IST CONVERSION)
+///////////////////////////////////////////////////////////////
+
+function getISTDate() {
+  // Robust conversion: get UTC time, then add IST offset (+5:30)
+  const now = new Date();
+  const utcMillis = now.getTime() + now.getTimezoneOffset() * 60000;
+  const istOffsetMinutes = 330; // +5:30
+  return new Date(utcMillis + istOffsetMinutes * 60000);
+}
+
+function formatMMDD(date) {
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${m}-${d}`;
+}
+
+function isLastDayOfMonth(date) {
+  const test = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return date.getDate() === test.getDate();
+}
+
+// ISO week helper (for 4-week rotation)
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
+///////////////////////////////////////////////////////////////
+// === PART 2: SLOT NORMALIZATION + RESOLUTION (OVERRIDES)
+///////////////////////////////////////////////////////////////
+
+function normalizeSlot(slot) {
+  if (slot === "morning") return "morning";
+  if (slot === "noon") return "noon";
+  if (slot === "afternoon") return "afternoon";
+  return "evening";
+}
+
+function getSpecialDayMessage(date, slot) {
+  const mmdd = formatMMDD(date);
+  const dayOfMonth = date.getDate();
+
+  // 1) Full-day overrides
+  if (SPECIAL_FULL_DAY[mmdd]) {
+    const block = SPECIAL_FULL_DAY[mmdd];
+    if (slot === "morning" && block.morning) return block.morning;
+    if (slot === "noon" && block.noon) return block.noon;
+    if (slot === "afternoon" && block.afternoon) return block.afternoon;
+    if (slot === "evening" && block.evening) return block.evening;
+    if (slot === "midnight" && block.midnight) return block.midnight;
+  }
+
+  // 2) FY / single-slot overrides
+  if (SPECIAL_SINGLE_SLOT[mmdd]) {
+    const sd = SPECIAL_SINGLE_SLOT[mmdd];
+    if (sd.slot === slot) return sd.message;
+  }
+
+  // 3) Month-End override (noon)
+  if (isLastDayOfMonth(date) && slot === "noon") {
+    return "Dear Members, good afternoon ⏳ Month-end is here — a good time to close loose ends, clear backlogs and step into the new month with readiness. Let's finish strong. ✔️";
+  }
+
+  // 4) Month-Start override (1st each month → noon)
+  if (dayOfMonth === 1 && slot === "noon") {
+    return "Dear Members, good afternoon 🌟 A new month begins. Let’s restart with clear goals, fresh energy and steady discipline. Wishing you a focused month ahead. 📘";
+  }
+
+  // 5) Observance Days
+  if (OBSERVANCE_DAYS[mmdd]) {
+    const ob = OBSERVANCE_DAYS[mmdd];
+    if (ob.slot === slot) return ob.message;
+  }
+
+  return null;
+}
+
+function getDayOfWeekMessage(date, slot) {
+  const day = date.getDay();      // 0 = Sunday ... 6 = Saturday
+  const weekIndex = getISOWeek(date) % 4; // rotates 0–3 weekly
+
+  // Sunday
+  if (day === 0) {
+    if (slot === "noon") return SUNDAY_NOON[weekIndex];
+    if (slot === "evening") return SUNDAY_EVENING[weekIndex];
+    return null; // Sunday has only noon + evening
+  }
+
+  // Monday
+  if (day === 1) {
+    if (slot === "morning") return MONDAY_MORNING[weekIndex];
+    if (slot === "noon") return MONDAY_NOON[weekIndex];
+  }
+
+  // Thursday (4) -> meetup idea
+  if (day === 4 && slot === "noon") {
+    return THURSDAY_MEETUP[weekIndex];
+  }
+
+  // Friday (5) -> refine meetup
+  if (day === 5 && slot === "noon") {
+    return FRIDAY_MEETUP[weekIndex];
+  }
+
+  // Saturday (6)
+  if (day === 6) {
+    if (slot === "morning") return SATURDAY_CONFIRM[weekIndex];
+    if (slot === "afternoon") return SATURDAY_4PM[weekIndex];
+    if (slot === "evening") return SATURDAY_8PM[weekIndex];
+  }
+
+  return null;
+}
+
+function getDefaultSlotMessage(slot) {
+  if (slot === "morning") {
+    return DEFAULT_MORNING[Math.floor(Math.random() * DEFAULT_MORNING.length)];
+  }
+  if (slot === "noon") {
+    return DEFAULT_NOON[Math.floor(Math.random() * DEFAULT_NOON.length)];
+  }
+  if (slot === "afternoon") {
+    return DEFAULT_AFTERNOON[Math.floor(Math.random() * DEFAULT_AFTERNOON.length)];
+  }
+  return DEFAULT_EVENING[Math.floor(Math.random() * DEFAULT_EVENING.length)];
+}
+
+function getMessageForSlot(slot, date = getISTDate()) {
+  const normalized = normalizeSlot(slot);
+
+  // 1) Special Day Override
+  const special = getSpecialDayMessage(date, normalized);
+  if (special) return special;
+
+  // 2) Weekly Override (4-week rotation)
+  const weekly = getDayOfWeekMessage(date, normalized);
+  if (weekly) return weekly;
+
+  // 3) Default slot pool
+  return getDefaultSlotMessage(normalized);
+}
+
+///////////////////////////////////////////////////////////////
+// === PART 3: TELEGRAM HELPERS (RETRY + LOGGING)
+///////////////////////////////////////////////////////////////
+
+const TELEGRAM_API_BASE = "https://api.telegram.org";
+
+async function sendTelegramMessage(env, chatId, text, tries = 2) {
+  const url = `${TELEGRAM_API_BASE}/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+  const payload = {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true
+  };
+
+  for (let attempt = 1; attempt <= tries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        console.log(`Telegram message sent (attempt ${attempt})`);
+        return true;
+      } else {
+        const textResp = await res.text();
+        console.warn(`Telegram sendMessage error (attempt ${attempt}):`, res.status, textResp);
+      }
+    } catch (err) {
+      console.error(`Telegram sendMessage exception (attempt ${attempt}):`, err);
+    }
+
+    if (attempt < tries) {
+      // small backoff
+      await new Promise(r => setTimeout(r, 500 * attempt));
+    }
+  }
+
+  console.error("Telegram sendMessage failed after retries.");
+  return false;
+}
+
+///////////////////////////////////////////////////////////////
+// === PART 4: CRON MAPPING + SCHEDULE HANDLING
+///////////////////////////////////////////////////////////////
+
+function cronToSlot(expr) {
+  switch (expr) {
+    case "30 2 * * *":  return "morning";   // 08:00 IST
+    case "30 6 * * *":  return "noon";      // 12:00 IST
+    case "30 10 * * *": return "afternoon"; // 16:00 IST
+    case "30 14 * * *": return "evening";   // 20:00 IST
+    default:
+      console.warn("Unknown cron:", expr);
+      return null;
+  }
+}
+
+async function handleScheduled(event, env) {
+  const slot = cronToSlot(event.cron);
+  if (!slot) {
+    console.warn("handleScheduled: unknown cron slot for", event.cron);
+    return;
+  }
+
+  const date = getISTDate();
+
+  // Sunday morning suppression: spec says no 8 AM on Sundays
+  const day = date.getDay(); // 0 = Sunday
+  if (day === 0 && slot === "morning") {
+    console.log("Skipping morning message on Sunday as per policy.");
+    return;
+  }
+
+  const message = getMessageForSlot(slot, date);
+
+  if (!message || !message.trim()) {
+    console.warn("No message resolved for slot:", slot);
+    return;
+  }
+
+  const ok = await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, message);
+  if (!ok) {
+    // If you want to push alerts for failures, implement here (e.g., send to ops webhook)
+    console.error("Scheduled broadcast failed for slot:", slot, "date:", date.toISOString());
+  }
+}
+
+///////////////////////////////////////////////////////////////
+// === PART 5: TELEGRAM WEBHOOK HANDLER (compat only)
+///////////////////////////////////////////////////////////////
+
+async function handleTelegramUpdate(env, update) {
+  // This worker is only for broadcast scheduling.
+  // We keep webhook endpoint for compatibility but intentionally ignore updates.
+  return;
+}
+
+///////////////////////////////////////////////////////////////
+// === PART 6: EXPORT (FETCH + SCHEDULED)
+///////////////////////////////////////////////////////////////
+
+export default {
+  //-----------------------------------------------------------
+  // HTTP FETCH HANDLER
+  //-----------------------------------------------------------
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    // Health check
+    if (request.method === "GET" && url.pathname === "/") {
+      return new Response("KenFolios + VStreet Broadcast Worker is alive.", {
+        status: 200,
+        headers: { "content-type": "text/plain" }
+      });
+    }
+
+    // Manual broadcast endpoint (simple; secured by hiding URL in Worker route or use a secret in headers)
+    if (request.method === "POST" && url.pathname === "/test-broadcast") {
+      let bodyText;
+      try {
+        const contentType = request.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const j = await request.json();
+          bodyText = j.text || JSON.stringify(j);
+        } else {
+          bodyText = await request.text();
+        }
+      } catch (e) {
+        bodyText = "Test message from KenFolios worker.";
+      }
+      const text = bodyText || "Test message from KenFolios worker.";
+
+      // Fire-and-forget via waitUntil (keeps response snappy)
+      ctx.waitUntil(sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, text));
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    }
+
+    // Telegram webhook receiver (compat)
+    if (request.method === "POST" && url.pathname === "/telegram/webhook") {
+      const incomingSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
+
+      if (incomingSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
+        console.warn("Unauthorized webhook attempt");
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      let update;
+      try {
+        update = await request.json();
+      } catch (e) {
+        console.error("Invalid Telegram update format:", e);
+        return new Response("Bad Request", { status: 400 });
+      }
+
+      // We intentionally ignore messages in this worker
+      ctx.waitUntil(handleTelegramUpdate(env, update));
+      return new Response("OK", { status: 200 });
+    }
+
+    return new Response("Not found", { status: 404 });
+  },
+
+  //-----------------------------------------------------------
+  // CRON HANDLER — invoked by Cloudflare Cron Triggers
+  //-----------------------------------------------------------
+  async scheduled(event, env, ctx) {
+    // event has 'cron' property matching the cron string
+    ctx.waitUntil(handleScheduled(event, env));
+  }
+};
