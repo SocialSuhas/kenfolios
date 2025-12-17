@@ -1,0 +1,1868 @@
+/**
+ * kf-members-submit-z9p4x-worker — complete
+ * - Generates & persists order_url/ref_id on create-order and on initial join
+ * - Generates & persists unique_token/activation_url on payment confirm
+ * - BASE_PRODUCT is GST-inclusive (1999 INR)
+ * - Optional MAILER_WEBHOOK env: receives JSON payloads for order_created and activation events
+ *
+ * Bindings required:
+ * env.D1_WRITE_BINDING (Cloudflare D1)
+ *
+ * Optional env vars:
+ * env.RAZORPAY_KEY_ID
+ * env.RAZORPAY_KEY_SECRET
+ * env.ALLOWED_ORIGINS
+ * env.MAILER_WEBHOOK
+ *
+ * Telegram-related env vars:
+ * env.TELEGRAM_BOT_TOKEN            // Bot token from BotFather
+ * env.TELEGRAM_WEBHOOK_SECRET       // Secret used in setWebhook secret_token
+ * env.TELEGRAM_GROUP_ID             // Optional: numeric group ID (if needed later)
+ * env.TELEGRAM_GROUP_INVITE_LINK    // Recommended: permanent invite link to the group
+ *
+ * Brevo-related env vars:
+ * env.BREVO_API_KEY                 // Brevo SMTP & API key
+ * env.BREVO_SENDER_EMAIL            // no-reply@kenfolios.com
+ * env.BREVO_SENDER_NAME             // KenFolios Media Private Limited
+ * env.BREVO_TEMPLATE_ID             // 1 (activation template)
+ */
+
+const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type,Accept"
+  };
+}
+
+function json(body, status = 200, origin = "*") {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...JSON_HEADERS, ...corsHeaders(origin) }
+  });
+}
+
+// --- Product / tax config (server authoritative) ---
+const BASE_PRODUCT = {
+  name: "Activation fee",
+  base_price: 1999,
+  currency: "INR",
+  inclusive_gst: true
+};
+const GST_RATE = 0.18;
+
+// --- Coupon definitions (server authoritative) ---
+const COUPONS = {
+  "KEN100": { code: "KEN100", type: "flat", amount: 100, min: 0, stackable: false },
+  "VSTREET20": { code: "VSTREET20", type: "percent", pct: 20, cap: 400, min: 0, stackable: false },
+  "LAUNCH500": { code: "LAUNCH500", type: "flat", amount: 500, min: 1499, stackable: false },
+  "FOUNDER100": {                         // NEW: 100% discount coupon
+    code: "FOUNDER100",
+    type: "percent",
+    pct: 100,
+    cap: BASE_PRODUCT.base_price,         // cap at full base price (1999)
+    min: 0,
+    stackable: false
+  }
+};
+
+// --- Optional per-coupon limits (usage + expiry) ---
+const COUPON_LIMITS = {
+  FOUNDER100: {
+    maxUses: 99,                                       // maximum successful uses
+    expiresAt: "2025-12-31T23:59:59Z"                  // change as needed
+  }
+};
+
+function moneyRound(n) { return Math.round(n); }
+
+/**
+ * applyCouponAndTotals
+ * - Accepts basePrice (INCLUSIVE of GST) and couponCode
+ * - Returns subtotal (base/inclusive), discount, taxable, gst, total
+ */
+function applyCouponAndTotals(basePrice, couponCode) {
+  const inclusive = Number(basePrice);
+  let discount = 0;
+  let appliedCoupon = null;
+  if (couponCode) {
+    const c = COUPONS[couponCode];
+    if (c) {
+      if (c.type === "flat") {
+        if (inclusive < (c.min || 0)) {
+          return { error: `Coupon ${couponCode} requires minimum order \u20B9${c.min}.` };
+        }
+        discount = Number(c.amount || 0);
+        appliedCoupon = c;
+      } else if (c.type === "percent") {
+        const raw = (inclusive * (Number(c.pct || 0) / 100));
+        const capped = c.cap ? Math.min(raw, Number(c.cap)) : raw;
+        discount = moneyRound(capped);
+        appliedCoupon = c;
+      } else {
+        return { error: `Invalid coupon type for ${couponCode}.` };
+      }
+    } else {
+      return { error: `Invalid coupon code.` };
+    }
+  }
+  if (discount > inclusive) discount = inclusive;
+  const total = moneyRound(inclusive - discount);
+  // Taxable is total / (1 + GST_RATE)
+  const taxableRaw = total / (1 + GST_RATE);
+  const taxable = moneyRound(taxableRaw);
+  const gst = moneyRound(total - taxable);
+  return {
+    subtotal: moneyRound(inclusive),
+    discount: moneyRound(discount),
+    taxable,
+    gst,
+    total,
+    applied_coupon: appliedCoupon ? appliedCoupon.code : null
+  };
+}
+
+// --- Helpers ---
+function pathParts(url) {
+  const u = new URL(url);
+  return u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+}
+
+function generateRefFromMember(memberId) {
+  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const a = alpha.charCodeAt(memberId % alpha.length) || 65;
+  const b = alpha.charCodeAt((memberId + 3) % alpha.length) || 65;
+  const c = alpha.charCodeAt((memberId + 7) % alpha.length) || 65;
+  const letters = String.fromCharCode(a, b, c);
+  const numpart = String((memberId * 37 + 1234) % 10000).padStart(4, '0');
+  const idpart = String(memberId).padStart(6, '0');
+  return `${letters}${numpart}-${idpart}`;
+}
+
+function generateUniqueToken(len = 28) {
+  // Cloudflare Workers provide a global crypto
+  const bytes = new Uint8Array(Math.ceil(len * 0.75));
+  crypto.getRandomValues(bytes);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) {
+    s += bytes[i].toString(36);
+  }
+  return s.replace(/[^a-z0-9]/gi, '').slice(0, len);
+}
+
+// --- Razorpay signature helper (HMAC SHA256) ---
+async function hmacSHA256Hex(secret, message) {
+  const enc = new TextEncoder();
+  const keyData = enc.encode(secret);
+  const msgData = enc.encode(message);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const sigBuf = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+  const bytes = new Uint8Array(sigBuf);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+async function verifyRazorpaySignature(secret, orderId, paymentId, signature) {
+  if (!secret) return false;
+  if (!orderId || !paymentId || !signature) return false;
+  const payload = `${orderId}|${paymentId}`;
+  const computed = await hmacSHA256Hex(secret, payload);
+  return computed === signature;
+}
+
+function buildCompanyBlock() {
+  return {
+    name: "KenFolios Media Private Limited",
+    address: "Second floor, F-328, Lado Sarai, New Delhi, Delhi, 110030",
+    gstin: "07AAGCK7129K1Z7",
+    cin: "U72900DL2017PTC321788"
+  };
+}
+
+// --- Optional mailer webhook (fire-and-forget) ---
+async function fireMailerWebhook(env, payload) {
+  try {
+    if (!env.MAILER_WEBHOOK) return;
+    // Fire-and-forget: do not await (non-blocking). Any failure logged to console.
+    fetch(env.MAILER_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(e => {
+      console.error('Mailer webhook failed (fire-and-forget):', String(e));
+    });
+  } catch (e) {
+    console.error('Mailer webhook error:', String(e));
+  }
+}
+
+// --- Brevo helper: send activation email via template or fallback HTML ---
+async function sendActivationEmail(env, toEmail, fullName, activationUrl) {
+  try {
+    if (!env.BREVO_API_KEY) {
+      console.error("Brevo: BREVO_API_KEY missing, skip email.");
+      return null;
+    }
+    if (!toEmail || !activationUrl) {
+      console.error("Brevo: missing toEmail or activationUrl, skip email.");
+      return null;
+    }
+
+    const name = fullName && fullName.trim() ? fullName.trim() : "Member";
+    const senderEmail = env.BREVO_SENDER_EMAIL || "no-reply@kenfolios.com";
+    const senderName = env.BREVO_SENDER_NAME || "KenFolios Business Community";
+
+    let payload;
+
+    const templateIdNum = env.BREVO_TEMPLATE_ID ? Number(env.BREVO_TEMPLATE_ID) : NaN;
+
+    if (!isNaN(templateIdNum) && templateIdNum > 0) {
+      // Use Brevo saved template (recommended)
+      payload = {
+        to: [{ email: toEmail, name }],
+        templateId: templateIdNum,
+        params: {
+          name,
+          activation_link: activationUrl
+        }
+      };
+    } else {
+      // Fallback: inline HTML email (simple but safe)
+      payload = {
+        sender: { email: senderEmail, name: senderName },
+        to: [{ email: toEmail, name }],
+        subject: "Activate Your KenFolios Business Community Account",
+        htmlContent: `
+<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;">
+<head>
+  <meta charset="UTF-8" />
+  <title>KenFolios Activation</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:Arial,sans-serif;color:#333;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:30px;border-radius:6px;">
+    <h1 style="font-size:22px;font-weight:700;color:#111;margin-bottom:20px;">
+      Activate Your KenFolios Business Community Account
+    </h1>
+    <p>Hi ${name},</p>
+    <p>
+      Your KenFolios Business Community account is almost ready.<br/>
+      To complete your registration and join the community, please click the button below:
+    </p>
+    <p>
+      <a href="${activationUrl}" style="display:inline-block;background:#E11D2E;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:6px;font-size:16px;font-weight:600;margin:25px 0;">
+        Activate My Account
+      </a>
+    </p>
+    <p>If the button above doesn’t work, copy and paste this link into your browser:</p>
+    <p style="word-break:break-all;font-size:14px;">${activationUrl}</p>
+    <p>This link is unique to your account and can only be used once.</p>
+    <p>
+      Welcome to the KenFolios Business Community.<br/>
+      We’re excited to have you on board.
+    </p>
+    <div style="font-size:12px;text-align:center;color:#777;margin-top:35px;">
+      © ${new Date().getFullYear()} KenFolios Media Private Limited. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`
+      };
+    }
+
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": env.BREVO_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error("Brevo send email failed:", res.status, JSON.stringify(data));
+    }
+    return data;
+  } catch (e) {
+    console.error("Brevo sendActivationEmail error:", String(e));
+    return null;
+  }
+}
+
+// --- Worker entrypoint ---
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const origin = request.headers.get("Origin") || "*";
+    const rawPath = url.pathname.replace(/\/+$/, "") || "/";
+    const isTelegramWebhookPath =
+      rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook");
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    if (!env.D1_WRITE_BINDING) {
+      return json({ ok: false, message: "D1 binding not found (env.D1_WRITE_BINDING)" }, 500, origin);
+    }
+
+    // Apply ALLOWED_ORIGINS check for browser/API calls, but NOT for Telegram webhook
+    if (!isTelegramWebhookPath && env.ALLOWED_ORIGINS && env.ALLOWED_ORIGINS.trim()) {
+      const allowed = env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
+      if (allowed.length && origin !== "*" && !allowed.includes(origin)) {
+        return json({ ok: false, message: "Origin not allowed" }, 403, origin);
+      }
+    }
+
+    try {
+      if ((rawPath === "/api/join" || rawPath.endsWith("/api/join")) && request.method === "POST") {
+        return await handleJoin(request, env, origin);
+      }
+      if (rawPath.startsWith("/api/member/") && request.method === "PATCH") {
+        return await handlePatchMember(request, env, origin);
+      }
+      if ((rawPath === "/api/payment/create-order" || rawPath.endsWith("/api/payment/create-order")) && request.method === "POST") {
+        return await handleCreateOrder(request, env, origin);
+      }
+      if ((rawPath === "/api/payment/confirm" || rawPath.endsWith("/api/payment/confirm")) && request.method === "POST") {
+        return await handlePaymentConfirm(request, env, origin);
+      }
+      // NEW: v2 confirm endpoint that uses activation_* columns only and verifies signature
+      if ((rawPath === "/api/payment/confirm-v2" || rawPath.endsWith("/api/payment/confirm-v2")) && request.method === "POST") {
+        return await handlePaymentConfirmV2(request, env, origin);
+      }
+
+      // --- NEW: endpoint to fetch order by ref_id (used by homepage loader) ---
+      if ((rawPath === "/api/order/by-ref" || rawPath.endsWith("/api/order/by-ref")) && request.method === "POST") {
+        return await handleFetchOrderByRef(request, env, origin);
+      }
+
+      // -----------------------------------------------
+      // Telegram Webhook Endpoint — Activation & Auto-Approval
+      // -----------------------------------------------
+      if (
+        (rawPath === "/api/telegram/webhook" || rawPath.endsWith("/api/telegram/webhook")) &&
+        request.method === "POST"
+      ) {
+        // Verify webhook secret (set via setWebhook & TELEGRAM_WEBHOOK_SECRET)
+        const tgSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+        if (env.TELEGRAM_WEBHOOK_SECRET && tgSecret !== env.TELEGRAM_WEBHOOK_SECRET) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
+        let update = {};
+        try {
+          update = await request.json();
+        } catch (e) {
+          console.error("Telegram webhook JSON parse error:", e);
+          return new Response("Bad request", { status: 400 });
+        }
+
+        console.log("Telegram update received:", JSON.stringify(update));
+
+        const db = env.D1_WRITE_BINDING;
+        const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+        const GROUP_ID = env.TELEGRAM_GROUP_ID;
+        const INVITE_LINK = env.TELEGRAM_GROUP_INVITE_LINK || null; // recommended: set this in env
+
+        // Helper: call Telegram API
+        async function callTelegram(method, payload) {
+          if (!BOT_TOKEN) {
+            console.error("TELEGRAM_BOT_TOKEN missing");
+            return null;
+          }
+          try {
+            const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok || !j.ok) {
+              console.error("Telegram API error", method, res.status, JSON.stringify(j));
+            }
+            return j;
+          } catch (e) {
+            console.error("Telegram API fetch error", method, String(e));
+            return null;
+          }
+        }
+
+        // Helper: send a DM to a user
+        async function sendDM(chatId, text) {
+          if (!BOT_TOKEN || !chatId) return;
+          return await callTelegram("sendMessage", {
+            chat_id: chatId,
+            text: text,
+            parse_mode: "HTML",
+            disable_web_page_preview: true
+          });
+        }
+
+        // Helper: approve / decline chat join requests
+        async function approveJoinRequest(chatId, userId) {
+          return await callTelegram("approveChatJoinRequest", {
+            chat_id: chatId,
+            user_id: userId
+          });
+        }
+
+        async function declineJoinRequest(chatId, userId) {
+          return await callTelegram("declineChatJoinRequest", {
+            chat_id: chatId,
+            user_id: userId
+          });
+        }
+
+        // --- Auto-approve join requests for paid & linked members ---
+        if (update.chat_join_request) {
+          const req = update.chat_join_request;
+          const chat = req.chat;
+          const user = req.from;
+
+          // If TELEGRAM_GROUP_ID is set, ensure this request is for our main group
+          if (GROUP_ID && String(chat.id) !== String(GROUP_ID)) {
+            return new Response(JSON.stringify({ ok: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+
+          let memberRow = null;
+          try {
+            const res = await db
+              .prepare("SELECT * FROM members WHERE telegram_user_id = ? LIMIT 1")
+              .bind(String(user.id))
+              .all();
+            if (res && res.results && res.results[0]) {
+              memberRow = res.results[0];
+            }
+          } catch (e) {
+            console.error("D1 lookup error (telegram_user_id for join_request):", String(e));
+          }
+
+          const isPaid =
+            memberRow &&
+            memberRow.activation_fee_status === "paid" &&
+            (!memberRow.telegram_revoked_at || memberRow.telegram_revoked_at === null);
+
+          if (!isPaid) {
+            // Optional: decline explicitly so freeloaders can't sit in pending forever
+            try {
+              await declineJoinRequest(chat.id, user.id);
+            } catch (e) {
+              console.error("declineJoinRequest failed:", String(e));
+            }
+
+            // Optional DM to explain
+            try {
+              await sendDM(
+                user.id,
+                "We could not approve your join request.\n\nPlease ensure your membership is activated using the link shared after payment, or contact support if you’ve already paid."
+              );
+            } catch (e) {
+              console.error("DM after decline failed:", String(e));
+            }
+
+            return new Response(JSON.stringify({ ok: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+
+          // Approve for paid + linked member
+          try {
+            await approveJoinRequest(chat.id, user.id);
+          } catch (e) {
+            console.error("approveJoinRequest failed:", String(e));
+          }
+
+          // Nice welcome DM
+          try {
+            await sendDM(
+              user.id,
+              "🎉 <b>Your membership is verified and your join request has been approved.</b>\n\nWelcome to the KenFolios Business Community!"
+            );
+          } catch (e) {
+            console.error("Welcome DM failed:", String(e));
+          }
+
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // We only handle private messages with /start <token>
+        const msg = update.message || update.edited_message || null;
+        if (!msg || !msg.from || !msg.chat || msg.chat.type !== "private") {
+          // Not a private chat message — just ack
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const from = msg.from;
+        const chatId = msg.chat.id;
+        const username = from.username || null;
+        const telegramUserId = from.id;
+
+        const text = (msg.text || "").trim();
+        if (!text.startsWith("/start")) {
+          // Optional: small helper reply
+          await sendDM(
+            chatId,
+            "Please use the activation link from your browser so we can connect your membership to Telegram."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // /start or /start <token>
+        const parts = text.split(/\s+/);
+        const activationToken = (parts[1] || "").trim();
+
+        if (!activationToken) {
+          await sendDM(
+            chatId,
+            "This activation link is incomplete. Please tap the activation button from your browser again."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Look up member by unique_token
+        let memberRow = null;
+        try {
+          const res = await db
+            .prepare("SELECT * FROM members WHERE unique_token = ? LIMIT 1")
+            .bind(activationToken)
+            .all();
+          if (res && res.results && res.results[0]) {
+            memberRow = res.results[0];
+          }
+        } catch (e) {
+          console.error("D1 lookup error (unique_token):", String(e));
+        }
+
+        if (!memberRow) {
+          await sendDM(
+            chatId,
+            "This activation link is invalid or expired. Please contact support if you believe this is an error."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Check payment status
+        if (memberRow.activation_fee_status !== "paid") {
+          await sendDM(
+            chatId,
+            "Your activation fee is not marked as paid yet. If you have already paid, please wait a minute and try again, or contact support."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Enforce one-telegram-user-per-token
+        if (memberRow.telegram_user_id && Number(memberRow.telegram_user_id) !== Number(telegramUserId)) {
+          await sendDM(
+            chatId,
+            "This activation link is already linked to another Telegram account. Please contact support if this is unexpected."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const nowIso = new Date().toISOString();
+
+        // Update member with Telegram details
+        try {
+          await db.prepare(`
+            UPDATE members
+            SET
+              telegram_user_id = ?,
+              telegram_username = ?,
+              telegram_linked_at = ?,
+              telegram_revoked_at = NULL,
+              telegram_revocation_reason = NULL
+            WHERE id = ?;
+          `).bind(
+            String(telegramUserId),
+            username,
+            nowIso,
+            memberRow.id
+          ).run();
+        } catch (e) {
+          console.error("D1 update error (telegram_*):", String(e));
+          await sendDM(
+            chatId,
+            "We could not connect your Telegram right now. Please try again in a bit."
+          );
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Try to give user access to the group
+        if (!GROUP_ID && !INVITE_LINK) {
+          await sendDM(
+            chatId,
+            "Your activation is confirmed, but the group link is not configured yet. Please contact support."
+          );
+        } else {
+          if (INVITE_LINK) {
+            // Recommended path: send invite link
+            await sendDM(
+              chatId,
+              `🎉 <b>Activation successful!</b>\n\nYour membership is active.\n\nTap here to join the KenFolios Business Community:\n${INVITE_LINK}`
+            );
+          } else if (GROUP_ID) {
+            // Fallback message if only GROUP_ID is set (no direct add API used here)
+            await sendDM(
+              chatId,
+              "🎉 <b>Activation successful!</b>\n\nYour membership is active. Please contact support to receive the latest group link."
+            );
+          }
+        }
+
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // ----------------------------------------------------------------------
+    } catch (err) {
+      console.error("Unhandled error:", String(err));
+      return json({ ok: false, message: "Internal error", error: String(err) }, 500, origin);
+    }
+
+    return json({ ok: false, message: "Not found" }, 404, origin);
+  }
+};
+
+// ---------------- Handlers ----------------
+async function parseJsonSafe(request) {
+  const ct = (request.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("application/json")) return await request.json();
+  const txt = await request.text();
+  try { return txt ? JSON.parse(txt) : {}; } catch { return {}; }
+}
+
+async function handleJoin(request, env, origin, ctx) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const full_name = (body.name || body.fullName || body.full_name || "").toString().trim();
+  const dob = (body.dob || "").toString().trim();
+  const gender = (body.gender || "").toString().trim();
+  const city = (body.city || "").toString().trim();
+  const email = (body.email || "").toString().trim().toLowerCase();
+  const phone = (body.phone || "").toString().trim();
+  const expectations = Array.isArray(body.expectations)
+    ? body.expectations.join(',')
+    : (body.expectations || body.expect || "").toString();
+  const accept = (body.accept || body.accepted || body.fi_accept) ? 1 : 0;
+  const created_at = new Date().toISOString();
+
+  if (!full_name || !dob || !gender || !city || !email || !phone) {
+    return json(
+      { ok: false, message: "Missing required fields (name,dob,gender,city,email,phone required)" },
+      400,
+      origin
+    );
+  }
+  if (!/@/.test(email) || phone.length < 6) {
+    return json({ ok: false, message: "Invalid email or phone" }, 400, origin);
+  }
+
+  try {
+    // -------------------------------------------------
+    // Existing member check
+    // -------------------------------------------------
+    const lookup = await db
+      .prepare("SELECT * FROM members WHERE email = ? ORDER BY created_at DESC LIMIT 1")
+      .bind(email)
+      .all();
+
+    if (lookup && lookup.results && lookup.results[0]) {
+      const existing = lookup.results[0];
+
+      if (existing.activation_fee_status === 'paid') {
+        return json(
+          {
+            ok: false,
+            message:
+              "A membership is already active for this email. Please use a different email to register or contact support if this is your account.",
+            reason: "already_paid"
+          },
+          409,
+          origin
+        );
+      }
+
+      // Update existing unpaid record
+      await db.prepare(`
+        UPDATE members
+        SET full_name = ?, dob = ?, gender = ?, city = ?, phone = ?, expectations = ?, accepted_terms = ?
+        WHERE id = ?
+      `)
+      .bind(
+        full_name,
+        dob,
+        gender,
+        city,
+        phone,
+        expectations,
+        accept ? 1 : 0,
+        existing.id
+      )
+      .run();
+
+      const order = buildOrderObject(existing.id, existing, null);
+      const dbCount = await readMemberCountOrFallback(db);
+
+      // 🔔 SES EMAIL — post submission (existing unpaid member)
+      try {
+        ctx.waitUntil(
+          sendOrderCreatedEmailSES(env, {
+            toEmail: existing.email,
+            fullName: existing.full_name || "Member",
+            orderUrl: order.order_url,
+            orderRef: order.order_ref,
+            orderCreatedAt: order.order_created_at,
+            orderTotal: order.totals.total
+          })
+        );
+      } catch (e) {
+        console.error("SES order email failed:", String(e));
+      }
+
+      return json({ ok: true, member_id: Number(existing.id), dbCount, order }, 200, origin);
+    }
+
+    // -------------------------------------------------
+    // Insert new member
+    // -------------------------------------------------
+    let member_id = null;
+
+    try {
+      const insertSql = `
+        INSERT INTO members
+          (full_name, dob, gender, city, email, phone, expectations, accepted_terms, created_at, activation_fee_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING id
+      `;
+      const insertRes = await db.prepare(insertSql)
+        .bind(
+          full_name,
+          dob,
+          gender,
+          city,
+          email,
+          phone,
+          expectations,
+          accept ? 1 : 0,
+          created_at,
+          'pending'
+        )
+        .all();
+
+      if (insertRes?.results?.[0]?.id != null) {
+        member_id = Number(insertRes.results[0].id);
+      }
+    } catch {
+      // Fallback if RETURNING not supported
+      await db.prepare(`
+        INSERT INTO members
+          (full_name, dob, gender, city, email, phone, expectations, accepted_terms, created_at, activation_fee_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+      .bind(
+        full_name,
+        dob,
+        gender,
+        city,
+        email,
+        phone,
+        expectations,
+        accept ? 1 : 0,
+        created_at,
+        'pending'
+      )
+      .run();
+    }
+
+    if (!member_id) {
+      const byEmail = await db
+        .prepare("SELECT id FROM members WHERE email = ? ORDER BY created_at DESC LIMIT 1")
+        .bind(email)
+        .all();
+
+      if (byEmail?.results?.[0]?.id != null) {
+        member_id = Number(byEmail.results[0].id);
+      }
+    }
+
+    // Increment member count (best-effort)
+    try {
+      await db.prepare(`
+        INSERT INTO meta (key, value) VALUES ('member_count', '1')
+        ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1
+      `).run();
+    } catch (e) {
+      console.error("meta upsert failed:", String(e));
+    }
+
+    // -------------------------------------------------
+    // Generate ref_id + order_url
+    // -------------------------------------------------
+    try {
+      const order_ref = generateRefFromMember(member_id);
+      const order_url = `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+
+      await db.prepare(`
+        UPDATE members
+        SET
+          ref_id = COALESCE(ref_id, ?),
+          order_url = COALESCE(order_url, ?),
+          activation_order_token = COALESCE(activation_order_token, ?)
+        WHERE id = ?
+      `)
+      .bind(order_ref, order_url, order_ref, member_id)
+      .run();
+    } catch (e) {
+      console.error("Could not persist initial ref_id/order_url after join:", String(e));
+    }
+
+    const byId = await db
+      .prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id)
+      .all();
+
+    const memberRow = byId?.results?.[0] || null;
+    const order = buildOrderObject(member_id, memberRow, null);
+    const dbCount = await readMemberCountOrFallback(db);
+
+    // 🔔 SES EMAIL — post submission (new member)
+    try {
+      ctx.waitUntil(
+        sendOrderCreatedEmailSES(env, {
+          toEmail: memberRow.email,
+          fullName: memberRow.full_name || "Member",
+          orderUrl: order.order_url,
+          orderRef: order.order_ref,
+          orderCreatedAt: order.order_created_at,
+          orderTotal: order.totals.total
+        })
+      );
+    } catch (e) {
+      console.error("SES order email failed:", String(e));
+    }
+
+    return json(
+      { ok: true, member_id, message: "Joined", dbCount, order },
+      201,
+      origin
+    );
+
+  } catch (err) {
+    const errStr = String(err || '');
+    console.error("DB write error:", errStr);
+
+    if (errStr.toLowerCase().includes('unique') || errStr.toLowerCase().includes('constraint')) {
+      return json(
+        { ok: false, message: "Duplicate record (email may already exist)", error: errStr },
+        409,
+        origin
+      );
+    }
+
+    return json(
+      { ok: false, message: "DB write error", error: errStr },
+      500,
+      origin
+    );
+  }
+}
+
+
+async function handlePatchMember(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const parts = pathParts(request.url);
+  const idPart = parts[parts.length - 1];
+  const memberId = Number(idPart);
+  if (!memberId) return json({ ok: false, message: "Missing member id" }, 400, origin);
+  const body = await parseJsonSafe(request);
+  const editableFields = {};
+  if (body.name) editableFields.full_name = body.name.toString().trim();
+  if (body.email) editableFields.email = body.email.toString().trim().toLowerCase();
+  if (body.phone) editableFields.phone = body.phone.toString().trim();
+  if (body.city) editableFields.city = body.city.toString().trim();
+  if (editableFields.email && !/@/.test(editableFields.email)) {
+    return json({ ok: false, message: "Invalid email" }, 400, origin);
+  }
+  if (editableFields.phone && editableFields.phone.length < 6) {
+    return json({ ok: false, message: "Invalid phone" }, 400, origin);
+  }
+
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(memberId).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      return json({ ok: false, message: "Member not found" }, 404, origin);
+    }
+    const existing = lookup.results[0];
+    if (existing.activation_fee_status === 'paid') {
+      return json({
+        ok: false,
+        message: "Member already paid; record is read-only",
+        reason: "already_paid"
+      }, 409, origin);
+    }
+    const keys = Object.keys(editableFields);
+    if (keys.length === 0) {
+      const order = buildOrderObject(memberId, existing, null);
+      return json({ ok: true, member_id: memberId, order }, 200, origin);
+    }
+    const sets = keys.map(k => `${k} = ?`).join(", ");
+    const bindVals = keys.map(k => editableFields[k]);
+    bindVals.push(memberId);
+    const updateSql = `UPDATE members SET ${sets} WHERE id = ?`;
+    await db.prepare(updateSql).bind(...bindVals).run();
+    const updated = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(memberId).all();
+    const updatedRow = updated.results[0];
+    const order = buildOrderObject(memberId, updatedRow, null);
+    return json({ ok: true, member_id: memberId, order }, 200, origin);
+  } catch (err) {
+    console.error("Patch member error:", String(err));
+    return json({ ok: false, message: "Update failed", error: String(err) }, 500, origin);
+  }
+}
+
+async function handleCreateOrder(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const member_id = Number(body.member_id || body.memberId);
+  const applyCoupon = (body.coupon || body.coupon_code || body.couponCode || null);
+  const simulate = body.simulate || false;
+  if (!member_id) {
+    return json({ ok: false, message: "member_id required" }, 400, origin);
+  }
+  const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+    .bind(member_id).all();
+  if (!lookup || !lookup.results || !lookup.results[0]) {
+    return json({ ok: false, message: "Member not found" }, 404, origin);
+  }
+  const member = lookup.results[0];
+  if (member.activation_fee_status === 'paid') {
+    return json({
+      ok: false,
+      message: "Activation fee already paid for this member",
+      reason: "already_paid"
+    }, 409, origin);
+  }
+  const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, applyCoupon);
+  if (totalsRes.error) {
+    return json({ ok: false, message: totalsRes.error }, 400, origin);
+  }
+
+  // Persist activation_created_at as UNIX seconds for order_created_at
+  try {
+    const nowSec = Math.floor(Date.now() / 1000);
+    await db.prepare(`
+      UPDATE members
+      SET activation_created_at = COALESCE(activation_created_at, ?)
+      WHERE id = ?;
+    `).bind(nowSec, member_id).run();
+  } catch (upErr) {
+    console.error("activation_created_at update failed:", String(upErr));
+  }
+
+  // Generate stable order_ref & order_url and persist (do not overwrite if exists)
+  const order_ref = generateRefFromMember(member_id);
+  const order_url = `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+  try {
+    await db.prepare(`
+      UPDATE members
+      SET
+        ref_id = COALESCE(ref_id, ?),
+        order_url = COALESCE(order_url, ?),
+        activation_order_token = COALESCE(activation_order_token, ?)
+      WHERE id = ?;
+    `).bind(order_ref, order_url, order_ref, member_id).run();
+  } catch (e) {
+    console.error("Could not persist order_url/ref_id:", String(e));
+  }
+
+  // Re-fetch member after potential updates
+  const afterSet = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+    .bind(member_id).all();
+  const memberAfter = (afterSet && afterSet.results && afterSet.results[0]) ? afterSet.results[0] : member;
+
+  // If simulate -> return totals & order (no gateway interaction)
+  if (simulate) {
+    return json({
+      ok: true,
+      razorpay_configured: !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
+      message: "Simulated order totals",
+      order: buildOrderObject(member_id, memberAfter, totalsRes)
+    }, 200, origin);
+  }
+
+  // If Razorpay not configured, still return created order (order_url present)
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+    try {
+      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
+        const payload = {
+          type: 'order_created',
+          email: memberAfter.email,
+          member_id,
+          order_ref,
+          order_url,
+          totals: totalsRes,
+          timestamp: new Date().toISOString()
+        };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) {
+      console.error('mail webhook error (no-razorpay):', String(e));
+    }
+
+    return json({
+      ok: true,
+      razorpay_configured: false,
+      message: "Payment options will appear here soon.",
+      order: buildOrderObject(member_id, memberAfter, totalsRes)
+    }, 200, origin);
+  }
+
+  // Create Razorpay order
+  try {
+    const createPayload = {
+      amount: totalsRes.total * 100,
+      currency: BASE_PRODUCT.currency,
+      receipt: `ORDER-${order_ref}`,
+      payment_capture: 1,
+      notes: { member_id: String(member_id), order_ref }
+    };
+    const razorpayAuth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
+    const rpRes = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${razorpayAuth}`
+      },
+      body: JSON.stringify(createPayload)
+    });
+    if (!rpRes.ok) {
+      const txt = await rpRes.text();
+      console.error("Razorpay create-order failed:", rpRes.status, txt);
+      return json({
+        ok: false,
+        message: "Failed to create payment order",
+        razorpay_error: txt
+      }, 502, origin);
+    }
+    const rpJson = await rpRes.json();
+
+    // Persist gateway order id/meta if not already set
+    try {
+      await db.prepare(`
+        UPDATE members
+        SET
+          activation_gateway_order_id = COALESCE(activation_gateway_order_id, ?),
+          activation_gateway_meta = COALESCE(activation_gateway_meta, ?)
+        WHERE id = ?;
+      `).bind(rpJson.id || null, JSON.stringify(rpJson) || null, member_id).run();
+    } catch (e) {
+      console.error("Failed to persist gateway order id/meta:", String(e));
+    }
+
+    // Fire mailer webhook for order created (non-blocking)
+    try {
+      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
+        const payload = {
+          type: 'order_created',
+          email: memberAfter.email,
+          member_id,
+          order_ref,
+          order_url,
+          razorpay_order: rpJson,
+          totals: totalsRes,
+          timestamp: new Date().toISOString()
+        };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) {
+      console.error('mail webhook error (after-rp):', String(e));
+    }
+
+    return json({
+      ok: true,
+      razorpay_configured: true,
+      razorpay_key_id: env.RAZORPAY_KEY_ID,
+      razorpay_order: rpJson,
+      order: buildOrderObject(member_id, memberAfter, totalsRes)
+    }, 200, origin);
+
+  } catch (err) {
+    console.error("Create-order error:", String(err));
+    return json({
+      ok: false,
+      message: "Payment order creation failed",
+      error: String(err)
+    }, 500, origin);
+  }
+}
+
+async function handlePaymentConfirm(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const member_id = Number(body.member_id || body.memberId);
+  const razorpayPaymentId = body.razorpay_payment_id || body.razorpayPaymentId || null;
+  const razorpayOrderId = body.razorpay_order_id || body.razorpayOrderId || null;
+  const razorpaySignature = body.razorpay_signature || body.razorpaySignature || null;
+  const coupon = body.coupon || body.coupon_code || null;
+  if (!member_id) return json({ ok: false, message: "member_id required" }, 400, origin);
+
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      return json({ ok: false, message: "Member not found" }, 404, origin);
+    }
+    const member = lookup.results[0];
+    if (member.activation_fee_status === 'paid') {
+      return json({ ok: true, message: "Already marked paid", reason: "already_paid" }, 200, origin);
+    }
+    const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, coupon);
+    if (totalsRes.error) {
+      return json({ ok: false, message: totalsRes.error }, 400, origin);
+    }
+    const now = new Date().toISOString();
+
+    // NOTE: This handler still uses payment_gateway/payment_gateway_payment_id,
+    // which are not in your schema. Prefer using /api/payment/confirm-v2 instead.
+    const updateSql = `
+      UPDATE members
+      SET
+        activation_fee_status = 'paid',
+        activation_fee_amount = ?,
+        activation_coupon_code = ?,
+        activation_fee_paid_at = ?,
+        payment_gateway = ?,
+        payment_gateway_payment_id = ?
+      WHERE id = ?
+    `;
+    await db.prepare(updateSql)
+      .bind(totalsRes.total, coupon || null, now, "razorpay", razorpayPaymentId || null, member_id)
+      .run();
+
+    // Generate unique_token + activation_url if not already present
+    let unique_token = null;
+    let activation_url = null;
+    try {
+      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email, full_name FROM members WHERE id = ? LIMIT 1")
+        .bind(member_id).all();
+      const existing = (after && after.results && after.results[0]) ? after.results[0] : null;
+      unique_token = existing && existing.unique_token ? existing.unique_token : null;
+      activation_url = existing && existing.activation_url ? existing.activation_url : null;
+
+      if (!unique_token) {
+        unique_token = generateUniqueToken(28);
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+        await db.prepare(`
+          UPDATE members
+          SET unique_token = ?, activation_url = ?, activated_at = ?
+          WHERE id = ?;
+        `).bind(unique_token, activation_url, now, member_id).run();
+      } else if (!activation_url) {
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+        await db.prepare(`
+          UPDATE members
+          SET
+            activation_url = COALESCE(activation_url, ?),
+            activated_at = COALESCE(activated_at, ?)
+          WHERE id = ?;
+        `).bind(activation_url, now, member_id).run();
+      }
+    } catch (tErr) {
+      console.error("Failed to set unique_token/activation_url:", String(tErr));
+    }
+
+    // Optionally track coupon usage
+    try {
+      if (coupon) {
+        const stamp = `${coupon}|${member_id}|${now}`;
+        await db.prepare(`
+          INSERT INTO meta (key, value)
+          VALUES (?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = value || ',' || excluded.value;
+        `).bind('coupon_usage', stamp).run().catch(() => { });
+      }
+    } catch (cuErr) {
+      /* ignore */
+    }
+
+    // Re-fetch updated row
+    const updated = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id).all();
+    const updatedRow = updated.results[0];
+    const order = buildOrderObject(member_id, updatedRow, totalsRes);
+
+    // Fire mailer webhook for activation (non-blocking)
+    try {
+      if (env.MAILER_WEBHOOK && (updatedRow.email || member.email)) {
+        const payload = {
+          type: 'activation',
+          email: updatedRow.email || member.email,
+          member_id,
+          activation_url: updatedRow.activation_url || (activation_url || (`https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`)),
+          order_ref: updatedRow.ref_id || null,
+          totals: totalsRes,
+          timestamp: new Date().toISOString()
+        };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) {
+      console.error('mail webhook error (activation):', String(e));
+    }
+
+    // Send activation email via Brevo (best-effort, non-critical)
+    try {
+      const emailTo = updatedRow.email || member.email;
+      const fullName = updatedRow.full_name || member.full_name || "Member";
+      const finalActivationUrl =
+        updatedRow.activation_url ||
+        activation_url ||
+        (unique_token
+          ? `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`
+          : null);
+
+      if (emailTo && finalActivationUrl) {
+        await sendActivationEmail(env, emailTo, fullName, finalActivationUrl);
+      }
+    } catch (e) {
+      console.error("Brevo activation email error (confirm v1):", String(e));
+    }
+
+    return json({ ok: true, message: "Payment confirmed", member_id, order }, 200, origin);
+
+  } catch (err) {
+    console.error("Payment confirm error:", String(err));
+    return json({ ok: false, message: "Payment confirmation failed", error: String(err) }, 500, origin);
+  }
+}
+
+// ---------------- NEW: V2 handler: uses activation_* fields + signature check ----------------
+async function handlePaymentConfirmV2(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request, env, origin);
+
+  const member_id = Number(body.member_id || body.memberId);
+  const razorpayPaymentId = body.razorpay_payment_id || body.razorpayPaymentId || null;
+  const razorpayOrderId = body.razorpay_order_id || body.razorpayOrderId || null;
+  const razorpaySignature = body.razorpay_signature || body.razorpaySignature || null;
+  const coupon = body.coupon || body.coupon_code || body.couponCode || null;
+
+  if (!member_id) return json({ ok: false, message: "member_id required" }, 400, origin);
+
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      return json({ ok: false, message: "Member not found" }, 404, origin);
+    }
+
+    const member = lookup.results[0];
+
+    // Already paid? just return current order
+    if (member.activation_fee_status === 'paid') {
+      const orderAlready = buildOrderObject(member_id, member, null);
+      return json({
+        ok: true,
+        message: "Already marked paid",
+        reason: "already_paid",
+        order: orderAlready
+      }, 200, origin);
+    }
+
+    // Verify Razorpay signature if secret present
+    if (!env.RAZORPAY_KEY_SECRET) {
+      return json({ ok: false, message: "RAZORPAY_KEY_SECRET not configured" }, 500, origin);
+    }
+
+    const sigOk = await verifyRazorpaySignature(
+      env.RAZORPAY_KEY_SECRET,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature
+    );
+
+    if (!sigOk) {
+      try {
+        await db.prepare(`
+          UPDATE members
+          SET
+            activation_gateway_status = ?,
+            activation_last_error = ?,
+            activation_attempt_count = activation_attempt_count + 1
+          WHERE id = ?;
+        `).bind("failed", "invalid_signature", member_id).run();
+      } catch (e) {
+        console.error("Failed to record invalid_signature:", String(e));
+      }
+      return json({ ok: false, message: "Invalid payment signature" }, 400, origin);
+    }
+
+    // Normalize coupon code (prefer body, fallback to member record)
+    const rawCoupon = (coupon || member.activation_coupon_code || "").toString().trim();
+    const couponCode = rawCoupon ? rawCoupon.toUpperCase() : "";
+
+    // Enforce per-coupon limits for special coupons like FOUNDER100
+    if (couponCode && COUPON_LIMITS[couponCode]) {
+      const limitCfg = COUPON_LIMITS[couponCode];
+
+      // Check expiry time if configured
+      if (limitCfg.expiresAt) {
+        try {
+          const now = new Date();
+          const exp = new Date(limitCfg.expiresAt);
+          if (now > exp) {
+            return json({
+              ok: false,
+              message: `Coupon ${couponCode} has expired.`,
+              reason: "coupon_expired"
+            }, 400, origin);
+          }
+        } catch (e) {
+          console.error("Coupon expiry parse error:", String(e));
+        }
+      }
+
+      // Check max uses via meta table (key: coupon_used_<CODE>)
+      let usedCount = 0;
+      const metaKey = `coupon_used_${couponCode}`;
+      try {
+        const metaRes = await db
+          .prepare("SELECT value FROM meta WHERE key = ? LIMIT 1")
+          .bind(metaKey)
+          .all();
+        if (metaRes && metaRes.results && metaRes.results[0] && metaRes.results[0].value != null) {
+          usedCount = Number(metaRes.results[0].value) || 0;
+        }
+      } catch (e) {
+        console.error("Coupon usage lookup error:", String(e));
+      }
+
+      if (limitCfg.maxUses != null && usedCount >= limitCfg.maxUses) {
+        return json({
+          ok: false,
+          message: `Coupon ${couponCode} has reached its maximum usage limit.`,
+          reason: "coupon_usage_limit_reached"
+        }, 400, origin);
+      }
+    }
+
+    // Totals (server-authoritative)
+    const totalsRes = applyCouponAndTotals(
+      BASE_PRODUCT.base_price,
+      couponCode || null
+    );
+    if (totalsRes.error) {
+      return json({ ok: false, message: totalsRes.error }, 400, origin);
+    }
+
+    const nowIso = new Date().toISOString();
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // Mark payment + gateway details using EXISTING columns only
+    try {
+      const updateSql = `
+        UPDATE members
+        SET
+          activation_fee_status = 'paid',
+          activation_fee_currency = COALESCE(activation_fee_currency, ?),
+          activation_fee_amount = ?,
+          activation_fee_discount_amount = ?,
+          activation_fee_final_amount = ?,
+          activation_coupon_code = COALESCE(activation_coupon_code, ?),
+          activation_fee_paid_at = ?,
+          activation_gateway_payment_id = COALESCE(activation_gateway_payment_id, ?),
+          activation_gateway_order_id = COALESCE(activation_gateway_order_id, ?),
+          activation_gateway_signature = COALESCE(activation_gateway_signature, ?),
+          activation_gateway_status = 'captured',
+          activation_captured_at = COALESCE(activation_captured_at, ?),
+          activation_attempt_count = activation_attempt_count + 1
+        WHERE id = ?;
+      `;
+      await db.prepare(updateSql).bind(
+        BASE_PRODUCT.currency,
+        totalsRes.total,
+        totalsRes.discount,
+        totalsRes.total,
+        couponCode || member.activation_coupon_code || null,
+        nowIso,
+        razorpayPaymentId || null,
+        razorpayOrderId || null,
+        razorpaySignature || null,
+        nowSec,
+        member_id
+      ).run();
+    } catch (upErr) {
+      console.error("Payment confirm-v2 update failed:", String(upErr));
+      return json({ ok: false, message: "Payment update failed", error: String(upErr) }, 500, origin);
+    }
+
+    // Generate unique_token + activation_url (same semantics as old handler, but query-param style)
+    let unique_token = null;
+    let activation_url = null;
+    try {
+      const after = await db.prepare("SELECT unique_token, activation_url, ref_id, email, full_name FROM members WHERE id = ? LIMIT 1")
+        .bind(member_id).all();
+      const existing = (after && after.results && after.results[0]) ? after.results[0] : null;
+      unique_token = existing && existing.unique_token ? existing.unique_token : null;
+      activation_url = existing && existing.activation_url ? existing.activation_url : null;
+
+      if (!unique_token) {
+        unique_token = generateUniqueToken(28);
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+        await db.prepare(`
+          UPDATE members
+          SET unique_token = ?, activation_url = ?, activated_at = COALESCE(activated_at, ?)
+          WHERE id = ?;
+        `).bind(unique_token, activation_url, nowIso, member_id).run();
+      } else if (!activation_url) {
+        activation_url = `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+        await db.prepare(`
+          UPDATE members
+          SET activation_url = ?, activated_at = COALESCE(activated_at, ?)
+          WHERE id = ?;
+        `).bind(activation_url, nowIso, member_id).run();
+      }
+    } catch (tErr) {
+      console.error("Failed to set unique_token/activation_url (v2):", String(tErr));
+    }
+
+    // Re-fetch updated row
+    const updated = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id).all();
+    const updatedRow = (updated && updated.results && updated.results[0]) ? updated.results[0] : member;
+    const order = buildOrderObject(member_id, updatedRow, totalsRes);
+
+    // If coupon has limits (e.g., FOUNDER100) and was used successfully, increment its usage count
+    if (couponCode && COUPON_LIMITS[couponCode]) {
+      const metaKey = `coupon_used_${couponCode}`;
+      try {
+        await db.prepare(`
+          INSERT INTO meta (key, value)
+          VALUES (?, '1')
+          ON CONFLICT(key) DO UPDATE
+          SET value = CAST(value AS INTEGER) + 1;
+        `).bind(metaKey).run();
+      } catch (e) {
+        console.error("Coupon usage increment error:", String(e));
+      }
+    }
+
+    // Fire mailer webhook for activation (same pattern as old handler)
+    try {
+      if (env.MAILER_WEBHOOK && (updatedRow.email || member.email)) {
+        const payload = {
+          type: 'activation',
+          email: updatedRow.email || member.email,
+          member_id,
+          activation_url: updatedRow.activation_url || activation_url,
+          order_ref: updatedRow.ref_id || null,
+          totals: totalsRes,
+          timestamp: new Date().toISOString()
+        };
+        fireMailerWebhook(env, payload);
+      }
+    } catch (e) {
+      console.error('mail webhook error (activation-v2):', String(e));
+    }
+
+    // Send activation email via Brevo (best-effort)
+    try {
+      const emailTo = updatedRow.email || member.email;
+      const fullName = updatedRow.full_name || member.full_name || "Member";
+      const finalActivationUrl =
+        updatedRow.activation_url ||
+        activation_url ||
+        (unique_token
+          ? `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`
+          : null);
+
+      if (emailTo && finalActivationUrl) {
+        await sendActivationEmail(env, emailTo, fullName, finalActivationUrl);
+      }
+    } catch (e) {
+      console.error("Brevo activation email error (confirm v2):", String(e));
+    }
+
+    return json({ ok: true, message: "Payment confirmed", member_id, order }, 200, origin);
+
+  } catch (err) {
+    console.error("Payment confirm-v2 error:", String(err));
+    return json({ ok: false, message: "Payment confirmation failed", error: String(err) }, 500, origin);
+  }
+}
+
+// ---------------- NEW handler: Fetch order by ref_id ----------------
+async function handleFetchOrderByRef(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+  const ref_id = (body.ref_id || body.refId || '').toString().trim();
+  if (!ref_id) {
+    return json({ ok: false, message: "ref_id required" }, 400, origin);
+  }
+  try {
+    const lookup = await db.prepare("SELECT * FROM members WHERE ref_id = ? LIMIT 1")
+      .bind(ref_id).all();
+    if (!lookup || !lookup.results || !lookup.results[0]) {
+      console.warn('handleFetchOrderByRef: not found', ref_id);
+      return json({ ok: false, message: "Order not found" }, 404, origin);
+    }
+    const member = lookup.results[0];
+    const order = buildOrderObject(member.id, member, null);
+    return json({ ok: true, order }, 200, origin);
+  } catch (err) {
+    console.error('handleFetchOrderByRef error:', String(err));
+    return json({ ok: false, message: "Internal error" }, 500, origin);
+  }
+}
+
+// -------------------------------------------------------------------
+// ---------------- Order builder & helpers ----------------
+function buildOrderObject(memberId, memberRow, totalsOverride) {
+  const member = memberRow ? {
+    id: memberRow.id,
+    full_name: memberRow.full_name,
+    email: memberRow.email,
+    phone: memberRow.phone,
+    city: memberRow.city,
+    dob: memberRow.dob,
+    gender: memberRow.gender,
+    expectations: memberRow.expectations
+  } : {};
+  const order_ref = memberRow && memberRow.ref_id
+    ? memberRow.ref_id
+    : generateRefFromMember(memberId);
+  const totals = totalsOverride
+    ? totalsOverride
+    : applyCouponAndTotals(
+        BASE_PRODUCT.base_price,
+        memberRow && memberRow.activation_coupon_code
+          ? memberRow.activation_coupon_code
+          : null
+      );
+  const status = (memberRow && memberRow.activation_fee_status === 'paid') ? 'paid' : 'pending';
+  const editable = status !== 'paid';
+  const available_coupons = Object.values(COUPONS).map(c => ({
+    code: c.code,
+    type: c.type,
+    amount: c.amount || null,
+    pct: c.pct || null,
+    cap: c.cap || null,
+    min: c.min || 0
+  }));
+
+  // Build order_created_at: prefer activation_created_at (UNIX secs), else created_at ISO, else now
+  let order_created_at = null;
+  if (memberRow && memberRow.activation_created_at) {
+    try {
+      const sec = Number(memberRow.activation_created_at);
+      if (!isNaN(sec)) order_created_at = new Date(sec * 1000).toISOString();
+    } catch (e) { /* ignore */ }
+  }
+  if (!order_created_at && memberRow && memberRow.created_at) {
+    order_created_at = (new Date(memberRow.created_at)).toISOString();
+  }
+  if (!order_created_at) order_created_at = (new Date()).toISOString();
+
+  // Ensure order_url uses query param style
+  const order_url = memberRow && memberRow.order_url
+    ? memberRow.order_url
+    : `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
+
+  const activation_url = memberRow && memberRow.activation_url
+    ? memberRow.activation_url
+    : (memberRow && memberRow.unique_token
+        ? `https://kenfolios.com/community?activation=${encodeURIComponent(memberRow.unique_token)}`
+        : null);
+
+  return {
+    order_ref,
+    order_created_at,
+    order_url,
+    activation_url,
+    ref_id: order_ref,
+    member: member,
+    product: {
+      name: BASE_PRODUCT.name,
+      base_price: BASE_PRODUCT.base_price,
+      currency: BASE_PRODUCT.currency
+    },
+    available_coupons,
+    applied_coupon: totals.applied_coupon || null,
+    totals: {
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      taxable: totals.taxable,
+      gst: totals.gst,
+      total: totals.total
+    },
+    status,
+    editable,
+    company: buildCompanyBlock()
+  };
+}
+
+async function readMemberCountOrFallback(db) {
+  try {
+    const metaRes = await db.prepare("SELECT value FROM meta WHERE key = 'member_count' LIMIT 1").all();
+    if (metaRes && metaRes.results && metaRes.results[0] && metaRes.results[0].value != null) {
+      return Number(metaRes.results[0].value) || 0;
+    } else {
+      const cntRes = await db.prepare("SELECT COUNT(*) AS cnt FROM members").all();
+      if (cntRes && cntRes.results && cntRes.results[0] && cntRes.results[0].cnt != null) {
+        return Number(cntRes.results[0].cnt) || 0;
+      }
+    }
+  } catch (err) {
+    console.error("count read failed:", String(err));
+  }
+  return null;
+}
+// ============================================================
+// AWS SES — ORDER CREATED (POST-SUBMISSION) EMAIL
+// Sent ONCE after successful /api/join
+// ============================================================
+
+// --- HTML TEMPLATE (LEFT ALIGNED) ---
+function buildOrderCreatedHtml({
+  fullName,
+  orderUrl,
+  orderRef,
+  orderCreatedAt,
+  orderTotal
+}) {
+  const year = new Date().getFullYear();
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Welcome to KenFolios Business Community</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:Arial,Helvetica,sans-serif;color:#333;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+    <tr>
+      <td align="left" style="padding-left:20px;padding-right:20px;">
+        <table width="600" cellpadding="0" cellspacing="0" align="left"
+          style="background:#ffffff;border-radius:6px;padding:30px;">
+
+          <h1 style="margin:0 0 20px 0;font-size:22px;color:#111;font-weight:700;">
+            Welcome to KenFolios Business Community
+          </h1>
+
+          <p>Dear <strong>${fullName}</strong>,</p>
+
+          <p>
+            You are registered for the <strong>KenFolios Business Community</strong>.
+          </p>
+
+          <p>
+            Below is your order for the one-time membership activation fee.
+            You can view and pay your order using the button below.
+            Once payment is completed, we will instantly share your activation link.
+          </p>
+
+          <p>
+            <a href="${orderUrl}"
+               style="display:inline-block;background:#E11D2E;color:#ffffff;
+                      text-decoration:none;padding:12px 22px;border-radius:6px;
+                      font-size:15px;font-weight:600;">
+              View &amp; Pay Order
+            </a>
+          </p>
+
+          <p style="font-size:13px;color:#555;">
+            If the button does not work, copy this link:<br/>
+            <span style="word-break:break-all;">${orderUrl}</span>
+          </p>
+
+          <table width="100%" cellpadding="0" cellspacing="0"
+            style="background:#F9FAFB;border:1px solid #E5E7EB;margin-bottom:22px;">
+            <tr>
+              <td colspan="2" style="padding:10px;font-weight:600;">
+                Order Details
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px;color:#4B5563;">Order Number</td>
+              <td style="padding:8px;">${orderRef}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px;color:#4B5563;">Order Created On</td>
+              <td style="padding:8px;">${orderCreatedAt}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px;color:#4B5563;">Amount Payable</td>
+              <td style="padding:8px;">₹${orderTotal}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px;color:#4B5563;">Payment Status</td>
+              <td style="padding:8px;">Pending payment</td>
+            </tr>
+          </table>
+
+          <p style="font-size:12px;color:#6B7280;">
+            <strong>KenFolios Media Private Limited</strong><br/>
+            Second Floor, F-328, Lado Sarai,<br/>
+            New Delhi – 110030, India
+          </p>
+
+          <p style="font-size:11px;color:#9CA3AF;">
+            © ${year} KenFolios Media Private Limited. All rights reserved.
+          </p>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+
+// --- AWS SES SENDER (SIGV4, WORKERS SAFE) ---
+async function sendOrderCreatedEmailSES(env, data) {
+  if (env.SES_ENABLED !== "true") return;
+
+  const {
+    toEmail,
+    fullName,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  } = data;
+
+  if (!toEmail || !orderUrl) return;
+
+  const region = env.SES_REGION;
+  const accessKey = env.SES_ACCESS_KEY_ID;
+  const secretKey = env.SES_SECRET_ACCESS_KEY;
+  const fromEmail = env.SES_FROM_EMAIL;
+  const fromName = env.AWS_SES_FROM_NAME || "KenFolios Business Community";
+
+  if (!region || !accessKey || !secretKey || !fromEmail) {
+    console.error("SES config missing");
+    return;
+  }
+
+  const htmlBody = buildOrderCreatedHtml({
+    fullName,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  });
+
+  const subject = "Complete your KenFolios registration";
+
+  const payload =
+    `Action=SendEmail` +
+    `&Source=${encodeURIComponent(`${fromName} <${fromEmail}>`)}` +
+    `&Destination.ToAddresses.member.1=${encodeURIComponent(toEmail)}` +
+    `&Message.Subject.Data=${encodeURIComponent(subject)}` +
+    `&Message.Body.Html.Data=${encodeURIComponent(htmlBody)}`;
+
+  const endpoint = `https://email.${region}.amazonaws.com/`;
+
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+
+  async function hmac(key, msg) {
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      typeof key === "string" ? new TextEncoder().encode(key) : key,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    return crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(msg));
+  }
+
+  async function sha256(msg) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(msg));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  const canonicalHeaders =
+    `content-type:application/x-www-form-urlencoded\n` +
+    `host:email.${region}.amazonaws.com\n` +
+    `x-amz-date:${amzDate}\n`;
+
+  const signedHeaders = "content-type;host;x-amz-date";
+  const payloadHash = await sha256(payload);
+
+  const canonicalRequest =
+    `POST\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+
+  const credentialScope = `${dateStamp}/${region}/ses/aws4_request`;
+  const stringToSign =
+    `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${await sha256(canonicalRequest)}`;
+
+  const kDate = await hmac("AWS4" + secretKey, dateStamp);
+  const kRegion = await hmac(kDate, region);
+  const kService = await hmac(kRegion, "ses");
+  const kSigning = await hmac(kService, "aws4_request");
+
+  const signature = [...new Uint8Array(await hmac(kSigning, stringToSign))]
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+
+  const authorization =
+    `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Amz-Date": amzDate,
+      "Authorization": authorization
+    },
+    body: payload
+  }).catch(e => console.error("SES send failed:", e));
+}
