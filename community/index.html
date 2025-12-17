@@ -4597,21 +4597,23 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 })();
  
 /*
-  Auto-scroll to Order Summary:
-  When the page is opened with ?order=REF, this waits for the async
-  order summary (.kf-order-wrapper) to render and then smoothly
-  scrolls the view to it.
+  Auto-scroll to Order Summary notice:
+  When accessed via ?order=REF, waits for the async order UI,
+  then scrolls to the "Details saved / Order ID" notice so it
+  is the first visible element.
 */
 (function () {
-  // Only act when ?order= is present
   const params = new URLSearchParams(window.location.search);
   if (!params.get('order')) return;
 
-  function scrollToOrderSummary() {
-    const box = document.querySelector('.kf-order-wrapper');
-    if (!box) return false;
+  function scrollToOrderNotice() {
+    const wrapper = document.querySelector('.kf-order-wrapper');
+    if (!wrapper) return false;
 
-    box.scrollIntoView({
+    // The saved notice is always immediately before the wrapper
+    const notice = wrapper.previousElementSibling || wrapper;
+
+    notice.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
@@ -4619,12 +4621,12 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     return true;
   }
 
-  // Try immediately (in case it rendered fast)
-  if (scrollToOrderSummary()) return;
+  // Try immediately
+  if (scrollToOrderNotice()) return;
 
-  // Otherwise observe DOM for async insertion
+  // Observe async DOM insertion
   const observer = new MutationObserver(() => {
-    if (scrollToOrderSummary()) {
+    if (scrollToOrderNotice()) {
       observer.disconnect();
     }
   });
@@ -4634,7 +4636,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     subtree: true
   });
 
-  // Safety disconnect after 5s
+  // Safety stop
   setTimeout(() => observer.disconnect(), 5000);
 })();
  
