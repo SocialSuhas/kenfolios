@@ -750,20 +750,34 @@ async function handleJoin(request, env, origin, ctx) {
       const dbCount = await readMemberCountOrFallback(db);
 
       // 🔔 SES EMAIL — post submission (existing unpaid member)
-      try {
-        ctx.waitUntil(
-          sendOrderCreatedEmailSES(env, {
-            toEmail: existing.email,
-            fullName: existing.full_name || "Member",
-            orderUrl: order.order_url,
-            orderRef: order.order_ref,
-            orderCreatedAt: order.order_created_at,
-            orderTotal: order.totals.total
-          })
-        );
-      } catch (e) {
-        console.error("SES order email failed:", String(e));
-      }
+// 🔔 ORDER CREATED EMAIL — SES with Brevo fallback (existing unpaid member)
+try {
+  if (env.SES_ENABLED === "true") {
+    ctx.waitUntil(
+      sendOrderCreatedEmailSES(env, {
+        toEmail: existing.email,
+        fullName: existing.full_name || "Member",
+        orderUrl: order.order_url,
+        orderRef: order.order_ref,
+        orderCreatedAt: order.order_created_at,
+        orderTotal: order.totals.total
+      })
+    );
+  } else {
+    ctx.waitUntil(
+      sendOrderCreatedEmailBrevo(env, {
+        toEmail: existing.email,
+        fullName: existing.full_name || "Member",
+        orderUrl: order.order_url,
+        orderRef: order.order_ref,
+        orderCreatedAt: order.order_created_at,
+        orderTotal: order.totals.total
+      })
+    );
+  }
+} catch (e) {
+  console.error("Order created email failed:", String(e));
+}
 
       return json({ ok: true, member_id: Number(existing.id), dbCount, order }, 200, origin);
     }
@@ -872,21 +886,34 @@ async function handleJoin(request, env, origin, ctx) {
     const dbCount = await readMemberCountOrFallback(db);
 
     // 🔔 SES EMAIL — post submission (new member)
-    try {
-      ctx.waitUntil(
-        sendOrderCreatedEmailSES(env, {
-          toEmail: memberRow.email,
-          fullName: memberRow.full_name || "Member",
-          orderUrl: order.order_url,
-          orderRef: order.order_ref,
-          orderCreatedAt: order.order_created_at,
-          orderTotal: order.totals.total
-        })
-      );
-    } catch (e) {
-      console.error("SES order email failed:", String(e));
-    }
-
+   // 🔔 ORDER CREATED EMAIL — SES with Brevo fallback (new member)
+try {
+  if (env.SES_ENABLED === "true") {
+    ctx.waitUntil(
+      sendOrderCreatedEmailSES(env, {
+        toEmail: memberRow.email,
+        fullName: memberRow.full_name || "Member",
+        orderUrl: order.order_url,
+        orderRef: order.order_ref,
+        orderCreatedAt: order.order_created_at,
+        orderTotal: order.totals.total
+      })
+    );
+  } else {
+    ctx.waitUntil(
+      sendOrderCreatedEmailBrevo(env, {
+        toEmail: memberRow.email,
+        fullName: memberRow.full_name || "Member",
+        orderUrl: order.order_url,
+        orderRef: order.order_ref,
+        orderCreatedAt: order.order_created_at,
+        orderTotal: order.totals.total
+      })
+    );
+  }
+} catch (e) {
+  console.error("Order created email failed:", String(e));
+}
     return json(
       { ok: true, member_id, message: "Joined", dbCount, order },
       201,
@@ -1882,3 +1909,62 @@ async function sendOrderCreatedEmailSES(env, data) {
     body: payload
   }).catch(e => console.error("SES send failed:", e));
 }
+// ============================================================
+// BREVO — ORDER CREATED (POST-SUBMISSION) EMAIL (FALLBACK)
+// Uses SAME HTML as SES, no template ID
+// ============================================================
+async function sendOrderCreatedEmailBrevo(env, data) {
+  const {
+    toEmail,
+    fullName,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  } = data;
+
+  if (!toEmail || !orderUrl) return;
+
+  if (!env.BREVO_API_KEY) {
+    console.error("Brevo config missing");
+    return;
+  }
+
+  const senderEmail = env.BREVO_SENDER_EMAIL || "no-reply@kenfolios.com";
+  const senderName = env.BREVO_SENDER_NAME || "KenFolios Business Community";
+  const name = fullName && fullName.trim() ? fullName.trim() : "Member";
+
+  const htmlBody = buildOrderCreatedHtml({
+    fullName: name,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  });
+
+  const payload = {
+    sender: { email: senderEmail, name: senderName },
+    to: [{ email: toEmail, name }],
+    subject: "Complete your KenFolios Business Community registration",
+    htmlContent: htmlBody
+  };
+
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": env.BREVO_API_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("Brevo order email failed:", res.status, txt);
+    }
+  } catch (e) {
+    console.error("Brevo send failed:", String(e));
+  }
+}
+
