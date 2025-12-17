@@ -305,7 +305,7 @@ async function sendActivationEmail(env, toEmail, fullName, activationUrl) {
 
 // --- Worker entrypoint ---
 export default {
-  async fetch(request, env) {
+async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin") || "*";
     const rawPath = url.pathname.replace(/\/+$/, "") || "/";
@@ -330,8 +330,9 @@ export default {
 
     try {
       if ((rawPath === "/api/join" || rawPath.endsWith("/api/join")) && request.method === "POST") {
-        return await handleJoin(request, env, origin);
-      }
+  return await handleJoin(request, env, origin, ctx);
+}
+
       if (rawPath.startsWith("/api/member/") && request.method === "PATCH") {
         return await handlePatchMember(request, env, origin);
       }
