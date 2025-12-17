@@ -4595,6 +4595,49 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   })();
 
 })();
+ 
+/*
+  Auto-scroll to Order Summary:
+  When the page is opened with ?order=REF, this waits for the async
+  order summary (.kf-order-wrapper) to render and then smoothly
+  scrolls the view to it.
+*/
+(function () {
+  // Only act when ?order= is present
+  const params = new URLSearchParams(window.location.search);
+  if (!params.get('order')) return;
+
+  function scrollToOrderSummary() {
+    const box = document.querySelector('.kf-order-wrapper');
+    if (!box) return false;
+
+    box.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+    return true;
+  }
+
+  // Try immediately (in case it rendered fast)
+  if (scrollToOrderSummary()) return;
+
+  // Otherwise observe DOM for async insertion
+  const observer = new MutationObserver(() => {
+    if (scrollToOrderSummary()) {
+      observer.disconnect();
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // Safety disconnect after 5s
+  setTimeout(() => observer.disconnect(), 5000);
+})();
+ 
 
 </script>
 
