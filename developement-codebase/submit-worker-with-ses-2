@@ -1815,7 +1815,7 @@ async function sendOrderCreatedEmailSES(env, data) {
     orderTotal
   });
 
-  const subject = "Complete your KenFolios registration";
+  const subject = "Complete your KenFolios Business Community registration";
 
   const payload =
     `Action=SendEmail` +
