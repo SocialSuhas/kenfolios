@@ -1886,9 +1886,22 @@
               <label class="kf-check"><input type="checkbox" name="expectations" value="Hiring & Team Building"> Hiring & Team Building</label>
               <label class="kf-check"><input type="checkbox" name="expectations" value="Internship Openings"> Internship Openings</label>
               <label class="kf-check"><input type="checkbox" name="expectations" value="Job Openings"> Job Openings</label>
-              <label class="kf-check"><input type="checkbox" name="expectations" value="Other"> Other</label>
-            </div>
-           <div class="kf-field">
+              <label class="kf-check">
+  <input type="checkbox" name="expectations" value="Other" id="expOther">
+  Other
+</label>
+
+              
+            </div><input
+  class="kf-input"
+  type="text"
+  id="otherExpectation"
+  maxlength="150"
+  placeholder="Please specify (max 150 characters)"
+  style="display:none; margin-top:6px;"
+/>
+          </div>
+<div class="kf-field">
   <label class="kf-label">
     Languages you are comfortable speaking <span style="font-weight:400">(optional)</span>
   </label>
@@ -1914,15 +1927,15 @@
   </div>
 
   <input
-    class="kf-input"
-    type="text"
-    id="otherLanguage"
-    placeholder="Please specify"
-    style="display:none; margin-top:6px;"
-  />
-</div>
+  class="kf-input"
+  type="text"
+  id="otherLanguage"
+  maxlength="50"
+  placeholder="Please specify (max 50 characters)"
+  style="display:none; margin-top:6px;"
+/>
 
-          </div>
+</div>
 
           <div class="kf-legal">
             <label style="display:flex; gap:.5rem; align-items:flex-start;">
@@ -1947,6 +1960,38 @@
   </div>
 
   <script>
+ /*
+ * Generic "Other" checkbox handler
+ * - Works for any checkbox + input pair
+ * - Shows input when checkbox is checked
+ * - Hides and clears input when unchecked
+ * - Prevents orphaned free-text values
+ * - Safe to reuse across the form
+ */
+function bindOtherToggle(checkboxId, inputId) {
+  const checkbox = document.getElementById(checkboxId);
+  const input = document.getElementById(inputId);
+
+  if (!checkbox || !input) return;
+
+  // Ensure correct initial state (important on reload / back nav)
+  input.style.display = checkbox.checked ? 'block' : 'none';
+
+  checkbox.addEventListener('change', () => {
+    if (checkbox.checked) {
+      input.style.display = 'block';
+      input.focus();
+    } else {
+      input.style.display = 'none';
+      input.value = '';
+    }
+  });
+}
+
+/* Bind all "Other" toggles here */
+bindOtherToggle('langOther', 'otherLanguage');
+bindOtherToggle('expOther', 'otherExpectation');
+
     /*
       CTA behaviour:
       - Inserts stage-specific, encouraging one-liners into each .single-cta .cta-text.
