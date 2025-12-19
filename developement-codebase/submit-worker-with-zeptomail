@@ -1967,3 +1967,82 @@ async function sendOrderCreatedEmailBrevo(env, data) {
     console.error("Brevo send failed:", String(e));
   }
 }
+/**
+ * sendOrderCreatedEmailZepto
+ * ----------------------------------------
+ * Sends transactional "Order Created" email using
+ * Zoho ZeptoMail REST API (NOT SMTP).
+ *
+ * - Compatible with Cloudflare Workers (HTTPS fetch only)
+ * - Uses existing buildOrderCreatedHtml() for email content
+ * - Auth via "Zoho-enczapikey" Send Mail token
+ * - Sender domain must be verified in ZeptoMail
+ *
+ * Required env vars:
+ *   env.ZEPTO_API_KEY        // ZeptoMail Send Mail token (without prefix)
+ *   env.ZEPTO_SENDER_EMAIL  // e.g. no-reply@kenfolios.com
+ */
+async function sendOrderCreatedEmailZepto(env, data) {
+  const {
+    toEmail,
+    fullName,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  } = data;
+
+  // Basic safety checks (do not throw, fail silently)
+  if (!toEmail || !orderUrl) return;
+  if (!env.ZEPTO_API_KEY) {
+    console.error("ZeptoMail: ZEPTO_API_KEY missing");
+    return;
+  }
+
+  // Build HTML using existing shared template
+  const htmlBody = buildOrderCreatedHtml({
+    fullName,
+    orderUrl,
+    orderRef,
+    orderCreatedAt,
+    orderTotal
+  });
+
+  // ZeptoMail REST payload (as per Zoho official sample)
+  const payload = {
+    from: {
+      address: env.ZEPTO_SENDER_EMAIL || "no-reply@kenfolios.com"
+    },
+    to: [
+      {
+        email_address: {
+          address: toEmail,
+          name: fullName || "Member"
+        }
+      }
+    ],
+    subject: "Complete your KenFolios Business Community registration",
+    htmlbody: htmlBody
+  };
+
+  try {
+    const res = await fetch("https://api.zeptomail.com/v1.1/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        // IMPORTANT: Prefix is required by Zoho
+        "Authorization": `Zoho-enczapikey ${env.ZEPTO_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("ZeptoMail send failed:", res.status, errText);
+    }
+  } catch (e) {
+    console.error("ZeptoMail fetch error:", String(e));
+  }
+}
+
