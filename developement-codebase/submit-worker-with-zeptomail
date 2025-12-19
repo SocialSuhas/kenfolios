@@ -750,15 +750,15 @@ async function handleJoin(request, env, origin, ctx) {
       const dbCount = await readMemberCountOrFallback(db);
 
       // 🔔 SES EMAIL — post submission (existing unpaid member)
-// 🔔 ORDER CREATED EMAIL — SES → Zepto → Brevo fallback
+// 🔔 ORDER CREATED EMAIL — SES → Zepto → Brevo fallback (existing unpaid member)
 ctx.waitUntil(
   (async () => {
     try {
-      // 1️⃣ Primary: AWS SES (if enabled)
+      // 1️⃣ Primary: AWS SES
       if (env.SES_ENABLED === "true") {
         await sendOrderCreatedEmailSES(env, {
-          toEmail: memberRow.email,
-          fullName: memberRow.full_name || "Member",
+          toEmail: existing.email,
+          fullName: existing.full_name || "Member",
           orderUrl: order.order_url,
           orderRef: order.order_ref,
           orderCreatedAt: order.order_created_at,
@@ -767,11 +767,11 @@ ctx.waitUntil(
         return;
       }
 
-      // 2️⃣ Secondary: Zoho ZeptoMail (if enabled)
+      // 2️⃣ Secondary: Zoho ZeptoMail
       if (env.ZEPTO_ENABLED === "true") {
         await sendOrderCreatedEmailZepto(env, {
-          toEmail: memberRow.email,
-          fullName: memberRow.full_name || "Member",
+          toEmail: existing.email,
+          fullName: existing.full_name || "Member",
           orderUrl: order.order_url,
           orderRef: order.order_ref,
           orderCreatedAt: order.order_created_at,
@@ -782,8 +782,8 @@ ctx.waitUntil(
 
       // 3️⃣ Final fallback: Brevo
       await sendOrderCreatedEmailBrevo(env, {
-        toEmail: memberRow.email,
-        fullName: memberRow.full_name || "Member",
+        toEmail: existing.email,
+        fullName: existing.full_name || "Member",
         orderUrl: order.order_url,
         orderRef: order.order_ref,
         orderCreatedAt: order.order_created_at,
@@ -794,8 +794,8 @@ ctx.waitUntil(
 
       // Absolute safety net
       await sendOrderCreatedEmailBrevo(env, {
-        toEmail: memberRow.email,
-        fullName: memberRow.full_name || "Member",
+        toEmail: existing.email,
+        fullName: existing.full_name || "Member",
         orderUrl: order.order_url,
         orderRef: order.order_ref,
         orderCreatedAt: order.order_created_at,
@@ -913,34 +913,61 @@ ctx.waitUntil(
     const dbCount = await readMemberCountOrFallback(db);
 
     // 🔔 SES EMAIL — post submission (new member)
-   // 🔔 ORDER CREATED EMAIL — SES with Brevo fallback (new member)
-try {
-  if (env.SES_ENABLED === "true") {
-    ctx.waitUntil(
-      sendOrderCreatedEmailSES(env, {
+  // 🔔 ORDER CREATED EMAIL — SES → Zepto → Brevo fallback
+ctx.waitUntil(
+  (async () => {
+    try {
+      // 1️⃣ Primary: AWS SES (if enabled)
+      if (env.SES_ENABLED === "true") {
+        await sendOrderCreatedEmailSES(env, {
+          toEmail: memberRow.email,
+          fullName: memberRow.full_name || "Member",
+          orderUrl: order.order_url,
+          orderRef: order.order_ref,
+          orderCreatedAt: order.order_created_at,
+          orderTotal: order.totals.total
+        });
+        return;
+      }
+
+      // 2️⃣ Secondary: Zoho ZeptoMail (if enabled)
+      if (env.ZEPTO_ENABLED === "true") {
+        await sendOrderCreatedEmailZepto(env, {
+          toEmail: memberRow.email,
+          fullName: memberRow.full_name || "Member",
+          orderUrl: order.order_url,
+          orderRef: order.order_ref,
+          orderCreatedAt: order.order_created_at,
+          orderTotal: order.totals.total
+        });
+        return;
+      }
+
+      // 3️⃣ Final fallback: Brevo
+      await sendOrderCreatedEmailBrevo(env, {
         toEmail: memberRow.email,
         fullName: memberRow.full_name || "Member",
         orderUrl: order.order_url,
         orderRef: order.order_ref,
         orderCreatedAt: order.order_created_at,
         orderTotal: order.totals.total
-      })
-    );
-  } else {
-    ctx.waitUntil(
-      sendOrderCreatedEmailBrevo(env, {
+      });
+    } catch (e) {
+      console.error("Order email send failed, fallback to Brevo:", String(e));
+
+      // Absolute safety net
+      await sendOrderCreatedEmailBrevo(env, {
         toEmail: memberRow.email,
         fullName: memberRow.full_name || "Member",
         orderUrl: order.order_url,
         orderRef: order.order_ref,
         orderCreatedAt: order.order_created_at,
         orderTotal: order.totals.total
-      })
-    );
-  }
-} catch (e) {
-  console.error("Order created email failed:", String(e));
-}
+      });
+    }
+  })()
+);
+
     return json(
       { ok: true, member_id, message: "Joined", dbCount, order },
       201,
