@@ -1974,13 +1974,14 @@ async function sendOrderCreatedEmailBrevo(env, data) {
  * Zoho ZeptoMail REST API (NOT SMTP).
  *
  * - Compatible with Cloudflare Workers (HTTPS fetch only)
- * - Uses existing buildOrderCreatedHtml() for email content
+ * - Reuses existing buildOrderCreatedHtml() template
  * - Auth via "Zoho-enczapikey" Send Mail token
- * - Sender domain must be verified in ZeptoMail
+ * - Sender email must be verified in ZeptoMail
  *
  * Required env vars:
  *   env.ZEPTO_API_KEY        // ZeptoMail Send Mail token (without prefix)
- *   env.ZEPTO_SENDER_EMAIL  // e.g. no-reply@kenfolios.com
+ *   env.ZEPTO_SENDER_EMAIL  // no-reply@kenfolios.com
+ *   env.ZEPTO_SENDER_NAME   // KenFolios Media Private Limited
  */
 async function sendOrderCreatedEmailZepto(env, data) {
   const {
@@ -1992,7 +1993,7 @@ async function sendOrderCreatedEmailZepto(env, data) {
     orderTotal
   } = data;
 
-  // Basic safety checks (do not throw, fail silently)
+  // Basic safety checks (fail silently, do not break flow)
   if (!toEmail || !orderUrl) return;
   if (!env.ZEPTO_API_KEY) {
     console.error("ZeptoMail: ZEPTO_API_KEY missing");
@@ -2008,10 +2009,11 @@ async function sendOrderCreatedEmailZepto(env, data) {
     orderTotal
   });
 
-  // ZeptoMail REST payload (as per Zoho official sample)
+  // ZeptoMail REST payload (aligned with Zoho official sample)
   const payload = {
     from: {
-      address: env.ZEPTO_SENDER_EMAIL || "no-reply@kenfolios.com"
+      address: env.ZEPTO_SENDER_EMAIL || "no-reply@kenfolios.com",
+      name: env.ZEPTO_SENDER_NAME || "KenFolios Media Private Limited"
     },
     to: [
       {
@@ -2031,7 +2033,7 @@ async function sendOrderCreatedEmailZepto(env, data) {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        // IMPORTANT: Prefix is required by Zoho
+        // Prefix is required by Zoho; token comes from env
         "Authorization": `Zoho-enczapikey ${env.ZEPTO_API_KEY}`
       },
       body: JSON.stringify(payload)
@@ -2045,4 +2047,5 @@ async function sendOrderCreatedEmailZepto(env, data) {
     console.error("ZeptoMail fetch error:", String(e));
   }
 }
+
 
