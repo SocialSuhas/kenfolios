@@ -36,37 +36,49 @@
     }
     .page{max-width:760px;margin:3rem auto;padding:0 1rem}
     .card{
-      background:#fff;border:1px solid var(--border);border-radius:16px;
-      padding:1.5rem 1.75rem;box-shadow:0 10px 30px rgba(15,23,42,.05)
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:1.5rem 1.75rem;
+      box-shadow:0 10px 30px rgba(15,23,42,.05)
     }
 
     .kf-community-logo{
-  width:100%;
-  max-width:320px;
-  height:auto;
-  margin:0 0 .75rem 0;   /* left aligned */
-  display:block;
-}
-
+      width:100%;
+      max-width:320px;
+      height:auto;
+      margin:0 0 .75rem 0;
+      display:block;
+    }
     @media (max-width:480px){
       .kf-community-logo{ max-width:260px; }
     }
 
     h1{font-size:22px;margin:0 0 .35rem 0}
     .desc{
-      font-size:14px;color:var(--muted);
-      line-height:1.45;margin-bottom:1.25rem
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.45;
+      margin-bottom:1.25rem
     }
     .note{
-      background:#f8fafc;border:1px solid var(--border);border-radius:12px;
-      padding:.75rem .9rem;font-size:13px;color:var(--muted);margin-bottom:1.25rem
+      background:#f8fafc;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:.75rem .9rem;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:1.25rem
     }
     form{display:grid;gap:1rem}
     .field{display:flex;flex-direction:column;gap:.35rem}
     label{font-size:13px;font-weight:700;color:var(--muted)}
     input,textarea{
-      border:1px solid var(--border);border-radius:10px;
-      padding:.6rem .7rem;font-size:15px;font-family:inherit
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:.6rem .7rem;
+      font-size:15px;
+      font-family:inherit
     }
     textarea{resize:vertical;min-height:90px}
 
@@ -86,19 +98,37 @@
       text-decoration:underline;
     }
 
-    .actions{display:flex;justify-content:center;margin-top:.25rem}
-    button{
-      height:46px;min-width:220px;border-radius:11px;
-      border:1px solid var(--kf-red);background:var(--kf-red);
-      color:#fff;font-weight:800;font-size:15px;cursor:pointer
+    .actions{
+      display:flex;
+      justify-content:center;
+      margin-top:.25rem
     }
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .status{margin-top:1rem;font-size:14px;text-align:center}
+    button{
+      height:46px;
+      min-width:220px;
+      border-radius:11px;
+      border:1px solid var(--kf-red);
+      background:var(--kf-red);
+      color:#fff;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer
+    }
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed
+    }
+    .status{
+      font-size:14px;
+      text-align:center
+    }
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
 
     .kf-footer{
-      text-align:center;font-size:12.5px;color:var(--muted);
+      text-align:center;
+      font-size:12.5px;
+      color:var(--muted);
       margin:1.75rem 0 .75rem 0
     }
   </style>
@@ -190,11 +220,12 @@
           </label>
         </div>
 
+        <!-- STATUS MESSAGE ABOVE BUTTON -->
+        <div id="status" class="status"></div>
+
         <div class="actions">
           <button type="submit" id="submitBtn">Submit for Review</button>
         </div>
-
-        <div id="status" class="status"></div>
       </form>
     </div>
 
