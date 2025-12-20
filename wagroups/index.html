@@ -5,16 +5,16 @@
   <title>KenFolios · WhatsApp Group Registration</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- INLINE SVG FAVICON (KF – MAX SIZE, NO IMAGE FILE) -->
+  <!-- INLINE SVG FAVICON -->
   <link
     rel="icon"
     type="image/svg+xml"
     href="data:image/svg+xml;utf8,
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
-  <rect width='64' height='64' rx='12' ry='12' fill='%23E11D2E'/>
+  <rect width='64' height='64' rx='12' fill='%23E11D2E'/>
   <text x='32' y='50' text-anchor='middle'
-    font-size='44' font-weight='900' letter-spacing='-2'
-    font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial'
+    font-size='44' font-weight='900'
+    font-family='system-ui'
     fill='white'>KF</text>
 </svg>"
   />
@@ -30,7 +30,7 @@
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
       background:var(--bg);
       color:var(--text);
     }
@@ -39,36 +39,19 @@
       background:#fff;border:1px solid var(--border);border-radius:16px;
       padding:1.5rem 1.75rem;box-shadow:0 10px 30px rgba(15,23,42,.05)
     }
-
-    .kf-community-logo{
-      width:100%;
-      max-width:320px;
-      height:auto;
-      margin-bottom:.75rem;
-    }
-    @media (max-width:480px){
-      .kf-community-logo{ max-width:260px; }
-    }
-
-    h1{font-size:22px;margin:0 0 .35rem 0}
-    .desc{
-      font-size:14px;color:var(--muted);
-      line-height:1.45;margin-bottom:1.25rem
-    }
-    .note{
-      background:#f8fafc;border:1px solid var(--border);border-radius:12px;
-      padding:.75rem .9rem;font-size:13px;color:var(--muted);margin-bottom:1.25rem
-    }
+    h1{font-size:22px;margin:0 0 .5rem 0}
+    .desc{font-size:14px;color:var(--muted);margin-bottom:1.25rem}
     form{display:grid;gap:1rem}
     .field{display:flex;flex-direction:column;gap:.35rem}
     label{font-size:13px;font-weight:700;color:var(--muted)}
     input,textarea{
-      border:1px solid var(--border);border-radius:10px;
-      padding:.6rem .7rem;font-size:15px;font-family:inherit
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:.6rem .7rem;
+      font-size:15px;
+      font-family:inherit
     }
     textarea{resize:vertical;min-height:90px}
-
-    /* Checkbox row */
     .check-row{
       display:flex;
       align-items:flex-start;
@@ -76,30 +59,20 @@
       font-size:13px;
       color:var(--muted);
     }
-    .check-row input{
-      margin-top:.15rem;
-      accent-color:var(--kf-red);
-    }
-    .check-row a{
-      color:var(--text);
-      text-decoration:underline;
-    }
-
-    .actions{display:flex;justify-content:center;margin-top:.25rem}
+    .check-row input{accent-color:var(--kf-red)}
+    .actions{display:flex;justify-content:center}
     button{
       height:46px;min-width:220px;border-radius:11px;
-      border:1px solid var(--kf-red);background:var(--kf-red);
-      color:#fff;font-weight:800;font-size:15px;cursor:pointer
+      border:1px solid var(--kf-red);
+      background:var(--kf-red);
+      color:#fff;font-weight:800;font-size:15px;
+      cursor:pointer
     }
     button:disabled{opacity:.6;cursor:not-allowed}
-    .status{margin-top:1rem;font-size:14px;text-align:center}
+    .status{text-align:center;font-size:14px;margin-top:1rem}
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
-
-    .kf-footer{
-      text-align:center;font-size:12.5px;color:var(--muted);
-      margin:1.75rem 0 .75rem 0
-    }
+    footer{text-align:center;font-size:12px;color:var(--muted);margin-top:2rem}
   </style>
 </head>
 
@@ -107,45 +80,11 @@
   <div class="page">
     <div class="card">
 
-      <!-- KenFolios Business Community Logo -->
-      <svg
-        class="kf-community-logo"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 360 64"
-        role="img"
-        aria-label="KenFolios Business Community"
-      >
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
-        <text x="32" y="52" text-anchor="middle"
-          font-size="46" font-weight="900" letter-spacing="-3"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#ffffff">KF</text>
-        <text x="76" y="30" font-size="22" font-weight="900"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a">KenFolios</text>
-        <text x="76" y="54" font-size="17" font-weight="800"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a" letter-spacing=".4">Business Community</text>
-      </svg>
-
       <h1>Register a WhatsApp Group</h1>
 
       <div class="desc">
-        Members can submit WhatsApp groups to be listed as official
-        KenFolios community groups. Only paid KenFolios members may
-        submit and join these groups. All requests are reviewed
-        manually and may take 2–3 working days.
-      </div>
-
-      <div class="note">
-        • All fields in this form are <strong>mandatory</strong><br>
-        • Only paid KenFolios members can submit requests<br>
-        • Only paid community members will be allowed to join the groups<br>
-        • Group name must start with <strong>KenFolios</strong><br>
-        • This feature is governed by KenFolios
-        <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
-        and
-        <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>
+        Only paid KenFolios members can submit WhatsApp groups.
+        All submissions are manually reviewed.
       </div>
 
       <form id="waGroupForm">
@@ -155,7 +94,7 @@
         </div>
 
         <div class="field">
-          <label>You registered email with us.</label>
+          <label>Registered Email</label>
           <input type="email" name="email" required />
         </div>
 
@@ -170,7 +109,7 @@
         </div>
 
         <div class="field">
-          <label>Group Description / Purpose</label>
+          <label>Group Description</label>
           <textarea name="group_description" required></textarea>
         </div>
 
@@ -179,38 +118,72 @@
           <input name="group_join_link" required />
         </div>
 
-        <!-- Terms acceptance -->
         <div class="check-row">
-          <input
-            type="checkbox"
-            id="acceptTerms"
-            name="accept_terms"
-            checked
-            required
-          />
-          <label for="acceptTerms">
-            I agree to the KenFolios
-            <a href="https://kenfolios.com/terms/" target="_blank">Terms & Conditions</a>
+          <input type="checkbox" checked required />
+          <span>
+            I agree to the
+            <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
             and
-            <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>.
-          </label>
+            <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>
+          </span>
         </div>
 
         <div class="actions">
-          <button type="submit">Submit for Review</button>
+          <button type="submit" id="submitBtn">Submit for Review</button>
         </div>
 
         <div id="status" class="status"></div>
       </form>
     </div>
 
-    <footer class="kf-footer">
-      © <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
+    <footer>
+      © <span id="year"></span> KenFolios Media Private Limited
     </footer>
   </div>
 
   <script>
-    document.getElementById('kfYear').textContent = new Date().getFullYear();
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('waGroupForm');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      statusEl.textContent = "Submitting...";
+      statusEl.className = "status";
+      submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch("/api/wa-groups/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Submission failed");
+        }
+
+        statusEl.textContent = data.message;
+        statusEl.className = "status ok";
+        form.reset();
+
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "status err";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
