@@ -5,6 +5,20 @@
   <title>KenFolios · WhatsApp Group Registration</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- INLINE SVG FAVICON (KF – MAX SIZE, NO IMAGE FILE) -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+  <rect width='64' height='64' rx='12' ry='12' fill='%23E11D2E'/>
+  <text x='32' y='50' text-anchor='middle'
+    font-size='44' font-weight='900' letter-spacing='-2'
+    font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial'
+    fill='white'>KF</text>
+</svg>"
+  />
+
   <style>
     :root{
       --kf-red:#E11D2E;
@@ -13,7 +27,6 @@
       --text:#0f172a;
       --muted:#64748b;
     }
-
     *{box-sizing:border-box}
     body{
       margin:0;
@@ -21,13 +34,11 @@
       background:var(--bg);
       color:var(--text);
     }
-
     .page{
       max-width:760px;
       margin:3rem auto;
       padding:0 1rem;
     }
-
     .card{
       background:#fff;
       border:1px solid var(--border);
@@ -35,18 +46,16 @@
       padding:1.5rem 1.75rem;
       box-shadow:0 10px 30px rgba(15,23,42,.05);
     }
-
     h1{
       font-size:22px;
-      margin:0 0 .25rem 0;
+      margin:0 0 .35rem 0;
     }
-
-    .sub{
+    .desc{
       font-size:14px;
       color:var(--muted);
+      line-height:1.45;
       margin-bottom:1.25rem;
     }
-
     .note{
       background:#f8fafc;
       border:1px solid var(--border);
@@ -56,26 +65,20 @@
       color:var(--muted);
       margin-bottom:1.25rem;
     }
-
-    .note strong{color:var(--text)}
-
     form{
       display:grid;
       gap:1rem;
     }
-
     .field{
       display:flex;
       flex-direction:column;
       gap:.35rem;
     }
-
     label{
       font-size:13px;
       font-weight:700;
       color:var(--muted);
     }
-
     input, textarea{
       border:1px solid var(--border);
       border-radius:10px;
@@ -83,20 +86,15 @@
       font-size:15px;
       font-family:inherit;
     }
-
-    textarea{resize:vertical; min-height:90px}
-
-    .hint{
-      font-size:12px;
-      color:var(--muted);
+    textarea{
+      resize:vertical;
+      min-height:90px;
     }
-
     .actions{
       display:flex;
       justify-content:center;
       margin-top:.5rem;
     }
-
     button{
       height:46px;
       min-width:220px;
@@ -108,20 +106,24 @@
       font-size:15px;
       cursor:pointer;
     }
-
     button:disabled{
       opacity:.6;
       cursor:not-allowed;
     }
-
     .status{
       margin-top:1rem;
       font-size:14px;
       text-align:center;
     }
-
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
+
+    .kf-footer{
+      text-align:center;
+      font-size:12.5px;
+      color:var(--muted);
+      margin:1.75rem 0 .75rem 0;
+    }
   </style>
 </head>
 
@@ -129,44 +131,62 @@
   <div class="page">
     <div class="card">
       <h1>Register a WhatsApp Group</h1>
-      <div class="sub">KenFolios Community · Members Only</div>
+
+      <div class="desc">
+        The KenFolios Community has announced that members will be allowed to
+        create WhatsApp groups under the community name for cities, interests,
+        and industries starting <strong>August 2025</strong>. Members can use
+        this form to submit a WhatsApp group to be listed as an official
+        community WhatsApp group.<br><br>
+        Currently, we are allowing only <strong>free groups</strong>. Soon,
+        members will also be able to create and run <strong>paid groups</strong>
+        for community members. Upon submitting a request here, we will review
+        and approve it. This process may take <strong>2–3 working days</strong>.
+      </div>
 
       <div class="note">
-        <strong>Important:</strong><br>
-        • Only <strong>paid KenFolios members</strong> can submit requests<br>
+        • Only paid KenFolios members can submit requests<br>
         • Group name must start with <strong>KenFolios</strong><br>
-        • Only <strong>free WhatsApp groups</strong> are allowed currently<br>
-        • All requests are <strong>manually reviewed</strong> before approval
+        • All submissions are manually reviewed
       </div>
 
       <form id="waGroupForm">
         <div class="field">
-          <label>Full Name</label>
-          <input required name="full_name" />
+          <label>Your Full Name</label>
+          <input name="full_name" required />
         </div>
 
         <div class="field">
-          <label>Email (same as community account)</label>
-          <input type="email" required name="email" />
+          <label>You registered email with us.</label>
+          <input type="email" name="email" required />
+        </div>
+
+        <div class="field">
+          <label>Contact Number</label>
+          <input type="tel" name="contact_number" required />
         </div>
 
         <div class="field">
           <label>WhatsApp Group Name</label>
-          <input required name="group_name"
-            placeholder="KenFolios Mumbai Tech Entrepreneurs" />
-          <div class="hint">Must start with “KenFolios”</div>
+          <input
+            name="group_name"
+            required
+            placeholder="KenFolios Mumbai Tech Entrepreneurs"
+          />
         </div>
 
         <div class="field">
           <label>Group Description / Purpose</label>
-          <textarea required name="group_description"
-            placeholder="Clearly state the professional goal of this group"></textarea>
+          <textarea name="group_description" required></textarea>
         </div>
 
         <div class="field">
           <label>WhatsApp Group Join Link</label>
-          <input required name="group_join_link"
-            placeholder="https://chat.whatsapp.com/…" />
+          <input
+            name="group_join_link"
+            required
+            placeholder="https://chat.whatsapp.com/…"
+          />
         </div>
 
         <div class="actions">
@@ -176,9 +196,15 @@
         <div id="status" class="status"></div>
       </form>
     </div>
+
+    <footer class="kf-footer">
+      © <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
+    </footer>
   </div>
 
   <script>
+    document.getElementById('kfYear').textContent = new Date().getFullYear();
+
     const form = document.getElementById('waGroupForm');
     const statusBox = document.getElementById('status');
 
@@ -210,11 +236,10 @@
         );
 
         const json = await res.json();
-
         if (!res.ok) throw json;
 
         statusBox.textContent =
-          "Request submitted successfully. Please check your email to verify.";
+          "Request submitted successfully. Please check your email for verification.";
         statusBox.classList.add('ok');
         form.reset();
 
