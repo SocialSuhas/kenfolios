@@ -40,7 +40,6 @@
       padding:1.5rem 1.75rem;box-shadow:0 10px 30px rgba(15,23,42,.05)
     }
 
-    /* Logo */
     .kf-community-logo{
       width:100%;
       max-width:320px;
@@ -78,6 +77,18 @@
     .status{margin-top:1rem;font-size:14px;text-align:center}
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
+
+    .legal{
+      font-size:12.5px;
+      color:var(--muted);
+      margin-top:.75rem;
+      text-align:center;
+    }
+    .legal a{
+      color:var(--text);
+      text-decoration:underline;
+    }
+
     .kf-footer{
       text-align:center;font-size:12.5px;color:var(--muted);
       margin:1.75rem 0 .75rem 0
@@ -98,35 +109,16 @@
         aria-label="KenFolios Business Community"
       >
         <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
-        <text
-          x="32"
-          y="52"
-          text-anchor="middle"
-          font-size="46"
-          font-weight="900"
-          letter-spacing="-3"
+        <text x="32" y="52" text-anchor="middle"
+          font-size="46" font-weight="900" letter-spacing="-3"
           font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#ffffff"
-        >KF</text>
-
-        <text
-          x="76"
-          y="30"
-          font-size="22"
-          font-weight="900"
+          fill="#ffffff">KF</text>
+        <text x="76" y="30" font-size="22" font-weight="900"
           font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a"
-        >KenFolios</text>
-
-        <text
-          x="76"
-          y="54"
-          font-size="17"
-          font-weight="800"
+          fill="#0f172a">KenFolios</text>
+        <text x="76" y="54" font-size="17" font-weight="800"
           font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a"
-          letter-spacing=".4"
-        >Business Community</text>
+          fill="#0f172a" letter-spacing=".4">Business Community</text>
       </svg>
 
       <h1>Register a WhatsApp Group</h1>
@@ -136,13 +128,7 @@
         create WhatsApp groups under the community name for cities, interests,
         and industries starting <strong>August 2025</strong>. Members can use
         this form to submit a WhatsApp group to be listed as an official
-        community WhatsApp group.<br><br>
-        Currently, we are allowing only <strong>free groups</strong>. Soon,
-        members will also be able to create and run <strong>paid groups</strong>
-        for community members. Only <strong>paid KenFolios community members</strong>
-        will be allowed to join these groups. Upon submitting a request here,
-        we will review and approve it. This process may take
-        <strong>2–3 working days</strong>.
+        community WhatsApp group.
       </div>
 
       <div class="note">
@@ -150,7 +136,11 @@
         • Only paid KenFolios members can submit requests<br>
         • Only paid community members will be allowed to join the groups<br>
         • Group name must start with <strong>KenFolios</strong><br>
-        • All submissions are manually reviewed
+        • All submissions are manually reviewed<br>
+        • Use of this feature is governed by KenFolios
+        <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
+        and
+        <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>
       </div>
 
       <form id="waGroupForm">
@@ -171,8 +161,7 @@
 
         <div class="field">
           <label>WhatsApp Group Name</label>
-          <input name="group_name" required
-            placeholder="KenFolios Mumbai Tech Entrepreneurs" />
+          <input name="group_name" required />
         </div>
 
         <div class="field">
@@ -182,12 +171,18 @@
 
         <div class="field">
           <label>WhatsApp Group Join Link</label>
-          <input name="group_join_link" required
-            placeholder="https://chat.whatsapp.com/…" />
+          <input name="group_join_link" required />
         </div>
 
         <div class="actions">
           <button type="submit">Submit for Review</button>
+        </div>
+
+        <div class="legal">
+          By submitting this form, you agree to the KenFolios
+          <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
+          and
+          <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>.
         </div>
 
         <div id="status" class="status"></div>
@@ -201,53 +196,6 @@
 
   <script>
     document.getElementById('kfYear').textContent = new Date().getFullYear();
-
-    const form = document.getElementById('waGroupForm');
-    const statusBox = document.getElementById('status');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      statusBox.textContent = '';
-      statusBox.className = 'status';
-
-      const btn = form.querySelector('button');
-      btn.disabled = true;
-
-      const data = Object.fromEntries(new FormData(form).entries());
-
-      if (!data.group_name.startsWith('KenFolios')) {
-        statusBox.textContent = "Group name must start with 'KenFolios'.";
-        statusBox.classList.add('err');
-        btn.disabled = false;
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          'https://kf-wa-groups-worker-crimson-fog-7c02.ksn-nvl.workers.dev/',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          }
-        );
-
-        const json = await res.json();
-        if (!res.ok) throw json;
-
-        statusBox.textContent =
-          "Request submitted successfully. Please check your email for verification.";
-        statusBox.classList.add('ok');
-        form.reset();
-
-      } catch (err) {
-        statusBox.textContent =
-          err?.error || 'Something went wrong. Please try again.';
-        statusBox.classList.add('err');
-      } finally {
-        btn.disabled = false;
-      }
-    });
   </script>
 </body>
 </html>
