@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>KenFolios · WhatsApp Group Registration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- INLINE SVG FAVICON (KF – MAX SIZE, NO IMAGE FILE) -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+  <rect width='64' height='64' rx='12' ry='12' fill='%23E11D2E'/>
+  <text x='32' y='50' text-anchor='middle'
+    font-size='44' font-weight='900' letter-spacing='-2'
+    font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial'
+    fill='white'>KF</text>
+</svg>"
+  />
+
+  <style>
+    :root{
+      --kf-red:#E11D2E;
+      --border:#e5e7eb;
+      --bg:#f8fafc;
+      --text:#0f172a;
+      --muted:#64748b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .page{max-width:760px;margin:3rem auto;padding:0 1rem}
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:1.5rem 1.75rem;
+      box-shadow:0 10px 30px rgba(15,23,42,.05)
+    }
+
+    .kf-community-logo{
+      width:100%;
+      max-width:320px;
+      height:auto;
+      margin:0 0 .75rem 0;
+      display:block;
+    }
+    @media (max-width:480px){
+      .kf-community-logo{ max-width:260px; }
+    }
+
+    h1{font-size:22px;margin:0 0 .35rem 0}
+    .desc{
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.45;
+      margin-bottom:1.25rem
+    }
+    .note{
+      background:#f8fafc;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:.75rem .9rem;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:1.25rem
+    }
+    form{display:grid;gap:1rem}
+    .field{display:flex;flex-direction:column;gap:.35rem}
+    label{font-size:13px;font-weight:700;color:var(--muted)}
+    input,textarea{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:.6rem .7rem;
+      font-size:15px;
+      font-family:inherit
+    }
+    textarea{resize:vertical;min-height:90px}
+
+    .check-row{
+      display:flex;
+      align-items:flex-start;
+      gap:.5rem;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .check-row input{
+      margin-top:.15rem;
+      accent-color:var(--kf-red);
+    }
+    .check-row a{
+      color:var(--text);
+      text-decoration:underline;
+    }
+
+    .actions{
+      display:flex;
+      justify-content:center;
+      margin-top:.25rem
+    }
+    button{
+      height:46px;
+      min-width:220px;
+      border-radius:11px;
+      border:1px solid var(--kf-red);
+      background:var(--kf-red);
+      color:#fff;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer
+    }
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed
+    }
+    .status{
+      font-size:14px;
+      text-align:center
+    }
+    .status.ok{color:#16a34a}
+    .status.err{color:#dc2626}
+
+    .kf-footer{
+      text-align:center;
+      font-size:12.5px;
+      color:var(--muted);
+      margin:1.75rem 0 .75rem 0
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="card">
+
+      <!-- KenFolios Business Community Logo -->
+      <svg
+        class="kf-community-logo"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 360 64"
+        role="img"
+        aria-label="KenFolios Business Community"
+      >
+        <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
+        <text x="32" y="52" text-anchor="middle"
+          font-size="46" font-weight="900" letter-spacing="-3"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#ffffff">KF</text>
+        <text x="76" y="30" font-size="22" font-weight="900"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#0f172a">KenFolios</text>
+        <text x="76" y="54" font-size="17" font-weight="800"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#0f172a" letter-spacing=".4">Business Community</text>
+      </svg>
+
+      <h1>Register a WhatsApp Group</h1>
+
+      <div class="desc">
+        Members can submit WhatsApp groups to be listed as official
+        KenFolios community groups. Only paid KenFolios members may
+        submit and join these groups. All requests are reviewed
+        manually and may take 2–3 working days.
+      </div>
+
+      <div class="note">
+        • All fields in this form are <strong>mandatory</strong><br>
+        • Only paid KenFolios members can submit requests<br>
+        • Only paid community members will be allowed to join the groups<br>
+        • Group name must start with <strong>KenFolios</strong><br>
+        • This feature is governed by KenFolios
+        <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
+        and
+        <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>
+      </div>
+
+      <form id="waGroupForm">
+        <div class="field">
+          <label>Your Full Name</label>
+          <input name="full_name" required />
+        </div>
+
+        <div class="field">
+          <label>You registered email with us</label>
+          <input type="email" name="email" required />
+        </div>
+
+        <div class="field">
+          <label>Contact Number</label>
+          <input type="tel" name="contact_number" required />
+        </div>
+
+        <div class="field">
+          <label>WhatsApp Group Name</label>
+          <input name="group_name" required />
+        </div>
+
+        <div class="field">
+          <label>Group Description / Purpose</label>
+          <textarea name="group_description" required></textarea>
+        </div>
+
+        <div class="field">
+          <label>WhatsApp Group Join Link</label>
+          <input name="group_join_link" required />
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" checked required />
+          <label>
+            I agree to the KenFolios
+            <a href="https://kenfolios.com/terms/" target="_blank">Terms & Conditions</a>
+            and
+            <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>.
+          </label>
+        </div>
+
+        <!-- STATUS MESSAGE ABOVE BUTTON -->
+        <div id="status" class="status"></div>
+
+        <div class="actions">
+          <button type="submit" id="submitBtn">Submit for Review</button>
+        </div>
+      </form>
+    </div>
+
+    <footer class="kf-footer">
+      © <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('kfYear').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('waGroupForm');
+    const statusEl = document.getElementById('status');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      statusEl.textContent = "Submitting...";
+      statusEl.className = "status";
+      submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch("/api/wa-groups/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Submission failed");
+        }
+
+        statusEl.textContent = data.message;
+        statusEl.className = "status ok";
+        form.reset();
+
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "status err";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
