@@ -5,7 +5,7 @@
   <title>KenFolios WhatsApp Groups</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- INLINE SVG FAVICON (KF – MAX SIZE, NO IMAGE FILE) -->
+  <!-- INLINE SVG FAVICON -->
   <link
     rel="icon"
     type="image/svg+xml"
@@ -18,190 +18,232 @@
     fill='white'>KF</text>
 </svg>"
   />
+
+  <style>
+    :root{
+      --kf-red:#E11D2E;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e5e7eb;
+      --bg:#f8fafc;
+    }
+
+    *{ box-sizing:border-box }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      background:var(--bg);
+    }
+
+    /* ===== Layout ===== */
+    .wrap{ max-width:1200px; margin:0 auto; padding:0 20px; }
+
+    /* ===== Hero ===== */
+    .hero{
+      background:#fff;
+      padding:80px 0 70px;
+      border-bottom:1px solid var(--border);
+    }
+    .hero-inner{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:48px;
+      align-items:center;
+    }
+    @media(max-width:900px){
+      .hero-inner{ grid-template-columns:1fr; text-align:center; }
+    }
+
+    .hero h1{
+      font-size:42px;
+      line-height:1.15;
+      margin:0 0 14px;
+      font-weight:900;
+    }
+    .hero p{
+      font-size:18px;
+      color:var(--muted);
+      max-width:520px;
+      margin:0 0 26px;
+    }
+    @media(max-width:900px){
+      .hero p{ margin-left:auto; margin-right:auto; }
+    }
+
+    .cta{
+      display:inline-block;
+      background:var(--kf-red);
+      color:#fff;
+      font-weight:800;
+      padding:14px 26px;
+      border-radius:999px;
+      text-decoration:none;
+      font-size:16px;
+    }
+
+    /* ===== Hero SVG ===== */
+    .hero-graphic{
+      width:100%;
+      max-width:420px;
+      margin-left:auto;
+    }
+    @media(max-width:900px){
+      .hero-graphic{ margin:0 auto; }
+    }
+
+    /* ===== Groups ===== */
+    .section{
+      padding:60px 0 80px;
+    }
+    .section h2{
+      font-size:26px;
+      margin:0 0 24px;
+      font-weight:900;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:20px;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      text-decoration:none;
+      color:inherit;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+
+    .card.upcoming{
+      background:#f8fafc;
+      border-style:dashed;
+      opacity:.7;
+      pointer-events:none;
+    }
+
+    .card-title{
+      font-weight:800;
+      font-size:16px;
+      margin-bottom:4px;
+    }
+    .card-meta{
+      font-size:13px;
+      color:var(--muted);
+    }
+    .card-status{
+      margin-top:14px;
+      font-size:12px;
+      font-weight:800;
+    }
+    .active{ color:#065f46; }
+    .up{ color:#92400e; }
+
+    .foot{
+      margin-top:40px;
+      text-align:center;
+      font-size:13px;
+      color:var(--muted);
+    }
+  </style>
 </head>
 
 <body>
 
-  <div class="shell">
-    <div class="mid">
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap hero-inner">
 
-      <!-- ==================================================
-           HERO SECTION
-      =================================================== -->
-      <section
-        style="
-          padding:3rem 1.5rem 2.5rem;
-          text-align:center;
-          border-bottom:1px solid var(--border);
-          background:#fff;
-        "
-      >
-
-        <!-- Modern SVG Illustration -->
-        <div style="max-width:420px; margin:0 auto 1.5rem;">
-          <svg viewBox="0 0 420 260" width="100%" height="auto" aria-hidden="true">
-            <rect x="0" y="0" width="420" height="260" rx="22" fill="#f8fafc"/>
-
-            <!-- chat bubbles -->
-            <rect x="36" y="54" width="240" height="52" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
-            <rect x="110" y="128" width="260" height="56" rx="20" fill="#ffffff" stroke="#e5e7eb"/>
-
-            <!-- typing dots -->
-            <circle cx="68" cy="80" r="4" fill="#64748b"/>
-            <circle cx="88" cy="80" r="4" fill="#64748b"/>
-            <circle cx="108" cy="80" r="4" fill="#64748b"/>
-
-            <!-- avatars -->
-            <circle cx="320" cy="66" r="22" fill="#E11D2E"/>
-            <circle cx="360" cy="118" r="16" fill="#94a3b8"/>
-            <circle cx="300" cy="178" r="14" fill="#cbd5f5"/>
-
-            <!-- connectors -->
-            <line x1="298" y1="68" x2="250" y2="84" stroke="#cbd5e1" stroke-width="2"/>
-            <line x1="300" y1="178" x2="258" y2="156" stroke="#cbd5e1" stroke-width="2"/>
-          </svg>
-        </div>
-
-        <h1 style="margin:0; font-size:28px; font-weight:900;">
-          KenFolios WhatsApp Groups
-        </h1>
-
-        <p
-          style="
-            margin:.75rem auto 1.75rem;
-            max-width:680px;
-            color:var(--muted);
-            font-size:17px;
-          "
-        >
-          City and industry focused WhatsApp groups created and governed by KenFolios.
-          Members may request new groups — all groups follow a controlled approval
-          and onboarding process.
+      <div>
+        <h1>KenFolios WhatsApp Groups</h1>
+        <p>
+          City and industry focused WhatsApp groups created and governed by
+          KenFolios. Members may request new groups — all access is controlled
+          and verified.
         </p>
 
-        <a
-          href="/wagroups/submit"
-          style="
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            padding:.75rem 1.5rem;
-            border-radius:999px;
-            background:var(--kf-red);
-            color:#fff;
-            font-weight:800;
-            text-decoration:none;
-            border:1px solid var(--kf-red);
-          "
-        >
-          ➕ Request a New Group
+        <a class="cta" href="/wagroups/submit">
+          Request a New Group
         </a>
-      </section>
+      </div>
 
-      <!-- ==================================================
-           GROUP LIST SECTION
-      =================================================== -->
-      <section style="padding:2rem 1.5rem 3rem;">
+      <!-- Clean, balanced SVG -->
+      <div class="hero-graphic">
+        <svg viewBox="0 0 420 320" width="100%" height="auto">
+          <rect x="20" y="30" width="300" height="70" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+          <rect x="90" y="140" width="310" height="80" rx="22" fill="#ffffff" stroke="#e5e7eb"/>
 
-        <h2 style="font-size:20px; font-weight:800; margin-bottom:1rem;">
-          Available & Upcoming Groups
-        </h2>
+          <circle cx="340" cy="70" r="26" fill="#E11D2E"/>
+          <circle cx="300" cy="190" r="18" fill="#94a3b8"/>
+          <circle cx="250" cy="240" r="14" fill="#cbd5f5"/>
 
-        <div
-          style="
-            display:grid;
-            grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-            gap:1rem;
-          "
-        >
-
-          <!-- ================= ACTIVE GROUPS ================= -->
-
-          <a href="/wagroups/mumbai-core"
-             style="
-               text-decoration:none;
-               color:inherit;
-               border:1px solid var(--border);
-               border-radius:16px;
-               padding:1rem;
-               background:#fff;
-               box-shadow:0 4px 14px rgba(2,6,23,.06);
-             ">
-            <div style="font-weight:800;">KenFolios Mumbai Core</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Mumbai · Business & Professionals
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#065f46;">
-              ● Active
-            </div>
-          </a>
-
-          <a href="/wagroups/delhi-circle"
-             style="text-decoration:none;color:inherit;border:1px solid var(--border);border-radius:16px;padding:1rem;background:#fff;">
-            <div style="font-weight:800;">KenFolios Delhi Circle</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Delhi NCR · Founders & Operators
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#065f46;">
-              ● Active
-            </div>
-          </a>
-
-          <!-- ================= UPCOMING GROUPS ================= -->
-
-          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
-            <div style="font-weight:800;">KenFolios Bengaluru Guild</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Bengaluru · Tech & Startups
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
-              ⏳ Upcoming
-            </div>
-          </div>
-
-          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
-            <div style="font-weight:800;">KenFolios Pune Network</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Pune · Professionals
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
-              ⏳ Upcoming
-            </div>
-          </div>
-
-          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
-            <div style="font-weight:800;">KenFolios Hyderabad Forum</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Hyderabad · Business Leaders
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
-              ⏳ Upcoming
-            </div>
-          </div>
-
-          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
-            <div style="font-weight:800;">KenFolios Chennai Collective</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
-              Chennai · Entrepreneurs
-            </div>
-            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
-              ⏳ Upcoming
-            </div>
-          </div>
-
-          <!-- Duplicate UPCOMING cards for 50+ cities
-               later to test infinite scroll -->
-
-        </div>
-
-        <p style="margin-top:2rem;font-size:13px;color:var(--muted);text-align:center;">
-          Groups are activated in phases. Upcoming groups will open once approved.
-        </p>
-
-      </section>
+          <line x1="320" y1="80" x2="250" y2="110" stroke="#cbd5e1" stroke-width="2"/>
+          <line x1="300" y1="200" x2="230" y2="180" stroke="#cbd5e1" stroke-width="2"/>
+        </svg>
+      </div>
 
     </div>
-  </div>
+  </section>
+
+  <!-- ================= GROUPS ================= -->
+  <section class="section">
+    <div class="wrap">
+      <h2>Groups Directory</h2>
+
+      <div class="grid">
+
+        <!-- Active -->
+        <a class="card" href="/wagroups/mumbai-core">
+          <div class="card-title">KenFolios Mumbai Core</div>
+          <div class="card-meta">Mumbai · Business & Professionals</div>
+          <div class="card-status active">● Active</div>
+        </a>
+
+        <a class="card" href="/wagroups/delhi-circle">
+          <div class="card-title">KenFolios Delhi Circle</div>
+          <div class="card-meta">Delhi NCR · Founders & Operators</div>
+          <div class="card-status active">● Active</div>
+        </a>
+
+        <!-- Upcoming -->
+        <div class="card upcoming">
+          <div class="card-title">KenFolios Bengaluru Guild</div>
+          <div class="card-meta">Bengaluru · Tech & Startups</div>
+          <div class="card-status up">⏳ Upcoming</div>
+        </div>
+
+        <div class="card upcoming">
+          <div class="card-title">KenFolios Pune Network</div>
+          <div class="card-meta">Pune · Professionals</div>
+          <div class="card-status up">⏳ Upcoming</div>
+        </div>
+
+        <div class="card upcoming">
+          <div class="card-title">KenFolios Hyderabad Forum</div>
+          <div class="card-meta">Hyderabad · Business Leaders</div>
+          <div class="card-status up">⏳ Upcoming</div>
+        </div>
+
+        <div class="card upcoming">
+          <div class="card-title">KenFolios Chennai Collective</div>
+          <div class="card-meta">Chennai · Entrepreneurs</div>
+          <div class="card-status up">⏳ Upcoming</div>
+        </div>
+
+      </div>
+
+      <div class="foot">
+        More cities will appear here as groups are approved and activated.
+      </div>
+    </div>
+  </section>
 
 </body>
 </html>
