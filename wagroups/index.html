@@ -36,27 +36,40 @@
       background:var(--bg);
     }
 
-    /* ===== Layout ===== */
     .wrap{ max-width:1200px; margin:0 auto; padding:0 20px; }
 
     /* ===== Hero ===== */
     .hero{
       background:#fff;
-      padding:80px 0 70px;
+      padding:72px 0 64px;
       border-bottom:1px solid var(--border);
     }
     .hero-inner{
       display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:48px;
+      grid-template-columns:1.05fr .95fr;
+      gap:56px;
       align-items:center;
     }
     @media(max-width:900px){
-      .hero-inner{ grid-template-columns:1fr; text-align:center; }
+      .hero-inner{
+        grid-template-columns:1fr;
+        text-align:center;
+      }
+    }
+
+    .logo-wrap{
+      margin-bottom:18px;
+    }
+    .kf-community-logo{
+      height:56px;
+      max-width:100%;
+    }
+    @media(max-width:900px){
+      .logo-wrap{ display:flex; justify-content:center; }
     }
 
     .hero h1{
-      font-size:42px;
+      font-size:40px;
       line-height:1.15;
       margin:0 0 14px;
       font-weight:900;
@@ -65,10 +78,13 @@
       font-size:18px;
       color:var(--muted);
       max-width:520px;
-      margin:0 0 26px;
+      margin:0 0 28px;
     }
     @media(max-width:900px){
-      .hero p{ margin-left:auto; margin-right:auto; }
+      .hero p{
+        margin-left:auto;
+        margin-right:auto;
+      }
     }
 
     .cta{
@@ -76,29 +92,31 @@
       background:var(--kf-red);
       color:#fff;
       font-weight:800;
-      padding:14px 26px;
+      padding:14px 28px;
       border-radius:999px;
       text-decoration:none;
       font-size:16px;
     }
 
-    /* ===== Hero SVG ===== */
+    /* ===== Hero Graphic ===== */
     .hero-graphic{
       width:100%;
       max-width:420px;
       margin-left:auto;
     }
     @media(max-width:900px){
-      .hero-graphic{ margin:0 auto; }
+      .hero-graphic{
+        margin:10px auto 0;
+      }
     }
 
     /* ===== Groups ===== */
     .section{
-      padding:60px 0 80px;
+      padding:64px 0 88px;
     }
     .section h2{
       font-size:26px;
-      margin:0 0 24px;
+      margin:0 0 26px;
       font-weight:900;
     }
 
@@ -147,7 +165,7 @@
     .up{ color:#92400e; }
 
     .foot{
-      margin-top:40px;
+      margin-top:42px;
       text-align:center;
       font-size:13px;
       color:var(--muted);
@@ -162,11 +180,35 @@
     <div class="wrap hero-inner">
 
       <div>
-        <h1>KenFolios WhatsApp Groups</h1>
+        <!-- KenFolios Business Community Logo -->
+        <div class="logo-wrap">
+          <svg
+            class="kf-community-logo"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 360 64"
+            role="img"
+            aria-label="KenFolios Business Community"
+          >
+            <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
+            <text x="32" y="52" text-anchor="middle"
+              font-size="46" font-weight="900" letter-spacing="-3"
+              font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+              fill="#ffffff">KF</text>
+            <text x="76" y="30" font-size="22" font-weight="900"
+              font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+              fill="#0f172a">KenFolios</text>
+            <text x="76" y="54" font-size="17" font-weight="800"
+              font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+              fill="#0f172a" letter-spacing=".4">Business Community</text>
+          </svg>
+        </div>
+
+        <h1>WhatsApp Groups Directory</h1>
+
         <p>
           City and industry focused WhatsApp groups created and governed by
-          KenFolios. Members may request new groups — all access is controlled
-          and verified.
+          KenFolios. Group creation and access are carefully reviewed to
+          maintain high-quality professional engagement.
         </p>
 
         <a class="cta" href="/wagroups/submit">
@@ -174,9 +216,9 @@
         </a>
       </div>
 
-      <!-- Clean, balanced SVG -->
+      <!-- Graphic -->
       <div class="hero-graphic">
-        <svg viewBox="0 0 420 320" width="100%" height="auto">
+        <svg viewBox="0 0 420 320" width="100%" height="auto" aria-hidden="true">
           <rect x="20" y="30" width="300" height="70" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
           <rect x="90" y="140" width="310" height="80" rx="22" fill="#ffffff" stroke="#e5e7eb"/>
 
@@ -240,7 +282,7 @@
       </div>
 
       <div class="foot">
-        More cities will appear here as groups are approved and activated.
+        More city groups will appear here as they are approved and activated.
       </div>
     </div>
   </section>
