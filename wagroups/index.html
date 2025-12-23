@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>KenFolios · WhatsApp Group Registration</title>
+  <title>KenFolios WhatsApp Groups</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- INLINE SVG FAVICON (KF – MAX SIZE, NO IMAGE FILE) -->
@@ -18,263 +18,190 @@
     fill='white'>KF</text>
 </svg>"
   />
-
-  <style>
-    :root{
-      --kf-red:#E11D2E;
-      --border:#e5e7eb;
-      --bg:#f8fafc;
-      --text:#0f172a;
-      --muted:#64748b;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial;
-      background:var(--bg);
-      color:var(--text);
-    }
-    .page{max-width:760px;margin:3rem auto;padding:0 1rem}
-    .card{
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:1.5rem 1.75rem;
-      box-shadow:0 10px 30px rgba(15,23,42,.05)
-    }
-
-    .kf-community-logo{
-      width:100%;
-      max-width:320px;
-      height:auto;
-      margin:0 0 .75rem 0;
-      display:block;
-    }
-    @media (max-width:480px){
-      .kf-community-logo{ max-width:260px; }
-    }
-
-    h1{font-size:22px;margin:0 0 .35rem 0}
-    .desc{
-      font-size:14px;
-      color:var(--muted);
-      line-height:1.45;
-      margin-bottom:1.25rem
-    }
-    .note{
-      background:#f8fafc;
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:.75rem .9rem;
-      font-size:13px;
-      color:var(--muted);
-      margin-bottom:1.25rem
-    }
-    form{display:grid;gap:1rem}
-    .field{display:flex;flex-direction:column;gap:.35rem}
-    label{font-size:13px;font-weight:700;color:var(--muted)}
-    input,textarea{
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:.6rem .7rem;
-      font-size:15px;
-      font-family:inherit
-    }
-    textarea{resize:vertical;min-height:90px}
-
-    .check-row{
-      display:flex;
-      align-items:flex-start;
-      gap:.5rem;
-      font-size:13px;
-      color:var(--muted);
-    }
-    .check-row input{
-      margin-top:.15rem;
-      accent-color:var(--kf-red);
-    }
-    .check-row a{
-      color:var(--text);
-      text-decoration:underline;
-    }
-
-    .actions{
-      display:flex;
-      justify-content:center;
-      margin-top:.25rem
-    }
-    button{
-      height:46px;
-      min-width:220px;
-      border-radius:11px;
-      border:1px solid var(--kf-red);
-      background:var(--kf-red);
-      color:#fff;
-      font-weight:800;
-      font-size:15px;
-      cursor:pointer
-    }
-    button:disabled{
-      opacity:.6;
-      cursor:not-allowed
-    }
-    .status{
-      font-size:14px;
-      text-align:center
-    }
-    .status.ok{color:#16a34a}
-    .status.err{color:#dc2626}
-
-    .kf-footer{
-      text-align:center;
-      font-size:12.5px;
-      color:var(--muted);
-      margin:1.75rem 0 .75rem 0
-    }
-  </style>
 </head>
 
 <body>
-  <div class="page">
-    <div class="card">
 
-      <!-- KenFolios Business Community Logo -->
-      <svg
-        class="kf-community-logo"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 360 64"
-        role="img"
-        aria-label="KenFolios Business Community"
+  <div class="shell">
+    <div class="mid">
+
+      <!-- ==================================================
+           HERO SECTION
+      =================================================== -->
+      <section
+        style="
+          padding:3rem 1.5rem 2.5rem;
+          text-align:center;
+          border-bottom:1px solid var(--border);
+          background:#fff;
+        "
       >
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
-        <text x="32" y="52" text-anchor="middle"
-          font-size="46" font-weight="900" letter-spacing="-3"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#ffffff">KF</text>
-        <text x="76" y="30" font-size="22" font-weight="900"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a">KenFolios</text>
-        <text x="76" y="54" font-size="17" font-weight="800"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a" letter-spacing=".4">Business Community</text>
-      </svg>
 
-      <h1>Register a WhatsApp Group</h1>
+        <!-- Modern SVG Illustration -->
+        <div style="max-width:420px; margin:0 auto 1.5rem;">
+          <svg viewBox="0 0 420 260" width="100%" height="auto" aria-hidden="true">
+            <rect x="0" y="0" width="420" height="260" rx="22" fill="#f8fafc"/>
 
-      <div class="desc">
-        Members can submit WhatsApp groups to be listed as official
-        KenFolios community groups. Only paid KenFolios members may
-        submit and join these groups. All requests are reviewed
-        manually and may take 2–3 working days.
-      </div>
+            <!-- chat bubbles -->
+            <rect x="36" y="54" width="240" height="52" rx="18" fill="#ffffff" stroke="#e5e7eb"/>
+            <rect x="110" y="128" width="260" height="56" rx="20" fill="#ffffff" stroke="#e5e7eb"/>
 
-      <div class="note">
-        • All fields in this form are <strong>mandatory</strong><br>
-        • Only paid KenFolios members can submit requests<br>
-        • Only paid community members will be allowed to join the groups<br>
-        • Group name must start with <strong>KenFolios</strong><br>
-        • This feature is governed by KenFolios
-        <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
-        and
-        <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>
-      </div>
+            <!-- typing dots -->
+            <circle cx="68" cy="80" r="4" fill="#64748b"/>
+            <circle cx="88" cy="80" r="4" fill="#64748b"/>
+            <circle cx="108" cy="80" r="4" fill="#64748b"/>
 
-      <form id="waGroupForm">
-        <div class="field">
-          <label>Your Full Name</label>
-          <input name="full_name" required />
+            <!-- avatars -->
+            <circle cx="320" cy="66" r="22" fill="#E11D2E"/>
+            <circle cx="360" cy="118" r="16" fill="#94a3b8"/>
+            <circle cx="300" cy="178" r="14" fill="#cbd5f5"/>
+
+            <!-- connectors -->
+            <line x1="298" y1="68" x2="250" y2="84" stroke="#cbd5e1" stroke-width="2"/>
+            <line x1="300" y1="178" x2="258" y2="156" stroke="#cbd5e1" stroke-width="2"/>
+          </svg>
         </div>
 
-        <div class="field">
-          <label>You registered email with us</label>
-          <input type="email" name="email" required />
+        <h1 style="margin:0; font-size:28px; font-weight:900;">
+          KenFolios WhatsApp Groups
+        </h1>
+
+        <p
+          style="
+            margin:.75rem auto 1.75rem;
+            max-width:680px;
+            color:var(--muted);
+            font-size:17px;
+          "
+        >
+          City and industry focused WhatsApp groups created and governed by KenFolios.
+          Members may request new groups — all groups follow a controlled approval
+          and onboarding process.
+        </p>
+
+        <a
+          href="/wagroups/submit"
+          style="
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:.75rem 1.5rem;
+            border-radius:999px;
+            background:var(--kf-red);
+            color:#fff;
+            font-weight:800;
+            text-decoration:none;
+            border:1px solid var(--kf-red);
+          "
+        >
+          ➕ Request a New Group
+        </a>
+      </section>
+
+      <!-- ==================================================
+           GROUP LIST SECTION
+      =================================================== -->
+      <section style="padding:2rem 1.5rem 3rem;">
+
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:1rem;">
+          Available & Upcoming Groups
+        </h2>
+
+        <div
+          style="
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+            gap:1rem;
+          "
+        >
+
+          <!-- ================= ACTIVE GROUPS ================= -->
+
+          <a href="/wagroups/mumbai-core"
+             style="
+               text-decoration:none;
+               color:inherit;
+               border:1px solid var(--border);
+               border-radius:16px;
+               padding:1rem;
+               background:#fff;
+               box-shadow:0 4px 14px rgba(2,6,23,.06);
+             ">
+            <div style="font-weight:800;">KenFolios Mumbai Core</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Mumbai · Business & Professionals
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#065f46;">
+              ● Active
+            </div>
+          </a>
+
+          <a href="/wagroups/delhi-circle"
+             style="text-decoration:none;color:inherit;border:1px solid var(--border);border-radius:16px;padding:1rem;background:#fff;">
+            <div style="font-weight:800;">KenFolios Delhi Circle</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Delhi NCR · Founders & Operators
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#065f46;">
+              ● Active
+            </div>
+          </a>
+
+          <!-- ================= UPCOMING GROUPS ================= -->
+
+          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
+            <div style="font-weight:800;">KenFolios Bengaluru Guild</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Bengaluru · Tech & Startups
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
+              ⏳ Upcoming
+            </div>
+          </div>
+
+          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
+            <div style="font-weight:800;">KenFolios Pune Network</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Pune · Professionals
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
+              ⏳ Upcoming
+            </div>
+          </div>
+
+          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
+            <div style="font-weight:800;">KenFolios Hyderabad Forum</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Hyderabad · Business Leaders
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
+              ⏳ Upcoming
+            </div>
+          </div>
+
+          <div style="border:1px dashed var(--border);border-radius:16px;padding:1rem;background:#f8fafc;opacity:.7;">
+            <div style="font-weight:800;">KenFolios Chennai Collective</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:.25rem;">
+              Chennai · Entrepreneurs
+            </div>
+            <div style="margin-top:.75rem;font-size:12px;font-weight:700;color:#92400e;">
+              ⏳ Upcoming
+            </div>
+          </div>
+
+          <!-- Duplicate UPCOMING cards for 50+ cities
+               later to test infinite scroll -->
+
         </div>
 
-        <div class="field">
-          <label>Contact Number</label>
-          <input type="tel" name="contact_number" required />
-        </div>
+        <p style="margin-top:2rem;font-size:13px;color:var(--muted);text-align:center;">
+          Groups are activated in phases. Upcoming groups will open once approved.
+        </p>
 
-        <div class="field">
-          <label>WhatsApp Group Name</label>
-          <input name="group_name" required />
-        </div>
+      </section>
 
-        <div class="field">
-          <label>Group Description / Purpose</label>
-          <textarea name="group_description" required></textarea>
-        </div>
-
-        <div class="field">
-          <label>WhatsApp Group Join Link</label>
-          <input name="group_join_link" required />
-        </div>
-
-        <div class="check-row">
-          <input type="checkbox" checked required />
-          <label>
-            I agree to the KenFolios
-            <a href="https://kenfolios.com/terms/" target="_blank">Terms & Conditions</a>
-            and
-            <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>.
-          </label>
-        </div>
-
-        <!-- STATUS MESSAGE ABOVE BUTTON -->
-        <div id="status" class="status"></div>
-
-        <div class="actions">
-          <button type="submit" id="submitBtn">Submit for Review</button>
-        </div>
-      </form>
     </div>
-
-    <footer class="kf-footer">
-      © <span id="kfYear"></span> KenFolios Media Private Limited. All rights reserved.
-    </footer>
   </div>
 
-  <script>
-    document.getElementById('kfYear').textContent = new Date().getFullYear();
-
-    const form = document.getElementById('waGroupForm');
-    const statusEl = document.getElementById('status');
-    const submitBtn = document.getElementById('submitBtn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      statusEl.textContent = "Submitting...";
-      statusEl.className = "status";
-      submitBtn.disabled = true;
-
-      const formData = new FormData(form);
-      const payload = Object.fromEntries(formData.entries());
-
-      try {
-        const res = await fetch("/api/wa-groups/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Submission failed");
-        }
-
-        statusEl.textContent = data.message;
-        statusEl.className = "status ok";
-        form.reset();
-
-      } catch (err) {
-        statusEl.textContent = err.message;
-        statusEl.className = "status err";
-      } finally {
-        submitBtn.disabled = false;
-      }
-    });
-  </script>
 </body>
 </html>
