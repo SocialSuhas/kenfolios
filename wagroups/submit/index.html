@@ -39,35 +39,36 @@
       background:#fff;
       border:1px solid var(--border);
       border-radius:16px;
-      padding:1.75rem 1.75rem;
+      padding:1.75rem;
       box-shadow:0 10px 30px rgba(15,23,42,.05)
     }
 
-    /* LOGO – CENTERED */
+    /* HEADER BLOCK – LEFT ALIGNED */
+    .header{
+      text-align:left;
+      margin-bottom:1.25rem;
+    }
     .kf-community-logo{
       width:100%;
       max-width:320px;
       height:auto;
       display:block;
-      margin:0 auto 1rem auto;
+      margin:0 0 .75rem 0;
     }
     @media (max-width:480px){
       .kf-community-logo{ max-width:260px; }
     }
-
-    /* HEADINGS – CENTERED */
-    h1{
+    .header h1{
       font-size:22px;
-      margin:0 0 .4rem;
-      text-align:center;
+      margin:0 0 .35rem 0;
     }
-    .desc{
+    .header .desc{
       font-size:14px;
       color:var(--muted);
-      margin-bottom:1.25rem;
-      text-align:center;
+      line-height:1.45;
     }
 
+    /* REST OF PAGE – AS IT IS */
     .note{
       background:#f8fafc;
       border:1px solid var(--border);
@@ -99,7 +100,7 @@
       align-items:flex-start;
     }
 
-    /* STATUS – CENTERED */
+    /* STATUS & BUTTON – UNCHANGED (CENTERED) */
     .status{
       font-size:14px;
       text-align:center;
@@ -107,7 +108,6 @@
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
 
-    /* BUTTON – CENTERED */
     .actions{
       display:flex;
       justify-content:center;
@@ -138,35 +138,38 @@
   <div class="page">
     <div class="card">
 
-      <!-- KenFolios Business Community SVG LOGO -->
-      <svg
-        class="kf-community-logo"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 360 64"
-        role="img"
-        aria-label="KenFolios Business Community"
-      >
-        <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
-        <text x="32" y="52" text-anchor="middle"
-          font-size="46" font-weight="900" letter-spacing="-3"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#ffffff">KF</text>
-        <text x="76" y="30" font-size="22" font-weight="900"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a">KenFolios</text>
-        <text x="76" y="54" font-size="17" font-weight="800"
-          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
-          fill="#0f172a" letter-spacing=".4">Business Community</text>
-      </svg>
+      <!-- LEFT-ALIGNED HEADER -->
+      <div class="header">
+        <svg
+          class="kf-community-logo"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 360 64"
+          role="img"
+          aria-label="KenFolios Business Community"
+        >
+          <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
+          <text x="32" y="52" text-anchor="middle"
+            font-size="46" font-weight="900" letter-spacing="-3"
+            font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+            fill="#ffffff">KF</text>
+          <text x="76" y="30" font-size="22" font-weight="900"
+            font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+            fill="#0f172a">KenFolios</text>
+          <text x="76" y="54" font-size="17" font-weight="800"
+            font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+            fill="#0f172a" letter-spacing=".4">Business Community</text>
+        </svg>
 
-      <h1>Register a WhatsApp Group</h1>
+        <h1>Register a WhatsApp Group</h1>
 
-      <div class="desc">
-        Members can request creation of official WhatsApp groups under the
-        KenFolios community. Groups are created and governed centrally
-        to maintain quality and long-term control.
+        <div class="desc">
+          Members can request creation of official WhatsApp groups under the
+          KenFolios community. Groups are created and governed centrally
+          to maintain quality and long-term control.
+        </div>
       </div>
 
+      <!-- EVERYTHING BELOW – UNCHANGED -->
       <div class="note">
         • All fields are mandatory<br>
         • Only paid KenFolios members can submit requests<br>
@@ -212,7 +215,6 @@
           </label>
         </div>
 
-        <!-- STATUS MESSAGE ABOVE BUTTON -->
         <div id="status" class="status"></div>
 
         <div class="actions">
