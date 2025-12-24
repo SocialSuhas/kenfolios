@@ -181,43 +181,6 @@
   </footer>
 </div>
 
-<script>
-  document.getElementById("year").textContent = new Date().getFullYear();
 
-  const form = document.getElementById("flagshipForm");
-  const statusEl = document.getElementById("status");
-  const btn = document.getElementById("submitBtn");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    statusEl.textContent = "Submitting request…";
-    statusEl.className = "status";
-    btn.disabled = true;
-
-    const payload = Object.fromEntries(new FormData(form).entries());
-
-    try {
-      const res = await fetch("/wagroups/flagship/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
-
-      statusEl.textContent =
-        "Request submitted. Please check your email to activate access.";
-      statusEl.className = "status ok";
-      form.reset();
-
-    } catch (err) {
-      statusEl.textContent = err.message;
-      statusEl.className = "status err";
-    } finally {
-      btn.disabled = false;
-    }
-  });
-</script>
 </body>
 </html>
