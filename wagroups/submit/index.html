@@ -49,14 +49,24 @@
       max-width:320px;
       height:auto;
       display:block;
-      margin:0 auto 1rem auto;
+      margin:0 0 1rem 0; /* LEFT ALIGNED */
     }
     @media (max-width:480px){
       .kf-community-logo{ max-width:260px; }
     }
 
-    h1{font-size:22px;margin:0 0 .4rem;text-align:center}
-    .desc{font-size:14px;color:var(--muted);margin-bottom:1.25rem;text-align:center}
+    h1{
+      font-size:22px;
+      margin:0 0 .4rem;
+      text-align:left;
+    }
+    .desc{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:1.25rem;
+      text-align:left;
+    }
+
     .note{
       background:#f8fafc;
       border:1px solid var(--border);
@@ -66,6 +76,7 @@
       color:var(--muted);
       margin-bottom:1.25rem
     }
+
     form{display:grid;gap:1rem}
     .field{display:flex;flex-direction:column;gap:.35rem}
     label{font-size:13px;font-weight:700;color:var(--muted)}
@@ -74,6 +85,7 @@
       border-radius:10px;
       padding:.6rem .7rem;
       font-size:15px;
+      font-family:inherit
     }
     textarea{min-height:90px}
 
@@ -82,16 +94,20 @@
       gap:.5rem;
       font-size:13px;
       color:var(--muted);
+      align-items:flex-start;
     }
 
     .status{
       font-size:14px;
-      text-align:center;
+      text-align:left; /* aligned with form */
     }
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
 
-    .actions{display:flex;justify-content:center}
+    .actions{
+      display:flex;
+      justify-content:flex-start; /* LEFT ALIGNED BUTTON */
+    }
     button{
       height:46px;
       min-width:220px;
@@ -100,6 +116,7 @@
       background:var(--kf-red);
       color:#fff;
       font-weight:800;
+      font-size:15px;
       cursor:pointer
     }
     button:disabled{opacity:.6}
