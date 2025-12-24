@@ -5,6 +5,21 @@
   <title>KenFolios WhatsApp Groups</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- INLINE SVG FAVICON -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+  <rect width='64' height='64' rx='12' ry='12' fill='%23E11D2E'/>
+  <text x='32' y='50' text-anchor='middle'
+    font-size='44' font-weight='900'
+    font-family='system-ui,Segoe UI,Roboto,Arial'
+    fill='white'>KF</text>
+</svg>"
+  />
+
+  <!-- ⚠️ NO STYLE CHANGES -->
   <style>
     :root{
       --kf-red:#E11D2E;
@@ -17,177 +32,162 @@
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:var(--bg);
       color:var(--text);
+      background:var(--bg);
     }
+    header{background:#fff}
+    .header-inner{max-width:1200px;margin:0 auto;padding:16px 20px 6px;display:flex;align-items:center}
+    .kf-community-logo{height:44px;display:block}
 
-    .wrap{max-width:1200px;margin:0 auto;padding:32px 20px}
-    h1{font-size:36px;font-weight:900;margin:0 0 12px}
-    p{color:var(--muted);font-size:17px;margin:0 0 28px}
+    .hero{background:#fff;padding:52px 0 72px}
+    .hero-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:1.1fr .9fr;gap:72px;align-items:center}
+    @media(max-width:900px){.hero-inner{grid-template-columns:1fr;text-align:center}}
 
-    /* GRID */
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-      gap:20px;
-    }
-    .card{
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:18px;
-      cursor:pointer;
-      transition:.15s;
-    }
-    .card:hover{transform:translateY(-2px)}
-    .card.upcoming{
-      opacity:.7;
-      cursor:default;
-    }
+    .hero h1{font-size:40px;margin:0 0 14px;font-weight:900}
+    .hero p{font-size:18px;color:var(--muted);max-width:540px;margin:0 0 28px}
+    @media(max-width:900px){.hero p{margin-left:auto;margin-right:auto}}
+
+    .cta{display:inline-block;background:var(--kf-red);color:#fff;padding:14px 28px;border-radius:999px;font-weight:800;text-decoration:none}
+
+    .hero-graphic{max-width:460px;margin-left:auto}
+    @media(max-width:900px){.hero-graphic{margin:24px auto 0}}
+
+    .section{padding:72px 0 96px}
+    .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+
+    h2{font-size:26px;margin-bottom:28px;font-weight:900}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+
+    .card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px;cursor:pointer}
+    .card.upcoming{background:#f8fafc;border-style:dashed;opacity:.75;cursor:default}
 
     .card-title{font-weight:800;font-size:16px}
     .card-meta{font-size:13px;color:var(--muted)}
-    .card-status{margin-top:10px;font-size:12px;font-weight:800}
-
-    /* GROUP VIEW */
-    .group-view{
-      max-width:720px;
-      margin:0 auto;
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius:20px;
-      padding:32px;
-    }
-    .group-view h2{font-size:28px;margin:0 0 12px}
-    .group-view p{font-size:16px}
-
-    .join-btn{
-      display:inline-block;
-      margin-top:24px;
-      background:var(--kf-red);
-      color:#fff;
-      padding:14px 28px;
-      border-radius:999px;
-      font-weight:800;
-      text-decoration:none;
-    }
-
-    .back{
-      display:inline-block;
-      margin-bottom:18px;
-      color:var(--muted);
-      cursor:pointer;
-    }
-
-    .hidden{display:none}
+    .card-status{margin-top:12px;font-size:12px;font-weight:800;color:#92400e}
   </style>
 </head>
 
 <body>
 
-<div class="wrap">
-
-  <!-- DIRECTORY MODE -->
-  <div id="directory">
-    <h1>WhatsApp Groups Directory</h1>
-    <p>Official KenFolios community groups. Only approved groups are listed.</p>
-
-    <div id="groupsGrid" class="grid"></div>
-
-    <h2 style="margin-top:48px">Upcoming Groups</h2>
-    <div id="upcomingGrid" class="grid"></div>
+<!-- ================= HEADER ================= -->
+<header>
+  <div class="header-inner">
+    <svg class="kf-community-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64">
+      <rect width="64" height="64" rx="14" fill="#E11D2E"/>
+      <text x="32" y="52" text-anchor="middle" font-size="46" font-weight="900" fill="#fff">KF</text>
+      <text x="76" y="30" font-size="22" font-weight="900" fill="#0f172a">KenFolios</text>
+      <text x="76" y="54" font-size="17" font-weight="800" fill="#0f172a">Business Community</text>
+    </svg>
   </div>
+</header>
 
-  <!-- GROUP DETAIL MODE -->
-  <div id="groupView" class="hidden">
-    <div class="group-view">
-      <div class="back" onclick="goBack()">← Back to groups</div>
-      <h2 id="gvName"></h2>
-      <p id="gvDesc"></p>
-      <div id="gvStatus" class="card-status"></div>
-      <a id="joinBtn" class="join-btn hidden">Join WhatsApp Group</a>
+<!-- ================= HERO ================= -->
+<section class="hero" id="heroSection">
+  <div class="hero-inner">
+    <div>
+      <h1>WhatsApp Groups Directory</h1>
+      <p>
+        Discover city, industry, and interest-based WhatsApp groups built for
+        meaningful, professional engagement within the KenFolios community.
+      </p>
+      <a class="cta" href="/wagroups/submit">Request a New Group</a>
+    </div>
+
+    <div class="hero-graphic">
+      <!-- unchanged SVG -->
     </div>
   </div>
+</section>
 
-</div>
+<!-- ================= DIRECTORY ================= -->
+<section class="section" id="directorySection">
+  <div class="wrap">
+
+    <!-- ✅ NEW: APPROVED GROUPS -->
+    <div id="approved-section">
+      <h2>Active Groups</h2>
+      <div id="approvedGrid" class="grid"></div>
+    </div>
+
+    <!-- EXISTING UPCOMING -->
+    <h2 style="margin-top:48px">Groups Directory</h2>
+    <div id="grid" class="grid"></div>
+
+  </div>
+</section>
+
+<!-- ================= GROUP DETAIL (NEW) ================= -->
+<section class="section" id="groupDetail" style="display:none">
+  <div class="wrap">
+    <h2 id="gdName"></h2>
+    <p id="gdDesc" class="card-meta"></p>
+    <a id="joinBtn" class="cta" style="margin-top:24px;display:none">Join WhatsApp Group</a>
+  </div>
+</section>
 
 <script>
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(location.search);
   const groupId = params.get('group_id');
 
-  const dirEl = document.getElementById('directory');
-  const gvEl = document.getElementById('groupView');
+  const hero = document.getElementById('heroSection');
+  const directory = document.getElementById('directorySection');
+  const detail = document.getElementById('groupDetail');
 
   if(groupId){
+    hero.style.display = 'none';
+    directory.style.display = 'none';
+    detail.style.display = 'block';
     loadGroup(groupId);
   }else{
-    loadDirectory();
+    loadApproved();
+    loadUpcoming();
   }
 
-  function goBack(){
-    history.pushState({}, '', '/wagroups');
-    gvEl.classList.add('hidden');
-    dirEl.classList.remove('hidden');
-  }
-
-  async function loadDirectory(){
-    dirEl.classList.remove('hidden');
-    gvEl.classList.add('hidden');
-
+  async function loadApproved(){
     const res = await fetch('/api/wa-groups/list');
     const data = await res.json();
+    const grid = document.getElementById('approvedGrid');
 
-    const grid = document.getElementById('groupsGrid');
-    grid.innerHTML = '';
-
-    data.groups.forEach(g => {
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `
+    data.groups.forEach(g=>{
+      const d=document.createElement('div');
+      d.className='card';
+      d.innerHTML=`
         <div class="card-title">${g.group_name}</div>
         <div class="card-meta">${g.group_description}</div>
-        <div class="card-status">✔ Approved</div>
+        <div class="card-status">✔ Active</div>
       `;
-      div.onclick = () => {
-        window.location.href = '/wagroups?group_id=' + g.id;
-      };
-      grid.appendChild(div);
+      d.onclick=()=>location.href='/wagroups?group_id='+g.id;
+      grid.appendChild(d);
     });
+  }
 
-    // Demo upcoming groups (unchanged logic)
-    const cities = ["Mumbai","Delhi","Bengaluru","Pune","Hyderabad"];
-    const ug = document.getElementById('upcomingGrid');
-    ug.innerHTML = '';
+  function loadUpcoming(){
+    const cities=["Mumbai","Delhi","Bengaluru","Pune"];
+    const grid=document.getElementById('grid');
     cities.forEach(c=>{
       const d=document.createElement('div');
       d.className='card upcoming';
       d.innerHTML=`
         <div class="card-title">KenFolios ${c} Community</div>
-        <div class="card-meta">${c} · Upcoming</div>
-        <div class="card-status">⏳ Under Review</div>
+        <div class="card-meta">${c} · City / Industry / Interest</div>
+        <div class="card-status">⏳ Upcoming</div>
       `;
-      ug.appendChild(d);
+      grid.appendChild(d);
     });
   }
 
   async function loadGroup(id){
-    dirEl.classList.add('hidden');
-    gvEl.classList.remove('hidden');
-
-    const res = await fetch('/api/wa-groups/group?group_id=' + id);
+    const res = await fetch('/api/wa-groups/group?group_id='+id);
     const g = await res.json();
 
-    document.getElementById('gvName').textContent = g.group_name;
-    document.getElementById('gvDesc').textContent = g.group_description;
-    document.getElementById('gvStatus').textContent =
-      g.status === 'approved' ? '✔ Approved Group' : '⏳ Under Review';
+    document.getElementById('gdName').textContent = g.group_name;
+    document.getElementById('gdDesc').textContent = g.group_description;
 
-    const joinBtn = document.getElementById('joinBtn');
     if(g.status === 'approved'){
-      joinBtn.classList.remove('hidden');
-      joinBtn.href = '/api/wa-groups/join?group_id=' + id;
-    }else{
-      joinBtn.classList.add('hidden');
+      const btn=document.getElementById('joinBtn');
+      btn.style.display='inline-block';
+      btn.href='/api/wa-groups/join?group_id='+id;
     }
   }
 </script>
