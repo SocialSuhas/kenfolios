@@ -39,32 +39,33 @@
       background:#fff;
       border:1px solid var(--border);
       border-radius:16px;
-      padding:1.5rem 1.75rem;
+      padding:1.75rem 1.75rem;
       box-shadow:0 10px 30px rgba(15,23,42,.05)
     }
 
-    /* SVG LOGO */
+    /* LOGO – CENTERED */
     .kf-community-logo{
       width:100%;
       max-width:320px;
       height:auto;
       display:block;
-      margin:0 0 1rem 0; /* LEFT ALIGNED */
+      margin:0 auto 1rem auto;
     }
     @media (max-width:480px){
       .kf-community-logo{ max-width:260px; }
     }
 
+    /* HEADINGS – CENTERED */
     h1{
       font-size:22px;
       margin:0 0 .4rem;
-      text-align:left;
+      text-align:center;
     }
     .desc{
       font-size:14px;
       color:var(--muted);
       margin-bottom:1.25rem;
-      text-align:left;
+      text-align:center;
     }
 
     .note{
@@ -74,7 +75,8 @@
       padding:.75rem .9rem;
       font-size:13px;
       color:var(--muted);
-      margin-bottom:1.25rem
+      margin-bottom:1.25rem;
+      text-align:left;
     }
 
     form{display:grid;gap:1rem}
@@ -97,16 +99,18 @@
       align-items:flex-start;
     }
 
+    /* STATUS – CENTERED */
     .status{
       font-size:14px;
-      text-align:left; /* aligned with form */
+      text-align:center;
     }
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
 
+    /* BUTTON – CENTERED */
     .actions{
       display:flex;
-      justify-content:flex-start; /* LEFT ALIGNED BUTTON */
+      justify-content:center;
     }
     button{
       height:46px;
