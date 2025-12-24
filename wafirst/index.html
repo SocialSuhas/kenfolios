@@ -73,26 +73,40 @@
     .hint{font-size:12px;color:var(--muted)}
 
     .check-row{
-      display:flex;gap:.5rem;
-      font-size:13px;color:var(--muted)
+      display:flex;
+      gap:.5rem;
+      font-size:13px;
+      color:var(--muted)
     }
 
-    .status{text-align:center;font-size:14px}
+    .status{
+      font-size:14px;
+      text-align:center;
+    }
     .status.ok{color:#16a34a}
     .status.err{color:#dc2626}
 
-    .actions{display:flex;justify-content:center}
+    .actions{
+      display:flex;
+      justify-content:center;
+    }
     button{
-      height:46px;min-width:240px;
-      border-radius:11px;border:1px solid var(--kf-red);
-      background:var(--kf-red);color:#fff;
-      font-weight:800;font-size:15px;cursor:pointer
+      height:46px;
+      min-width:240px;
+      border-radius:11px;
+      border:1px solid var(--kf-red);
+      background:var(--kf-red);
+      color:#fff;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer
     }
     button:disabled{opacity:.6}
 
     footer{
       text-align:center;
-      font-size:12.5px;color:var(--muted);
+      font-size:12.5px;
+      color:var(--muted);
       margin:1.75rem 0 .75rem
     }
   </style>
@@ -104,21 +118,34 @@
 
     <div class="header">
       <!-- LOGO -->
-      <svg class="kf-community-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64">
-        <rect width="64" height="64" rx="14" fill="#E11D2E"/>
-        <text x="32" y="52" text-anchor="middle" font-size="46" font-weight="900"
-          font-family="system-ui" fill="#fff">KF</text>
-        <text x="76" y="30" font-size="22" font-weight="900" fill="#0f172a">KenFolios</text>
-        <text x="76" y="54" font-size="17" font-weight="800" fill="#0f172a">
+      <svg
+        class="kf-community-logo"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 360 64"
+        role="img"
+        aria-label="KenFolios Business Community"
+      >
+        <rect x="0" y="0" width="64" height="64" rx="14" fill="#E11D2E"/>
+        <text x="32" y="52" text-anchor="middle"
+          font-size="46" font-weight="900"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#ffffff">KF</text>
+        <text x="76" y="30" font-size="22" font-weight="900"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#0f172a">KenFolios</text>
+        <text x="76" y="54" font-size="17" font-weight="800"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+          fill="#0f172a" letter-spacing=".4">
           Business Community
         </text>
       </svg>
 
       <h1>PAN India Verified Members WhatsApp Group</h1>
+
       <div class="desc">
-        This is the registration page for the <strong>KenFolios Business Community – PAN India
-        Verified Members WhatsApp Group</strong>.  
-        This group is meant for high-quality professional and business engagement.
+        This is the registration page for the
+        <strong>KenFolios Business Community – PAN India Verified Members WhatsApp Group</strong>.
+        This group is intended strictly for high-quality professional and business engagement.
       </div>
     </div>
 
@@ -154,8 +181,12 @@
 
       <div class="field">
         <label>How do you plan to use this group?</label>
-        <textarea name="intended_use" maxlength="300" required></textarea>
-        <div class="hint">Max 300 characters. Be specific and professional.</div>
+        <textarea
+          name="intended_use"
+          maxlength="300"
+          required
+        ></textarea>
+        <div class="hint">Maximum 300 characters. Be clear and professional.</div>
       </div>
 
       <div class="check-row">
@@ -171,8 +202,11 @@
       <div id="status" class="status"></div>
 
       <div class="actions">
-        <button type="submit" id="submitBtn">Submit & Request Access</button>
+        <button type="submit" id="submitBtn">
+          Submit & Request Access
+        </button>
       </div>
+
     </form>
   </div>
 
@@ -181,6 +215,44 @@
   </footer>
 </div>
 
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
 
+  const form = document.getElementById("flagshipForm");
+  const statusEl = document.getElementById("status");
+  const btn = document.getElementById("submitBtn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    statusEl.textContent = "Submitting request…";
+    statusEl.className = "status";
+    btn.disabled = true;
+
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const res = await fetch("/wagroups/flagship/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Submission failed");
+
+      statusEl.textContent =
+        "Request submitted successfully. Please check your email to activate access.";
+      statusEl.className = "status ok";
+      form.reset();
+
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.className = "status err";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>
