@@ -49,13 +49,10 @@
 
     .cta{display:inline-block;background:var(--kf-red);color:#fff;padding:14px 28px;border-radius:999px;font-weight:800;text-decoration:none}
 
-    .hero-graphic{max-width:460px;margin-left:auto}
-    @media(max-width:900px){.hero-graphic{margin:24px auto 0}}
-
     .section{padding:72px 0 96px}
     .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
 
-    h2{font-size:26px;margin-bottom:28px;font-weight:900}
+    h2{font-size:26px;margin-bottom:16px;font-weight:900}
 
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
 
@@ -65,6 +62,10 @@
     .card-title{font-weight:800;font-size:16px}
     .card-meta{font-size:13px;color:var(--muted)}
     .card-status{margin-top:12px;font-size:12px;font-weight:800;color:#92400e}
+
+    /* additive */
+    .meta-block{margin-top:18px}
+    .members-list{margin-top:10px;padding-left:18px}
   </style>
 </head>
 
@@ -93,10 +94,6 @@
       </p>
       <a class="cta" href="/wagroups/submit">Request a New Group</a>
     </div>
-
-    <div class="hero-graphic">
-      <!-- unchanged SVG -->
-    </div>
   </div>
 </section>
 
@@ -104,25 +101,35 @@
 <section class="section" id="directorySection">
   <div class="wrap">
 
-    <!-- ✅ NEW: APPROVED GROUPS -->
     <div id="approved-section">
       <h2>Active Groups</h2>
       <div id="approvedGrid" class="grid"></div>
     </div>
 
-    <!-- EXISTING UPCOMING -->
     <h2 style="margin-top:48px">Groups Directory</h2>
     <div id="grid" class="grid"></div>
 
   </div>
 </section>
 
-<!-- ================= GROUP DETAIL (NEW) ================= -->
+<!-- ================= GROUP DETAIL ================= -->
 <section class="section" id="groupDetail" style="display:none">
   <div class="wrap">
+
     <h2 id="gdName"></h2>
     <p id="gdDesc" class="card-meta"></p>
-    <a id="joinBtn" class="cta" style="margin-top:24px;display:none">Join WhatsApp Group</a>
+
+    <div id="gdModerators" class="meta-block"></div>
+
+    <div class="meta-block">
+      <strong>Members</strong>
+      <ul id="gdMembers" class="members-list"></ul>
+    </div>
+
+    <a id="joinBtn" class="cta" style="margin-top:24px;display:none">
+      Join WhatsApp Group
+    </a>
+
   </div>
 </section>
 
@@ -181,8 +188,29 @@
     const res = await fetch('/api/wa-groups/group?group_id='+id);
     const g = await res.json();
 
-    document.getElementById('gdName').textContent = g.group_name;
-    document.getElementById('gdDesc').textContent = g.group_description;
+    document.getElementById('gdName').textContent = g.name;
+    document.getElementById('gdDesc').textContent = g.description;
+
+    // Moderators
+    const modBox = document.getElementById('gdModerators');
+    if(g.moderated_by && g.moderated_by.length){
+      modBox.innerHTML =
+        '<strong>Moderated by:</strong> ' +
+        g.moderated_by.map(m =>
+          m.full_name + (m.city ? ' (' + m.city + ')' : '')
+        ).join(', ');
+    }
+
+    // Members
+    const list = document.getElementById('gdMembers');
+    list.innerHTML = '';
+    if(g.members){
+      g.members.forEach(m=>{
+        const li=document.createElement('li');
+        li.textContent = m.full_name + (m.city ? ' – ' + m.city : '');
+        list.appendChild(li);
+      });
+    }
 
     if(g.status === 'approved'){
       const btn=document.getElementById('joinBtn');
