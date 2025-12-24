@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>KenFolios · PAN India Verified Members WhatsApp Group</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- INLINE SVG FAVICON -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml;utf8,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+  <rect width='64' height='64' rx='12' fill='%23E11D2E'/>
+  <text x='32' y='50' text-anchor='middle'
+    font-size='44' font-weight='900'
+    font-family='system-ui'
+    fill='white'>KF</text>
+</svg>"
+  />
+
+  <style>
+    :root{
+      --kf-red:#E11D2E;
+      --border:#e5e7eb;
+      --bg:#f8fafc;
+      --text:#0f172a;
+      --muted:#64748b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .page{max-width:760px;margin:3rem auto;padding:0 1rem}
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:1.75rem;
+      box-shadow:0 10px 30px rgba(15,23,42,.05)
+    }
+
+    .header{margin-bottom:1.25rem}
+    .kf-community-logo{max-width:320px;margin-bottom:.75rem}
+    h1{font-size:22px;margin:.25rem 0}
+    .desc{font-size:14px;color:var(--muted);line-height:1.45}
+
+    .note{
+      background:#f8fafc;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:.75rem .9rem;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:1.25rem;
+    }
+
+    form{display:grid;gap:1rem}
+    .field{display:flex;flex-direction:column;gap:.35rem}
+    label{font-size:13px;font-weight:700;color:var(--muted)}
+    input,textarea{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:.6rem .7rem;
+      font-size:15px;
+      font-family:inherit
+    }
+    textarea{min-height:100px}
+
+    .hint{font-size:12px;color:var(--muted)}
+
+    .check-row{
+      display:flex;gap:.5rem;
+      font-size:13px;color:var(--muted)
+    }
+
+    .status{text-align:center;font-size:14px}
+    .status.ok{color:#16a34a}
+    .status.err{color:#dc2626}
+
+    .actions{display:flex;justify-content:center}
+    button{
+      height:46px;min-width:240px;
+      border-radius:11px;border:1px solid var(--kf-red);
+      background:var(--kf-red);color:#fff;
+      font-weight:800;font-size:15px;cursor:pointer
+    }
+    button:disabled{opacity:.6}
+
+    footer{
+      text-align:center;
+      font-size:12.5px;color:var(--muted);
+      margin:1.75rem 0 .75rem
+    }
+  </style>
+</head>
+
+<body>
+<div class="page">
+  <div class="card">
+
+    <div class="header">
+      <!-- LOGO -->
+      <svg class="kf-community-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64">
+        <rect width="64" height="64" rx="14" fill="#E11D2E"/>
+        <text x="32" y="52" text-anchor="middle" font-size="46" font-weight="900"
+          font-family="system-ui" fill="#fff">KF</text>
+        <text x="76" y="30" font-size="22" font-weight="900" fill="#0f172a">KenFolios</text>
+        <text x="76" y="54" font-size="17" font-weight="800" fill="#0f172a">
+          Business Community
+        </text>
+      </svg>
+
+      <h1>PAN India Verified Members WhatsApp Group</h1>
+      <div class="desc">
+        This is the registration page for the <strong>KenFolios Business Community – PAN India
+        Verified Members WhatsApp Group</strong>.  
+        This group is meant for high-quality professional and business engagement.
+      </div>
+    </div>
+
+    <div class="note">
+      • Only <strong>paid KenFolios members</strong> are eligible<br>
+      • An <strong>email activation link</strong> will be sent after submission<br>
+      • Activation link is <strong>one-time use</strong> and valid only for this group<br>
+      • Group is strictly for <strong>professional & business purposes</strong><br>
+      • Entry is subject to verification and admin approval
+    </div>
+
+    <form id="flagshipForm">
+
+      <div class="field">
+        <label>Your Full Name</label>
+        <input name="full_name" required />
+      </div>
+
+      <div class="field">
+        <label>Registered Email</label>
+        <input type="email" name="email" required />
+      </div>
+
+      <div class="field">
+        <label>Contact Number</label>
+        <input type="tel" name="phone" required />
+      </div>
+
+      <div class="field">
+        <label>City</label>
+        <input name="city" />
+      </div>
+
+      <div class="field">
+        <label>How do you plan to use this group?</label>
+        <textarea name="intended_use" maxlength="300" required></textarea>
+        <div class="hint">Max 300 characters. Be specific and professional.</div>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" checked required />
+        <label>
+          I agree to the
+          <a href="https://kenfolios.com/terms/" target="_blank">Terms</a>
+          and
+          <a href="https://kenfolios.com/privacy/" target="_blank">Privacy Policy</a>.
+        </label>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="actions">
+        <button type="submit" id="submitBtn">Submit & Request Access</button>
+      </div>
+    </form>
+  </div>
+
+  <footer>
+    © <span id="year"></span> KenFolios Media Private Limited
+  </footer>
+</div>
+
+
+</body>
+</html>
