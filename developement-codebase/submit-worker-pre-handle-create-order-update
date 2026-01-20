@@ -1097,110 +1097,111 @@ async function handlePatchMember(request, env, origin) {
 async function handleCreateOrder(request, env, origin) {
   const db = env.D1_WRITE_BINDING;
   const body = await parseJsonSafe(request);
+
   const member_id = Number(body.member_id || body.memberId);
-  const applyCoupon = (body.coupon || body.coupon_code || body.couponCode || null);
-  const simulate = body.simulate || false;
+  const coupon = body.coupon || body.coupon_code || body.couponCode || null;
+  const simulate = !!body.simulate;
+
   if (!member_id) {
     return json({ ok: false, message: "member_id required" }, 400, origin);
   }
-  const lookup = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
-    .bind(member_id).all();
-  if (!lookup || !lookup.results || !lookup.results[0]) {
+
+  // --------------------------------------------------
+  // 1) Fetch member
+  // --------------------------------------------------
+  const lookup = await db
+    .prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+    .bind(member_id)
+    .all();
+
+  if (!lookup?.results?.[0]) {
     return json({ ok: false, message: "Member not found" }, 404, origin);
   }
+
   const member = lookup.results[0];
-  if (member.activation_fee_status === 'paid') {
-    return json({
-      ok: false,
-      message: "Activation fee already paid for this member",
-      reason: "already_paid"
-    }, 409, origin);
+
+  // --------------------------------------------------
+  // 2) HARD GUARD — paid orders are IMMUTABLE
+  // --------------------------------------------------
+  if (member.activation_fee_status === "paid") {
+    return json(
+      {
+        ok: false,
+        message: "Activation fee already paid",
+        reason: "already_paid",
+        order: buildOrderObject(member_id, member, null)
+      },
+      409,
+      origin
+    );
   }
-  const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, applyCoupon);
+
+  // --------------------------------------------------
+  // 3) Calculate totals (server authoritative)
+  // --------------------------------------------------
+  const totalsRes = applyCouponAndTotals(
+    BASE_PRODUCT.base_price,
+    coupon
+  );
+
   if (totalsRes.error) {
     return json({ ok: false, message: totalsRes.error }, 400, origin);
   }
 
-  // Persist activation_created_at as UNIX seconds for order_created_at
+  // --------------------------------------------------
+  // 4) SIMULATION MODE (coupon preview only)
+  // --------------------------------------------------
+  if (simulate) {
+    return json(
+      {
+        ok: true,
+        razorpay_configured: !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
+        message: "Simulated order totals",
+        order: buildOrderObject(member_id, member, totalsRes)
+      },
+      200,
+      origin
+    );
+  }
+
+  // --------------------------------------------------
+  // 5) Razorpay not configured
+  // --------------------------------------------------
+  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
+    return json(
+      {
+        ok: true,
+        razorpay_configured: false,
+        message: "Payment options will appear here soon.",
+        order: buildOrderObject(member_id, member, totalsRes)
+      },
+      200,
+      origin
+    );
+  }
+
+  // --------------------------------------------------
+  // 6) Create NEW Razorpay order (every attempt)
+  // --------------------------------------------------
   try {
     const nowSec = Math.floor(Date.now() / 1000);
-    await db.prepare(`
-      UPDATE members
-      SET activation_created_at = COALESCE(activation_created_at, ?)
-      WHERE id = ?;
-    `).bind(nowSec, member_id).run();
-  } catch (upErr) {
-    console.error("activation_created_at update failed:", String(upErr));
-  }
 
-  // Generate stable order_ref & order_url and persist (do not overwrite if exists)
-  const order_ref = generateRefFromMember(member_id);
-  const order_url = `https://kenfolios.com/community?order=${encodeURIComponent(order_ref)}`;
-  try {
-    await db.prepare(`
-      UPDATE members
-      SET
-        ref_id = COALESCE(ref_id, ?),
-        order_url = COALESCE(order_url, ?),
-        activation_order_token = COALESCE(activation_order_token, ?)
-      WHERE id = ?;
-    `).bind(order_ref, order_url, order_ref, member_id).run();
-  } catch (e) {
-    console.error("Could not persist order_url/ref_id:", String(e));
-  }
-
-  // Re-fetch member after potential updates
-  const afterSet = await db.prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
-    .bind(member_id).all();
-  const memberAfter = (afterSet && afterSet.results && afterSet.results[0]) ? afterSet.results[0] : member;
-
-  // If simulate -> return totals & order (no gateway interaction)
-  if (simulate) {
-    return json({
-      ok: true,
-      razorpay_configured: !!(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
-      message: "Simulated order totals",
-      order: buildOrderObject(member_id, memberAfter, totalsRes)
-    }, 200, origin);
-  }
-
-  // If Razorpay not configured, still return created order (order_url present)
-  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
-    try {
-      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
-        const payload = {
-          type: 'order_created',
-          email: memberAfter.email,
-          member_id,
-          order_ref,
-          order_url,
-          totals: totalsRes,
-          timestamp: new Date().toISOString()
-        };
-        fireMailerWebhook(env, payload);
-      }
-    } catch (e) {
-      console.error('mail webhook error (no-razorpay):', String(e));
-    }
-
-    return json({
-      ok: true,
-      razorpay_configured: false,
-      message: "Payment options will appear here soon.",
-      order: buildOrderObject(member_id, memberAfter, totalsRes)
-    }, 200, origin);
-  }
-
-  // Create Razorpay order
-  try {
     const createPayload = {
-      amount: totalsRes.total * 100,
+      amount: totalsRes.total * 100, // paise
       currency: BASE_PRODUCT.currency,
-      receipt: `ORDER-${order_ref}`,
+      receipt: `ORDER-${member.ref_id}-${nowSec}`,
       payment_capture: 1,
-      notes: { member_id: String(member_id), order_ref }
+      notes: {
+        member_id: String(member_id),
+        order_ref: member.ref_id,
+        email: member.email || null
+      }
     };
-    const razorpayAuth = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`);
+
+    const razorpayAuth = btoa(
+      `${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`
+    );
+
     const rpRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
@@ -1209,66 +1210,67 @@ async function handleCreateOrder(request, env, origin) {
       },
       body: JSON.stringify(createPayload)
     });
+
     if (!rpRes.ok) {
       const txt = await rpRes.text();
       console.error("Razorpay create-order failed:", rpRes.status, txt);
-      return json({
-        ok: false,
-        message: "Failed to create payment order",
-        razorpay_error: txt
-      }, 502, origin);
+      return json(
+        { ok: false, message: "Failed to create payment order" },
+        502,
+        origin
+      );
     }
+
     const rpJson = await rpRes.json();
 
-    // Persist gateway order id/meta if not already set
+    // --------------------------------------------------
+    // 7) Persist attempt-level data ONLY (overwrite)
+    // --------------------------------------------------
     try {
       await db.prepare(`
         UPDATE members
         SET
-          activation_gateway_order_id = COALESCE(activation_gateway_order_id, ?),
-          activation_gateway_meta = COALESCE(activation_gateway_meta, ?)
+          activation_gateway_order_id = ?,
+          activation_gateway_meta = ?,
+          activation_gateway_status = 'created',
+          activation_created_at = ?,
+          activation_attempt_count = COALESCE(activation_attempt_count, 0) + 1
         WHERE id = ?;
-      `).bind(rpJson.id || null, JSON.stringify(rpJson) || null, member_id).run();
+      `).bind(
+        rpJson.id,
+        JSON.stringify(rpJson),
+        nowSec,
+        member_id
+      ).run();
     } catch (e) {
-      console.error("Failed to persist gateway order id/meta:", String(e));
+      console.error("Persist Razorpay order failed:", String(e));
     }
 
-    // Fire mailer webhook for order created (non-blocking)
-    try {
-      if (env.MAILER_WEBHOOK && memberAfter && memberAfter.email) {
-        const payload = {
-          type: 'order_created',
-          email: memberAfter.email,
-          member_id,
-          order_ref,
-          order_url,
-          razorpay_order: rpJson,
-          totals: totalsRes,
-          timestamp: new Date().toISOString()
-        };
-        fireMailerWebhook(env, payload);
-      }
-    } catch (e) {
-      console.error('mail webhook error (after-rp):', String(e));
-    }
-
-    return json({
-      ok: true,
-      razorpay_configured: true,
-      razorpay_key_id: env.RAZORPAY_KEY_ID,
-      razorpay_order: rpJson,
-      order: buildOrderObject(member_id, memberAfter, totalsRes)
-    }, 200, origin);
+    // --------------------------------------------------
+    // 8) Final response
+    // --------------------------------------------------
+    return json(
+      {
+        ok: true,
+        razorpay_configured: true,
+        razorpay_key_id: env.RAZORPAY_KEY_ID,
+        razorpay_order: rpJson,
+        order: buildOrderObject(member_id, member, totalsRes)
+      },
+      200,
+      origin
+    );
 
   } catch (err) {
     console.error("Create-order error:", String(err));
-    return json({
-      ok: false,
-      message: "Payment order creation failed",
-      error: String(err)
-    }, 500, origin);
+    return json(
+      { ok: false, message: "Payment order creation failed" },
+      500,
+      origin
+    );
   }
 }
+
 
 async function handlePaymentConfirm(request, env, origin) {
   const db = env.D1_WRITE_BINDING;
