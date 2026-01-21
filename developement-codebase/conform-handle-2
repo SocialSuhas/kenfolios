@@ -1,0 +1,180 @@
+// ---------------- SAFE V2 handler (webhook-first, guarded fallback) ----------------
+async function handlePaymentConfirmV2(request, env, origin) {
+  const db = env.D1_WRITE_BINDING;
+  const body = await parseJsonSafe(request);
+
+  const member_id = Number(body.member_id || body.memberId);
+  const razorpayPaymentId = body.razorpay_payment_id || null;
+  const razorpayOrderId = body.razorpay_order_id || null;
+  const razorpaySignature = body.razorpay_signature || null;
+  const coupon = (body.coupon || body.coupon_code || "").toUpperCase() || null;
+
+  if (!member_id) {
+    return json({ ok: false, message: "member_id required" }, 400, origin);
+  }
+
+  try {
+    // --------------------------------------------------
+    // 1) Fetch member
+    // --------------------------------------------------
+    const lookup = await db
+      .prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id)
+      .all();
+
+    if (!lookup?.results?.[0]) {
+      return json({ ok: false, message: "Member not found" }, 404, origin);
+    }
+
+    const member = lookup.results[0];
+
+    // --------------------------------------------------
+    // 2) HARD GUARD — webhook already completed
+    // --------------------------------------------------
+    if (
+      member.activation_fee_status === "paid" &&
+      member.unique_token &&
+      member.activation_url
+    ) {
+      const order = buildOrderObject(member_id, member, null);
+      return json(
+        {
+          ok: true,
+          message: "Already confirmed via webhook",
+          reason: "webhook_authoritative",
+          order
+        },
+        200,
+        origin
+      );
+    }
+
+    // --------------------------------------------------
+    // 3) Verify Razorpay signature (frontend fallback)
+    // --------------------------------------------------
+    if (!env.RAZORPAY_KEY_SECRET) {
+      return json({ ok: false, message: "RAZORPAY_KEY_SECRET missing" }, 500, origin);
+    }
+
+    const sigOk = await verifyRazorpaySignature(
+      env.RAZORPAY_KEY_SECRET,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature
+    );
+
+    if (!sigOk) {
+      return json({ ok: false, message: "Invalid payment signature" }, 400, origin);
+    }
+
+    // --------------------------------------------------
+    // 4) Totals (server authoritative)
+    // --------------------------------------------------
+    const totalsRes = applyCouponAndTotals(BASE_PRODUCT.base_price, coupon || null);
+    if (totalsRes.error) {
+      return json({ ok: false, message: totalsRes.error }, 400, origin);
+    }
+
+    const nowIso = new Date().toISOString();
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // --------------------------------------------------
+    // 5) Mark PAID (ONLY if webhook hasn’t)
+    // --------------------------------------------------
+    await db.prepare(`
+      UPDATE members
+      SET
+        activation_fee_status = 'paid',
+        activation_fee_amount = ?,
+        activation_coupon_code = COALESCE(activation_coupon_code, ?),
+        activation_fee_paid_at = COALESCE(activation_fee_paid_at, ?),
+        activation_gateway_payment_id = COALESCE(activation_gateway_payment_id, ?),
+        activation_gateway_order_id = COALESCE(activation_gateway_order_id, ?),
+        activation_gateway_signature = COALESCE(activation_gateway_signature, ?),
+        activation_gateway_status = 'captured',
+        activation_captured_at = COALESCE(activation_captured_at, ?)
+      WHERE id = ?;
+    `).bind(
+      totalsRes.total,
+      coupon,
+      nowIso,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+      nowSec,
+      member_id
+    ).run();
+
+    // --------------------------------------------------
+    // 6) TOKEN + EMAIL GUARD
+    // --------------------------------------------------
+    let tokenGeneratedHere = false;
+    let unique_token = member.unique_token;
+    let activation_url = member.activation_url;
+
+    if (!unique_token || !activation_url) {
+      tokenGeneratedHere = true;
+
+      unique_token = unique_token || generateUniqueToken(28);
+      activation_url =
+        activation_url ||
+        `https://kenfolios.com/community?activation=${encodeURIComponent(unique_token)}`;
+
+      await db.prepare(`
+        UPDATE members
+        SET
+          unique_token = ?,
+          activation_url = ?,
+          activated_at = COALESCE(activated_at, ?)
+        WHERE id = ?;
+      `).bind(unique_token, activation_url, nowIso, member_id).run();
+    }
+
+    // --------------------------------------------------
+    // 7) Send activation email ONLY if token generated here
+    // --------------------------------------------------
+    if (tokenGeneratedHere) {
+      try {
+        await sendActivationEmail(
+          env,
+          member.email,
+          member.full_name || "Member",
+          activation_url
+        );
+      } catch (e) {
+        console.error("V2 activation email failed:", String(e));
+      }
+    }
+
+    // --------------------------------------------------
+    // 8) Final response
+    // --------------------------------------------------
+    const updated = await db
+      .prepare("SELECT * FROM members WHERE id = ? LIMIT 1")
+      .bind(member_id)
+      .all();
+
+    const order = buildOrderObject(member_id, updated.results[0], totalsRes);
+
+    return json(
+      {
+        ok: true,
+        message: tokenGeneratedHere
+          ? "Payment confirmed (fallback path)"
+          : "Payment confirmed (webhook completed)",
+        member_id,
+        order
+      },
+      200,
+      origin
+    );
+
+  } catch (err) {
+    console.error("Payment confirm-v2 error:", String(err));
+    return json(
+      { ok: false, message: "Payment confirmation failed", error: String(err) },
+      500,
+      origin
+    );
+  }
+}
