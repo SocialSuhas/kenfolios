@@ -290,6 +290,30 @@ const DEFAULT_EVENING = [
   "Dear Members, good evening ✨ Wishing you a calm and reflective evening. Gentle resets create strong days. 🌙",
   "Dear Members, good evening 🌌 Let’s close the day lightly. Clarity comes from quiet moments. ✔️"
 ];
+///////////////////////////////////////////////////////////////
+// >>> FOUNDER MESSAGE (DAILY 2 PM IST BROADCAST)
+//
+// This message is sent once daily at 2:00 PM IST
+// Cron: 30 8 * * *  (UTC)
+// Purpose:
+// - Direct communication from founder
+// - Provide transparency on progress and updates
+// - Maintain trust and connection with community
+///////////////////////////////////////////////////////////////
+
+const FOUNDER_MESSAGE = `────────────────────────
+🧑‍💼 PERSONAL MESSAGE FROM FOUNDER, SUHAS
+────────────────────────
+
+I have been personally involved in leading several of our core technology developments. Over the past few weeks, a minor accident required me to operate at a reduced capacity, which has caused slight delays in certain product rollouts.
+
+However, we are using this phase constructively—focusing on building stronger, more refined, and future-ready products from the ground up.
+
+I truly appreciate your continued support and patience as a valued member contributing to the growth of these platforms.
+
+Regards,
+Suhas
+Founder, KenFolios and IMPS`;
 
 ///////////////////////////////////////////////////////////////
 // === PART 1: DATE / TIME HELPERS (ROBUST IST CONVERSION)
@@ -488,6 +512,7 @@ async function setChatPosting(env, chatId, canPost) {
 
 function cronToSlot(expr) {
   switch (expr) {
+    case "30 8 * * *": return "founder";
     case "30 2 * * *":  return "morning";
     case "30 6 * * *":  return "noon";
     case "30 10 * * *": return "afternoon";
@@ -503,6 +528,12 @@ async function handleScheduled(event, env) {
   if (!slot) return;
 
   const date = getISTDate();
+
+  // >>> FOUNDER MESSAGE: 2 PM IST broadcast
+if (slot === "founder") {
+  await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, FOUNDER_MESSAGE);
+  return;
+}
 
   // >>> SILENT HOURS: 10 PM close + notify
   if (slot === "silent") {
