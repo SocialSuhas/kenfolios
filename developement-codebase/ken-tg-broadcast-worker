@@ -316,6 +316,43 @@ Suhas
 Founder, KenFolios and IMPS`;
 
 ///////////////////////////////////////////////////////////////
+// >>> TEAM MESSAGE (DAILY 6 PM IST BROADCAST)
+//
+// Cron: 30 12 * * *  (UTC)
+//
+// Purpose:
+// - Share team updates and community guidance
+// - Reinforce automation-first, AI-age ecosystem
+// - Direct members to pinned messages and group activity
+// - Encourage networking across city, industry and interest groups
+//
+// Note:
+// Helps reduce repetitive queries and keeps communication structured
+///////////////////////////////////////////////////////////////
+
+const TEAM_MESSAGE = `────────────────────────
+👥 MESSAGE FROM KENFOLIOS TEAM
+────────────────────────
+
+KenFolios Business Community is designed as a modern, AI-age network that relies on structured systems and automation to continuously refine and improve the member experience.
+
+Our team actively monitors and responds to genuine queries across channels. However, most important updates, discussions and opportunities are shared directly within the groups to maintain transparency and accessibility.
+
+Most of the important and required information is also shared in pinned messages on a timely basis for new members. We recommend reviewing pinned messages regularly to stay aligned with the community structure and updates.
+
+The community is organised across city, industry and interest-based groups to enable meaningful connections. Members are encouraged to introduce their businesses, interact with others and explore collaboration opportunities for business development.
+
+This system-driven approach allows us to maintain high standards of networking while keeping the platform accessible and affordable for Indian markets.
+
+With 200+ WhatsApp groups already active and many at capacity, we are continuously learning from these interactions to build stronger, future-ready products for the community.
+
+We do not charge any recurring fees, and most upcoming features are being developed to remain free for members.
+
+Each group itself is a growing network of 2000+ professionals, making it a strong space for visibility, learning and collaboration.
+
+Regards,  
+Team KenFolios`;
+///////////////////////////////////////////////////////////////
 // === PART 1: DATE / TIME HELPERS (ROBUST IST CONVERSION)
 ///////////////////////////////////////////////////////////////
 
@@ -513,6 +550,7 @@ async function setChatPosting(env, chatId, canPost) {
 function cronToSlot(expr) {
   switch (expr) {
     case "30 8 * * *": return "founder";
+     case "30 12 * * *": return "team";   // 
     case "30 2 * * *":  return "morning";
     case "30 6 * * *":  return "noon";
     case "30 10 * * *": return "afternoon";
@@ -532,6 +570,12 @@ async function handleScheduled(event, env) {
   // >>> FOUNDER MESSAGE: 2 PM IST broadcast
 if (slot === "founder") {
   await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, FOUNDER_MESSAGE);
+  return;
+}
+
+// >>> TEAM MESSAGE: 6 PM IST broadcast
+if (slot === "team") {
+  await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, TEAM_MESSAGE);
   return;
 }
 
