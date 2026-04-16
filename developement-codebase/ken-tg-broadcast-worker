@@ -290,6 +290,109 @@ const DEFAULT_EVENING = [
   "Dear Members, good evening ✨ Wishing you a calm and reflective evening. Gentle resets create strong days. 🌙",
   "Dear Members, good evening 🌌 Let’s close the day lightly. Clarity comes from quiet moments. ✔️"
 ];
+
+///////////////////////////////////////////////////////////////
+// >>> 5:30 PM BROADCAST (KENFOLIOS COMMUNITY PROMOTION)
+// Mon → Sun rotation
+///////////////////////////////////////////////////////////////
+
+const BROADCAST_5PM_MESSAGES = [
+
+/* ====================== MONDAY ====================== */
+`<b>Let’s strengthen India’s largest online business community 🇮🇳</b>
+
+KenFolios Business Community supports professionals and businesses across India.
+
+Started in 2013 → 5000+ stories → 100M+ readers  
+Launched in 2021 → <b>35K+ members (as of March 2026)</b>
+
+Now scaling on Telegram for structured growth.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this with your network and help strengthen the community.`,
+
+/* ====================== TUESDAY ====================== */
+`<b>Let’s build India’s strongest business network 🇮🇳</b>
+
+KenFolios Business Community is built on years of research and execution.
+
+• 2013: Content platform  
+• 2021: Community launch  
+• <b>35,000+ members (as of March 2026)</b>
+
+From WhatsApp groups → now a structured Telegram ecosystem.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this message and help grow a stronger ecosystem.`,
+
+/* ====================== WEDNESDAY ====================== */
+`<b>Strengthen your network. Strengthen India 🇮🇳</b>
+
+KenFolios Business Community connects founders and professionals across India.
+
+• 100M+ reach  
+• <b>35K+ members (as of March 2026)</b>  
+• 200+ WhatsApp groups (legacy)  
+• Now scaling on Telegram
+
+Built for meaningful connections and real growth.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this and help more professionals grow together.`,
+
+/* ====================== THURSDAY ====================== */
+`<b>India’s business community is evolving 🇮🇳</b>
+
+KenFolios Business Community
+
+2013 → Audience (100M+)  
+2021 → Community  
+2025 → Scalable systems  
+
+<b>35K+ professionals (as of March 2026)</b> already part of the journey.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this message and help build a stronger network.`,
+
+/* ====================== FRIDAY ====================== */
+`<b>Grow with a research-driven business community 🇮🇳</b>
+
+KenFolios Business Community is built on real insights, not noise.
+
+From 5000+ articles to <b>35K+ members (as of March 2026)</b>.
+
+Now evolving into a structured, automation-driven ecosystem.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this with your contacts and contribute to collective growth.`,
+
+/* ====================== SATURDAY ====================== */
+`<b>A decade of research → A powerful business network 🇮🇳</b>
+
+KenFolios Business Community
+
+• 100M+ reach  
+• <b>35K+ members (as of March 2026)</b>  
+• Pan-India network  
+
+Now scaling with Telegram + automation.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this and help strengthen India’s business ecosystem.`,
+
+/* ====================== SUNDAY ====================== */
+`<b>Let’s grow together 🇮🇳</b>
+
+KenFolios Business Community is built for serious professionals and businesses.
+
+A high-quality network focused on growth, collaboration, and long-term value.
+
+<b>35K+ members (as of March 2026)</b> and growing steadily.
+
+👉 Join: https://kenfolios.com/community  
+📢 Share this with your network and help expand the community.`
+
+];
 ///////////////////////////////////////////////////////////////
 // >>> FOUNDER MESSAGE (DAILY 2 PM IST BROADCAST)
 //
@@ -301,19 +404,27 @@ const DEFAULT_EVENING = [
 // - Maintain trust and connection with community
 ///////////////////////////////////////////////////////////////
 
-const FOUNDER_MESSAGE = `────────────────────────
-🧑‍💼 PERSONAL MESSAGE FROM FOUNDER, SUHAS
+const FOUNDER_MESSAGE = `🧑‍💼 <b>PERSONAL MESSAGE FROM FOUNDER, SUHAS</b>
+
 ────────────────────────
 
-I have been personally involved in leading several of our core technology developments. Over the past few weeks, a minor accident required me to operate at a reduced capacity, which has caused slight delays in certain product rollouts.
+Dear Members,
 
-However, we are using this phase constructively—focusing on building stronger, more refined, and future-ready products from the ground up.
+I had earlier informed you about a minor accident which slowed down our technology work, as I personally lead most core tech verticals. I’m glad to share that I have now recovered, and development is accelerating again.
 
-I truly appreciate your continued support and patience as a valued member contributing to the growth of these platforms.
+With the launch of KenFolios Postal Outreach, we have paused the rollout of regional groups for 15 days to further optimise backend systems and refine upcoming features.
+
+While active features continue to improve, this phase allows us to strengthen development-stage features before launch.
+
+KenFolios remains a primarily online professional networking platform, supported by occasional offline meetups. Our recent meetup in Vapi, Gujarat, was a great step, and more are planned.
+
+The community is powered by Meta Ads and AI-driven systems. At the same time, we’ve introduced a postal outreach campaign to connect with professionals beyond social media.
+
+Thank you for your continued support.
 
 Regards,
 Suhas
-Founder, KenFolios and IMPS`;
+Founder, KenFolios Media Private Limited and IMPS`;
 
 ///////////////////////////////////////////////////////////////
 // >>> TEAM MESSAGE (DAILY 6 PM IST BROADCAST)
@@ -352,6 +463,36 @@ Each group itself is a growing network of 2000+ professionals, making it a stron
 
 Regards,  
 Team KenFolios`;
+
+///////////////////////////////////////////////////////////////
+// >>> IMPORTANT TIPS MESSAGE (DAILY 7 AM IST BROADCAST)
+//
+// Cron: 30 1 * * *  (UTC)
+// Purpose:
+// - Share structured guidance to members
+// - Reduce agenda-driven noise
+// - Reinforce community culture and expectations
+///////////////////////////////////////////////////////////////
+
+const IMPORTANT_TIPS_MESSAGE = `🔹 <b>IMPORTANT TIPS FOR MEMBERS</b> 🔹  
+
+Built over <b>5+ years</b> with <b>35,000+ members</b>, <b>250+ meets</b>, and <b>100+ testimonials</b>, our community has evolved into an <b>AI-driven ecosystem (since 2024)</b>—focused on <b>long-term value</b>, not short-term noise.  
+
+📌 <b>Key Observations for Members:</b>  
+
+• ⏳ <b>Value takes time</b> — features are research-backed and rolled out thoughtfully.  
+• 🔁 <b>Repeated feature queries</b> reduce credibility when information is already shared.  
+• 🤝 <b>Strong networks</b> are built through meaningful engagement—not support dependency.  
+• 🚀 <b>Collaboration-focused members</b> grow more than complaint-focused participants.  
+• 🧭 <b>Platform structure</b> (Telegram core + phased WhatsApp rollout) is intentional and clearly communicated.  
+• 📊 <b>Legacy WhatsApp groups</b> are full; new systems ensure scalability and fairness.  
+• 💼 <b>Serious professionals invest in growth</b>—clarity of intent reflects in actions.  
+• ⚠️ <b>Agenda-driven or repetitive negative communication</b> often creates unintended negative perception—members are advised to avoid this.  
+• 📍 <b>Avoid already-addressed concerns</b>—clarity exists in pinned and onboarding content.  
+• 🏗️ <b>Respect the ecosystem</b>—this is a curated, evolving business network.  
+
+✨ <b>Let’s build, contribute, and grow—together, with clarity and purpose.</b>`;
+
 ///////////////////////////////////////////////////////////////
 // === PART 1: DATE / TIME HELPERS (ROBUST IST CONVERSION)
 ///////////////////////////////////////////////////////////////
@@ -551,8 +692,10 @@ function cronToSlot(expr) {
   switch (expr) {
     case "30 8 * * *": return "founder";
      case "30 12 * * *": return "team";   // 
+    case "30 13 * * *": return "tips"; // 7 PM IST
     case "30 2 * * *":  return "morning";
     case "30 6 * * *":  return "noon";
+    case "0 12 * * *": return "broadcast_530pm";
     case "30 10 * * *": return "afternoon";
     case "30 14 * * *": return "evening";
     case "30 16 * * *": return "silent"; // >>> SILENT HOURS
@@ -573,12 +716,28 @@ if (slot === "founder") {
   return;
 }
 
+// >>> 5:30 PM BROADCAST MESSAGE (WEEKDAY ROTATION)
+if (slot === "broadcast_530pm") {
+  const day = date.getDay(); // 0 = Sunday
+
+  const index = (day + 6) % 7; // Monday = 0
+
+  const message = BROADCAST_5PM_MESSAGES[index];
+
+  await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, message);
+  return;
+}
+
 // >>> TEAM MESSAGE: 6 PM IST broadcast
 if (slot === "team") {
   await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, TEAM_MESSAGE);
   return;
 }
-
+// >>> IMPORTANT TIPS MESSAGE: 7 PM IST broadcast
+if (slot === "tips") {
+  await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, IMPORTANT_TIPS_MESSAGE);
+  return;
+}
   // >>> SILENT HOURS: 10 PM close + notify
   if (slot === "silent") {
     await setChatPosting(env, env.TELEGRAM_GROUP_ID, false);
