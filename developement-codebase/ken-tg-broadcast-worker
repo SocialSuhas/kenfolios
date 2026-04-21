@@ -393,6 +393,31 @@ A high-quality network focused on growth, collaboration, and long-term value.
 📢 Share this with your network and help expand the community.`
 
 ];
+
+// >>> MEETUP & EVENTS MESSAGES (11 AM IST)
+// Encourages member-driven meetups, participation, and content sharing for KenFolios featuring
+const MEETUP_MESSAGES = [
+
+`📍 <b>IMPORTANT MESSAGE ABOUT MEETUPS AND FEATURING ON KENFOLIOS</b>
+
+Dear Members,
+
+Our community has conducted <b>250+ online and offline meetups</b> since its inception in January 2021.
+
+In 2026, we are focused on making the community significantly more powerful through the use of technology. The core team is actively working on leveraging <b>AI and advanced systems</b> to further strengthen the ecosystem for all members.
+
+We encourage members to organise <b>online and offline meetups</b> and invite others across cities, industries, and interest areas.
+
+Members are also encouraged to join meetups organised by fellow members. However, please exercise <b>due discretion and personal judgement</b> before attending, as these meetups are independently organised and not managed by the community directly.
+
+Members may share <b>meetup photos and video testimonials</b>, and <b>we will be happy to feature selected content</b> on KenFolios’ social media platforms, which currently reach <b>up to 1 million followers</b>.
+
+KenFolios is one of <b>India’s earliest and established social media platforms</b>, originally started in January 2013.
+
+🤝 Let’s continue building meaningful connections through thoughtful and structured interactions.`
+
+];
+
 ///////////////////////////////////////////////////////////////
 // >>> FOUNDER MESSAGE (DAILY 2 PM IST BROADCAST)
 //
@@ -416,7 +441,7 @@ With the launch of KenFolios Postal Outreach, we have paused the rollout of regi
 
 While active features continue to improve, this phase allows us to strengthen development-stage features before launch.
 
-KenFolios remains a primarily online professional networking platform, supported by occasional offline meetups. Our recent meetup in Vapi, Gujarat, was a great step, and more are planned.
+KenFolios remains a primarily online professional networking platform, supported by occasional offline meetups.
 
 The community is powered by Meta Ads and AI-driven systems. At the same time, we’ve introduced a postal outreach campaign to connect with professionals beyond social media.
 
@@ -691,6 +716,7 @@ async function setChatPosting(env, chatId, canPost) {
 function cronToSlot(expr) {
   switch (expr) {
     case "30 8 * * *": return "founder";
+    case "30 5 * * *": return "meetup";
      case "30 12 * * *": return "team";   // 
     case "30 13 * * *": return "tips"; // 7 PM IST
     case "30 2 * * *":  return "morning";
@@ -713,6 +739,22 @@ async function handleScheduled(event, env) {
   // >>> FOUNDER MESSAGE: 2 PM IST broadcast
 if (slot === "founder") {
   await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, FOUNDER_MESSAGE);
+  return;
+}
+// >>> MEETUP & EVENTS MESSAGE (DAILY 11 AM IST)
+// Purpose:
+// - Encourage member-driven meetups
+// - Promote offline + online engagement
+// - Drive content for social featuring
+if (slot === "meetup") {
+  const day = date.getDay();
+
+  // Skip Thu (4), Fri (5), Sat (6) to avoid overlap with existing meetup flow
+  if (day === 4 || day === 5 || day === 6) return;
+
+  const message = MEETUP_MESSAGES[Math.floor(Math.random() * MEETUP_MESSAGES.length)];
+
+  await sendTelegramMessage(env, env.TELEGRAM_GROUP_ID, message);
   return;
 }
 
