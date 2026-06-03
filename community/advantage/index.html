@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,8 +12,6 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 
 <meta name="theme-color" content="#E11D2E">
-
-<meta name="description" content="The Hidden Advantage - A founder's perspective on reputation, trust, influence and the unseen value of belonging to the KenFolios ecosystem.">
 
 <style>
 
@@ -43,10 +42,6 @@ body{
     overflow-x:hidden;
 }
 
-/* ==========================
-   WATERMARK
-========================== */
-
 .watermark{
     position:fixed;
     top:50%;
@@ -61,20 +56,12 @@ body{
     white-space:nowrap;
 }
 
-/* ==========================
-   LAYOUT
-========================== */
-
 .container{
     width:min(1100px,92%);
     margin:auto;
     position:relative;
     z-index:2;
 }
-
-/* ==========================
-   HERO
-========================== */
 
 .hero{
     min-height:100vh;
@@ -91,8 +78,6 @@ body{
     gap:2rem;
 }
 
-/* SAME SIZE FOR ALL BRANDS */
-
 .brand,
 .community,
 .vstreet{
@@ -108,11 +93,47 @@ body{
     margin-top:.5rem;
 }
 
+/* Animated Dividers */
+
 .divider{
-    width:120px;
+    width:140px;
     height:2px;
-    background:rgba(225,29,46,.65);
     margin:0 auto;
+    background:var(--kf-red);
+    transform:scaleX(0);
+    transform-origin:center;
+    opacity:0;
+}
+
+.divider.one{
+    animation:drawLine .8s ease forwards .4s;
+}
+
+.divider.two{
+    animation:drawLine .8s ease forwards 1.2s;
+}
+
+.divider.three{
+    animation:drawLine .8s ease forwards 2s;
+}
+
+@keyframes drawLine{
+
+    0%{
+        transform:scaleX(0);
+        opacity:0;
+    }
+
+    50%{
+        opacity:1;
+    }
+
+    100%{
+        transform:scaleX(1);
+        opacity:1;
+        box-shadow:
+            0 0 12px rgba(225,29,46,.35);
+    }
 }
 
 .hero-line{
@@ -141,10 +162,6 @@ body{
     line-height:1.8;
 }
 
-/* ==========================
-   CONTENT
-========================== */
-
 .section{
     padding:8rem 0;
     border-top:1px solid rgba(255,255,255,.08);
@@ -171,17 +188,12 @@ blockquote{
     font-style:italic;
 }
 
-/* ==========================
-   FOOTER
-========================== */
-
 .footer{
     position:sticky;
     bottom:0;
     margin-top:auto;
     background:#111827;
     border-top:1px solid rgba(255,255,255,.08);
-    z-index:10;
 }
 
 .footer-inner{
@@ -209,16 +221,11 @@ blockquote{
 .footer-links a{
     color:#fff;
     text-decoration:none;
-    transition:.2s;
 }
 
 .footer-links a:hover{
     color:var(--kf-red);
 }
-
-/* ==========================
-   MOBILE
-========================== */
 
 @media(max-width:768px){
 
@@ -233,10 +240,6 @@ blockquote{
 
     .footer-links{
         justify-content:center;
-    }
-
-    .paper-title{
-        line-height:1;
     }
 
     .watermark{
@@ -260,16 +263,11 @@ KENFOLIOS
 <div class="logo-stack">
 
 <div>
-    <div class="brand">
-        KenFolios
-    </div>
-
-    <div class="subbrand">
-        Tales Extraordinaire
-    </div>
+    <div class="brand">KenFolios</div>
+    <div class="subbrand">Tales Extraordinaire</div>
 </div>
 
-<div class="divider"></div>
+<div class="divider one"></div>
 
 <div>
     <div class="community">
@@ -277,17 +275,16 @@ KENFOLIOS
     </div>
 </div>
 
-<div class="divider"></div>
+<div class="divider two"></div>
 
 <div>
-    <div class="vstreet">
-        VStreet
-    </div>
-
+    <div class="vstreet">VStreet</div>
     <div class="subbrand">
         India's Own Influence Promenade
     </div>
 </div>
+
+<div class="divider three"></div>
 
 <div class="hero-line"></div>
 
@@ -297,8 +294,8 @@ KENFOLIOS
 </div>
 
 <div class="tagline">
-    The value that cannot be bought, copied,
-    manufactured, or replicated elsewhere.
+    The value that cannot be bought,
+    copied, manufactured, or replicated elsewhere.
 </div>
 
 </div>
@@ -321,8 +318,7 @@ that emerge when accomplished people come together within a high-quality communi
 </p>
 
 <blockquote>
-Placeholder founder quote. This space can later contain a defining statement that captures
-the philosophy and vision behind the ecosystem.
+Placeholder founder quote.
 </blockquote>
 
 </div>
@@ -349,3 +345,4 @@ the philosophy and vision behind the ecosystem.
 
 </body>
 </html>
+```
