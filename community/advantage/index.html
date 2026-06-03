@@ -1,19 +1,31 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Hidden Advantage | KenFolios</title>
+
+<title>The Hidden Advantage | KenFolios Business Community</title>
+
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+
+<meta name="theme-color" content="#E11D2E">
+
+<meta name="description" content="The Hidden Advantage - A founder's perspective on reputation, trust, influence and the unseen value of belonging to the KenFolios ecosystem.">
+
+<meta property="og:title" content="The Hidden Advantage | KenFolios">
+<meta property="og:description" content="The value that cannot be bought, copied, manufactured overnight or replicated elsewhere.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kenfolios.com/community/white-paper/">
 
 <style>
+
 :root{
     --kf-red:#E11D2E;
-    --text:#0f172a;
-    --muted:#64748b;
-    --border:#e5e7eb;
     --bg:#0f172a;
-    --white:#ffffff;
+    --text:#ffffff;
+    --muted:#94a3b8;
 }
 
 *{
@@ -27,17 +39,37 @@ html{
 }
 
 body{
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     background:var(--bg);
-    color:var(--white);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     min-height:100vh;
     display:flex;
     flex-direction:column;
+    overflow-x:hidden;
 }
+
+/* Watermark */
+
+.watermark{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:18vw;
+    font-weight:900;
+    color:rgba(225,29,46,.04);
+    pointer-events:none;
+    user-select:none;
+    z-index:0;
+}
+
+/* Layout */
 
 .container{
     width:min(1100px,92%);
     margin:auto;
+    position:relative;
+    z-index:2;
 }
 
 /* Hero */
@@ -48,7 +80,7 @@ body{
     align-items:center;
     justify-content:center;
     text-align:center;
-    padding:4rem 0;
+    padding:5rem 0;
 }
 
 .logo-stack{
@@ -57,56 +89,91 @@ body{
     gap:2rem;
 }
 
-.logo-line{
-    color:#fff;
-    font-weight:800;
-    line-height:1.05;
+.brand{
+    font-size:clamp(2.5rem,5vw,4.5rem);
+    font-weight:900;
     letter-spacing:-1px;
 }
 
-.logo-line.small{
-    font-size:clamp(1.2rem,2vw,1.8rem);
-    opacity:.85;
+.subbrand{
+    color:var(--muted);
+    font-size:clamp(1rem,2vw,1.2rem);
 }
 
-.logo-line.medium{
-    font-size:clamp(2rem,4vw,3.5rem);
+.community{
+    font-size:clamp(2rem,5vw,4rem);
+    font-weight:800;
 }
 
-.logo-line.large{
-    font-size:clamp(3rem,8vw,6rem);
+.vstreet{
+    font-size:clamp(2rem,4vw,3rem);
+    font-weight:800;
 }
 
-.logo-line.xlarge{
-    font-size:clamp(4rem,10vw,8rem);
+.vstreet-sub{
+    color:var(--muted);
+    font-size:1rem;
 }
 
 .divider{
     width:120px;
     height:2px;
-    background:#fff;
+    background:rgba(225,29,46,.7);
     margin:0 auto;
-    opacity:.25;
+}
+
+.paper-title{
+    font-size:clamp(4rem,10vw,8rem);
+    font-weight:900;
+    line-height:.95;
+    letter-spacing:-3px;
+}
+
+.paper-title .red{
+    color:var(--kf-red);
+}
+
+.hero-line{
+    width:180px;
+    height:4px;
+    background:var(--kf-red);
+    margin:0 auto;
+}
+
+.tagline{
+    max-width:700px;
+    margin:auto;
+    color:var(--muted);
+    font-size:1.15rem;
+    line-height:1.8;
 }
 
 /* Content */
 
 .section{
-    padding:7rem 0;
+    padding:8rem 0;
     border-top:1px solid rgba(255,255,255,.08);
 }
 
 .section h2{
-    font-size:clamp(2rem,5vw,4rem);
-    margin-bottom:1.5rem;
-    font-weight:800;
+    font-size:clamp(2rem,4vw,3.5rem);
+    margin-bottom:2rem;
 }
 
 .section p{
-    font-size:1.2rem;
-    line-height:1.9;
-    color:rgba(255,255,255,.8);
+    color:var(--muted);
+    line-height:2;
+    font-size:1.1rem;
     max-width:850px;
+}
+
+blockquote{
+    margin-top:3rem;
+    border-left:4px solid var(--kf-red);
+    padding-left:1.5rem;
+    font-size:1.3rem;
+    line-height:1.8;
+    font-style:italic;
 }
 
 /* Footer */
@@ -117,23 +184,23 @@ body{
     margin-top:auto;
     background:#111827;
     border-top:1px solid rgba(255,255,255,.08);
-    padding:1rem 0;
-    z-index:100;
+    z-index:10;
 }
 
 .footer-inner{
-    width:min(1200px,95%);
+    width:min(1400px,95%);
     margin:auto;
+    padding:1rem;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    gap:1rem;
     flex-wrap:wrap;
+    gap:1rem;
 }
 
 .footer-left{
+    color:var(--muted);
     font-size:.9rem;
-    color:rgba(255,255,255,.75);
 }
 
 .footer-links{
@@ -145,11 +212,11 @@ body{
 .footer-links a{
     color:#fff;
     text-decoration:none;
-    font-size:.9rem;
+    transition:.2s;
 }
 
 .footer-links a:hover{
-    text-decoration:underline;
+    color:var(--kf-red);
 }
 
 @media(max-width:768px){
@@ -166,82 +233,105 @@ body{
     .footer-links{
         justify-content:center;
     }
+
+    .paper-title{
+        line-height:1;
+    }
 }
+
 </style>
 </head>
 
 <body>
 
+<div class="watermark">
+KENFOLIOS
+</div>
+
 <section class="hero">
-    <div class="container">
 
-        <div class="logo-stack">
+<div class="container">
 
-            <div class="logo-line medium">
-                KenFolios
-            </div>
+<div class="logo-stack">
 
-            <div class="logo-line small">
-                Tales Extraordinaire (Webzine)
-            </div>
+<div>
+<div class="brand">KenFolios</div>
+<div class="subbrand">Tales Extraordinaire (Webzine)</div>
+</div>
 
-            <div class="divider"></div>
+<div class="divider"></div>
 
-            <div class="logo-line large">
-                KenFolios Business Community
-            </div>
+<div class="community">
+KenFolios Business Community
+</div>
 
-            <div class="divider"></div>
+<div class="divider"></div>
 
-            <div class="logo-line medium">
-                VStreet
-            </div>
+<div>
+<div class="vstreet">VStreet</div>
+<div class="vstreet-sub">
+India's Own Influence Promenade
+</div>
+</div>
 
-            <div class="logo-line small">
-                India's Own Influence Promenade
-            </div>
+<div class="hero-line"></div>
 
-            <div class="divider"></div>
+<div class="paper-title">
+The <span class="red">Hidden</span><br>
+Advantage
+</div>
 
-            <div class="logo-line xlarge">
-                The Hidden Advantage
-            </div>
+<div class="tagline">
+The value that cannot be bought, copied,
+manufactured overnight, or replicated elsewhere.
+</div>
 
-        </div>
+</div>
 
-    </div>
+</div>
+
 </section>
 
 <section class="section">
-    <div class="container">
-        <h2>The Hidden Advantage</h2>
 
-        <p>
-            Placeholder content. This section will eventually contain
-            the founder's narrative, the story behind the ecosystem,
-            the philosophy of association, reputation, trust, influence,
-            visibility, opportunity and the unique advantages that emerge
-            from being part of a high-quality community.
-        </p>
-    </div>
+<div class="container">
+
+<h2>The Hidden Advantage</h2>
+
+<p>
+Placeholder content. This section will eventually contain the founder's
+narrative, the philosophy behind the ecosystem, the evolution of
+KenFolios, the importance of reputation, trust, association, visibility,
+relationships, and the unique opportunities that emerge when accomplished
+people come together within a high-quality community.
+</p>
+
+<blockquote>
+Placeholder founder quote. This space can later contain a defining
+statement that captures the philosophy and vision behind the ecosystem.
+</blockquote>
+
+</div>
+
 </section>
 
 <footer class="footer">
-    <div class="footer-inner">
 
-        <div class="footer-left">
-            © 2026 KenFolios Media Private Limited. All Rights Reserved.
-        </div>
+<div class="footer-inner">
 
-        <div class="footer-links">
-            <a href="https://kenfolios.com/privacy/">Privacy Policy</a>
-            <a href="https://kenfolios.com/terms/">Terms of Use</a>
-            <a href="https://kenfolios.com/community/">Community</a>
-        </div>
+<div class="footer-left">
+© 2026 KenFolios Media Private Limited. All Rights Reserved.
+</div>
 
-    </div>
+<div class="footer-links">
+<a href="https://kenfolios.com/privacy/">Privacy Policy</a>
+<a href="https://kenfolios.com/terms/">Terms of Use</a>
+<a href="https://kenfolios.com/community/">Community</a>
+</div>
+
+</div>
+
 </footer>
 
 </body>
 </html>
-```
