@@ -14,11 +14,6 @@
 
 <meta name="description" content="The Hidden Advantage - A founder's perspective on reputation, trust, influence and the unseen value of belonging to the KenFolios ecosystem.">
 
-<meta property="og:title" content="The Hidden Advantage | KenFolios">
-<meta property="og:description" content="The value that cannot be bought, copied, manufactured overnight or replicated elsewhere.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://kenfolios.com/community/white-paper/">
-
 <style>
 
 :root{
@@ -48,22 +43,27 @@ body{
     overflow-x:hidden;
 }
 
-/* Watermark */
+/* ==========================
+   WATERMARK
+========================== */
 
 .watermark{
     position:fixed;
     top:50%;
     left:50%;
     transform:translate(-50%,-50%);
-    font-size:18vw;
+    font-size:20vw;
     font-weight:900;
-    color:rgba(225,29,46,.04);
+    color:rgba(225,29,46,.035);
     pointer-events:none;
     user-select:none;
     z-index:0;
+    white-space:nowrap;
 }
 
-/* Layout */
+/* ==========================
+   LAYOUT
+========================== */
 
 .container{
     width:min(1100px,92%);
@@ -72,7 +72,9 @@ body{
     z-index:2;
 }
 
-/* Hero */
+/* ==========================
+   HERO
+========================== */
 
 .hero{
     min-height:100vh;
@@ -89,48 +91,28 @@ body{
     gap:2rem;
 }
 
-.brand{
+/* SAME SIZE FOR ALL BRANDS */
+
+.brand,
+.community,
+.vstreet{
     font-size:clamp(2.5rem,5vw,4.5rem);
     font-weight:900;
     letter-spacing:-1px;
+    line-height:1.05;
 }
 
 .subbrand{
     color:var(--muted);
-    font-size:clamp(1rem,2vw,1.2rem);
-}
-
-.community{
-    font-size:clamp(2rem,5vw,4rem);
-    font-weight:800;
-}
-
-.vstreet{
-    font-size:clamp(2rem,4vw,3rem);
-    font-weight:800;
-}
-
-.vstreet-sub{
-    color:var(--muted);
-    font-size:1rem;
+    font-size:clamp(1rem,2vw,1.15rem);
+    margin-top:.5rem;
 }
 
 .divider{
     width:120px;
     height:2px;
-    background:rgba(225,29,46,.7);
+    background:rgba(225,29,46,.65);
     margin:0 auto;
-}
-
-.paper-title{
-    font-size:clamp(4rem,10vw,8rem);
-    font-weight:900;
-    line-height:.95;
-    letter-spacing:-3px;
-}
-
-.paper-title .red{
-    color:var(--kf-red);
 }
 
 .hero-line{
@@ -138,6 +120,17 @@ body{
     height:4px;
     background:var(--kf-red);
     margin:0 auto;
+}
+
+.paper-title{
+    font-size:clamp(5rem,12vw,10rem);
+    font-weight:900;
+    line-height:.9;
+    letter-spacing:-4px;
+}
+
+.paper-title .red{
+    color:var(--kf-red);
 }
 
 .tagline{
@@ -148,7 +141,9 @@ body{
     line-height:1.8;
 }
 
-/* Content */
+/* ==========================
+   CONTENT
+========================== */
 
 .section{
     padding:8rem 0;
@@ -176,7 +171,9 @@ blockquote{
     font-style:italic;
 }
 
-/* Footer */
+/* ==========================
+   FOOTER
+========================== */
 
 .footer{
     position:sticky;
@@ -194,8 +191,8 @@ blockquote{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    flex-wrap:wrap;
     gap:1rem;
+    flex-wrap:wrap;
 }
 
 .footer-left{
@@ -219,6 +216,10 @@ blockquote{
     color:var(--kf-red);
 }
 
+/* ==========================
+   MOBILE
+========================== */
+
 @media(max-width:768px){
 
     .hero{
@@ -236,6 +237,10 @@ blockquote{
 
     .paper-title{
         line-height:1;
+    }
+
+    .watermark{
+        font-size:30vw;
     }
 }
 
@@ -255,35 +260,45 @@ KENFOLIOS
 <div class="logo-stack">
 
 <div>
-<div class="brand">KenFolios</div>
-<div class="subbrand">Tales Extraordinaire (Webzine)</div>
-</div>
+    <div class="brand">
+        KenFolios
+    </div>
 
-<div class="divider"></div>
-
-<div class="community">
-KenFolios Business Community
+    <div class="subbrand">
+        Tales Extraordinaire
+    </div>
 </div>
 
 <div class="divider"></div>
 
 <div>
-<div class="vstreet">VStreet</div>
-<div class="vstreet-sub">
-India's Own Influence Promenade
+    <div class="community">
+        KenFolios Business Community
+    </div>
 </div>
+
+<div class="divider"></div>
+
+<div>
+    <div class="vstreet">
+        VStreet
+    </div>
+
+    <div class="subbrand">
+        India's Own Influence Promenade
+    </div>
 </div>
 
 <div class="hero-line"></div>
 
 <div class="paper-title">
-The <span class="red">Hidden</span><br>
-Advantage
+    The <span class="red">Hidden</span><br>
+    Advantage
 </div>
 
 <div class="tagline">
-The value that cannot be bought, copied,
-manufactured overnight, or replicated elsewhere.
+    The value that cannot be bought, copied,
+    manufactured, or replicated elsewhere.
 </div>
 
 </div>
@@ -299,16 +314,15 @@ manufactured overnight, or replicated elsewhere.
 <h2>The Hidden Advantage</h2>
 
 <p>
-Placeholder content. This section will eventually contain the founder's
-narrative, the philosophy behind the ecosystem, the evolution of
-KenFolios, the importance of reputation, trust, association, visibility,
-relationships, and the unique opportunities that emerge when accomplished
-people come together within a high-quality community.
+Placeholder content. This section will eventually contain the founder's narrative,
+the philosophy behind the ecosystem, the evolution of KenFolios, the importance of
+reputation, trust, association, visibility, relationships, and the unique opportunities
+that emerge when accomplished people come together within a high-quality community.
 </p>
 
 <blockquote>
-Placeholder founder quote. This space can later contain a defining
-statement that captures the philosophy and vision behind the ecosystem.
+Placeholder founder quote. This space can later contain a defining statement that captures
+the philosophy and vision behind the ecosystem.
 </blockquote>
 
 </div>
