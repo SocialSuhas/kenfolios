@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenFolios Stories</title>
+
+<style>
+
+:root{
+  --kf-red:#E11D2E;
+  --border:#e5e7eb;
+  --bg:#f8fafc;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+.container{
+  width:min(1200px,92%);
+  margin:auto;
+}
+
+/* =========================
+   HERO
+========================= */
+
+.hero{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+  background:
+  radial-gradient(circle at top,#fff 0%,#fdf2f3 35%,#f8fafc 100%);
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  width:700px;
+  height:700px;
+  border-radius:50%;
+  background:rgba(225,29,46,.08);
+  filter:blur(90px);
+  animation:pulseGlow 8s ease-in-out infinite;
+}
+
+@keyframes pulseGlow{
+  0%,100%{
+    transform:scale(1);
+  }
+  50%{
+    transform:scale(1.2);
+  }
+}
+
+.hero-content{
+  position:relative;
+  z-index:2;
+  max-width:900px;
+  text-align:center;
+}
+
+.badge{
+  display:inline-block;
+  padding:.55rem 1rem;
+  border-radius:999px;
+  background:rgba(225,29,46,.08);
+  color:var(--kf-red);
+  font-size:.75rem;
+  letter-spacing:.12em;
+  font-weight:700;
+  margin-bottom:1.5rem;
+}
+
+.hero h1{
+  font-size:clamp(3rem,7vw,5.5rem);
+  line-height:1;
+  margin-bottom:1.5rem;
+}
+
+.hero p{
+  font-size:1.15rem;
+  color:var(--muted);
+  line-height:1.8;
+}
+
+.status{
+  margin-top:2rem;
+  display:inline-block;
+  padding:.75rem 1.2rem;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:999px;
+  font-weight:600;
+}
+
+/* =========================
+   FLOATING STORY CARDS
+========================= */
+
+.story-float{
+  position:absolute;
+  background:#fff;
+  border:1px solid rgba(225,29,46,.15);
+  color:#475569;
+  padding:1rem;
+  border-radius:16px;
+  box-shadow:0 15px 40px rgba(0,0,0,.05);
+  font-size:.9rem;
+  animation:floatUp linear infinite;
+  opacity:.7;
+}
+
+@keyframes floatUp{
+  from{
+    transform:translateY(120vh);
+  }
+  to{
+    transform:translateY(-150px);
+  }
+}
+
+.f1{left:5%;animation-duration:18s;}
+.f2{left:15%;animation-duration:22s;}
+.f3{left:30%;animation-duration:16s;}
+.f4{left:45%;animation-duration:20s;}
+.f5{left:60%;animation-duration:18s;}
+.f6{left:75%;animation-duration:25s;}
+.f7{left:88%;animation-duration:21s;}
+
+/* =========================
+   STATS
+========================= */
+
+.section{
+  padding:6rem 0;
+}
+
+.section-title{
+  text-align:center;
+  margin-bottom:3rem;
+}
+
+.section-title span{
+  color:var(--kf-red);
+  font-size:.8rem;
+  font-weight:700;
+  letter-spacing:.15em;
+}
+
+.section-title h2{
+  margin-top:.75rem;
+  font-size:3rem;
+}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1.5rem;
+}
+
+.stat{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:2rem;
+  text-align:center;
+  transition:.3s;
+}
+
+.stat:hover{
+  transform:translateY(-8px);
+  border-color:var(--kf-red);
+}
+
+.stat-number{
+  color:var(--kf-red);
+  font-size:2.8rem;
+  font-weight:800;
+}
+
+.stat-label{
+  margin-top:.5rem;
+  color:var(--muted);
+}
+
+/* =========================
+   CATEGORY CARDS
+========================= */
+
+.categories{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:1.5rem;
+}
+
+.category{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:1.75rem;
+  transition:.3s;
+  position:relative;
+  overflow:hidden;
+}
+
+.category::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:5px;
+  height:100%;
+  background:var(--kf-red);
+}
+
+.category:hover{
+  transform:translateY(-8px);
+  border-color:var(--kf-red);
+  box-shadow:0 25px 50px rgba(225,29,46,.08);
+}
+
+.category h3{
+  font-size:1.1rem;
+}
+
+/* =========================
+   FEATURE CARD
+========================= */
+
+.impact-card{
+  grid-column:1/-1;
+  padding:4rem;
+  border-radius:32px;
+  background:
+  linear-gradient(
+  135deg,
+  rgba(225,29,46,.06),
+  rgba(225,29,46,.01)
+  );
+  border:1px solid rgba(225,29,46,.15);
+  position:relative;
+  overflow:hidden;
+}
+
+.impact-card::after{
+  content:"";
+  position:absolute;
+  right:-150px;
+  top:-150px;
+  width:400px;
+  height:400px;
+  border-radius:50%;
+  background:rgba(225,29,46,.08);
+  filter:blur(80px);
+}
+
+.impact-card h2{
+  margin-bottom:1rem;
+  font-size:2.2rem;
+}
+
+.impact-card p{
+  color:#475569;
+  line-height:1.8;
+  max-width:900px;
+}
+
+/* =========================
+   NOTICE
+========================= */
+
+.notice{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:3rem;
+  text-align:center;
+}
+
+.notice h2{
+  margin-bottom:1rem;
+}
+
+.notice p{
+  color:var(--muted);
+  line-height:1.8;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer{
+  padding:2rem;
+  border-top:1px solid var(--border);
+  text-align:center;
+  color:var(--muted);
+}
+
+footer nav{
+  margin-top:1rem;
+}
+
+footer a{
+  color:var(--kf-red);
+  text-decoration:none;
+  margin:0 12px;
+}
+
+footer a:hover{
+  text-decoration:underline;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:768px){
+
+.hero h1{
+  font-size:3rem;
+}
+
+.hero p{
+  font-size:1rem;
+}
+
+.impact-card{
+  padding:2rem;
+}
+
+.section-title h2{
+  font-size:2.2rem;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<!-- FLOATERS -->
+
+<div class="story-float f1">Business Success</div>
+<div class="story-float f2">Social Impact</div>
+<div class="story-float f3">Innovation</div>
+<div class="story-float f4">Leadership</div>
+<div class="story-float f5">Story #2548</div>
+<div class="story-float f6">Entrepreneur</div>
+<div class="story-float f7">Rags To Riches</div>
+
+<!-- HERO -->
+
+<section class="hero">
+
+<div class="hero-content">
+
+<div class="badge">
+KENFOLIOS STORIES • ARCHIVE IN TRANSITION
+</div>
+
+<h1>It Started With A Story</h1>
+
+<p>
+In January 2013, we set out to use the emerging power of social media to tell stories that mattered. What followed was a journey of more than 5,000 stories, over 100 million people reached, and countless moments of recognition—helping many individuals, businesses, and ideas find wider audiences, and in some cases, even overnight fame. Our storytelling journey was eventually paused and later archived following an internal audit. We hope to begin again soon—wiser, stronger, and ready for the next chapter. Until then, all stories remain archived and inaccessible. When we return to publishing, this space will once again become home to both selected stories from our past and the new stories yet to be written.
+</p>
+
+<div class="status">
+📚 Stories Archive Status • Preparing For The Next Chapter
+</div>
+
+</div>
+
+</section>
+
+<!-- STATS -->
+
+<section class="section">
+
+<div class="container">
+
+<div class="section-title">
+<span>OUR JOURNEY</span>
+<h2>Stories, Impact & Reach</h2>
+</div>
+
+<div class="stats-grid">
+
+<div class="stat">
+<div class="stat-number">5000+</div>
+<div class="stat-label">Stories Published</div>
+</div>
+
+<div class="stat">
+<div class="stat-number">100M+</div>
+<div class="stat-label">Audience Reached</div>
+</div>
+
+<div class="stat">
+<div class="stat-number">1M+</div>
+<div class="stat-label">Community Followers</div>
+</div>
+
+<div class="stat">
+<div class="stat-number">13+</div>
+<div class="stat-label">Years Of Storytelling</div>
+</div>
+
+<div class="stat">
+<div class="stat-number">2</div>
+<div class="stat-label">Languages</div>
+</div>
+
+<div class="stat">
+<div class="stat-number">1000s+</div>
+<div class="stat-label">People Featured</div>
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- CATEGORIES -->
+
+<section class="section">
+
+<div class="container">
+
+<div class="section-title">
+<span>STORY GENRES</span>
+<h2>The Stories We Tell</h2>
+</div>
+
+<div class="categories">
+
+<div class="category"><h3>Entrepreneurial Journeys</h3></div>
+<div class="category"><h3>Business Success Stories</h3></div>
+<div class="category"><h3>Startups & Innovation</h3></div>
+<div class="category"><h3>Rags To Riches</h3></div>
+<div class="category"><h3>Social Impact</h3></div>
+<div class="category"><h3>Women Leaders</h3></div>
+<div class="category"><h3>Family Businesses</h3></div>
+<div class="category"><h3>Young Achievers</h3></div>
+<div class="category"><h3>Corporate Leadership</h3></div>
+<div class="category"><h3>Community Builders</h3></div>
+<div class="category"><h3>Education & Learning</h3></div>
+<div class="category"><h3>Healthcare & Wellness</h3></div>
+<div class="category"><h3>Technology</h3></div>
+<div class="category"><h3>Digital Transformation</h3></div>
+<div class="category"><h3>Sustainability</h3></div>
+<div class="category"><h3>Arts & Creativity</h3></div>
+<div class="category"><h3>Public Service</h3></div>
+<div class="category"><h3>Rural India</h3></div>
+<div class="category"><h3>Personal Branding</h3></div>
+<div class="category"><h3>Professional Excellence</h3></div>
+
+<div class="impact-card">
+
+<h2>And Everything That Matters</h2>
+
+<p>
+Entrepreneurship, social impact, innovation, leadership, education, culture, community building, and much more. The genres above represent only a small part of our storytelling journey.
+</p>
+
+<br>
+
+<p>
+Over the years, KenFolios featured people, businesses, organizations, ideas, movements, causes, achievements, breakthroughs and moments from virtually every field and walk of life. If something had the power to inform, inspire, create awareness, spark conversation, celebrate achievement, or leave a positive impact, it belonged in the KenFolios Stories archive.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- NOTICE -->
+
+<section class="section">
+
+<div class="container">
+
+<div class="notice">
+
+<h2>Archive Notice</h2>
+
+<p>
+Following an internal audit in 2021, the KenFolios Stories archive was placed into preservation mode while we reassessed and restructured our storytelling framework. While all stories currently remain archived and inaccessible, we remain optimistic about returning with a stronger foundation and renewed purpose in the future.
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+<footer>
+
+<div>
+© 2026 KenFolios Media Private Limited
+</div>
+
+<nav>
+<a href="https://kenfolios.com/community/">Community</a>
+<a href="https://kenfolios.com/support/">Support</a>
+<a href="https://kenfolios.com/privacy/">Privacy</a>
+<a href="https://kenfolios.com/terms/">Terms</a>
+</nav>
+
+</footer>
+
+</body>
+</html>
