@@ -1,485 +1,446 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>KenFolios – New Homepage Coming Soon</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex,nofollow" />
-  <style>
-    :root {
-      --kf-red: #E11D2E;
-      --kf-dark: #0f172a;
-      --kf-bg: #020617;
-      --kf-text: #f9fafb;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenFolios | Tales Extraordinaire</title>
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+<style>
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
-      color: var(--kf-text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+:root{
+    --kf-red:#E11D2E;
+    --bg:#0f172a;
+    --card:#111827;
+    --text:#ffffff;
+    --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+}
 
-    .wrapper {
-      max-width: 720px;
-      width: 100%;
-      padding: 24px;
-    }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-    .card {
-      background: rgba(15, 23, 42, 0.95);
-      border-radius: 24px;
-      border: 1px solid rgba(248, 250, 252, 0.06);
-      box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(15, 23, 42, 0.8);
-      padding: 32px 24px 28px;
-      position: relative;
-      overflow: hidden;
-    }
+html{
+    scroll-behavior:smooth;
+}
 
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: -120px;
-      background: radial-gradient(circle at top left, rgba(225, 29, 46, 0.25), transparent 60%);
-      opacity: 0.9;
-      pointer-events: none;
-    }
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    overflow-x:hidden;
+}
 
-    .card-inner {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      gap: 24px;
-    }
+.watermark{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18vw;
+    font-weight:900;
+    color:rgba(225,29,46,.03);
+    pointer-events:none;
+    z-index:0;
+}
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(248, 250, 252, 0.08);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(248, 250, 252, 0.8);
-    }
+.floating{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:1;
+}
 
-    .badge-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--kf-red);
-      box-shadow: 0 0 0 0 rgba(225, 29, 46, 0.65);
-      animation: ping 1.4s infinite;
-    }
+.float{
+    position:absolute;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.05);
+    padding:.8rem 1rem;
+    border-radius:14px;
+    color:rgba(255,255,255,.35);
+    backdrop-filter:blur(10px);
+    animation:float linear infinite;
+}
 
-    @keyframes ping {
-      0% {
-        transform: scale(1);
-        opacity: 1;
-      }
-      75% {
-        transform: scale(2.2);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(2.2);
-        opacity: 0;
-      }
-    }
+.float:nth-child(1){left:5%;animation-duration:18s;}
+.float:nth-child(2){left:20%;animation-duration:24s;}
+.float:nth-child(3){left:40%;animation-duration:20s;}
+.float:nth-child(4){left:60%;animation-duration:17s;}
+.float:nth-child(5){left:80%;animation-duration:22s;}
 
-    h1 {
-      font-size: clamp(1.9rem, 3vw, 2.3rem);
-      line-height: 1.1;
-      font-weight: 700;
-    }
+@keyframes float{
+    from{transform:translateY(110vh);}
+    to{transform:translateY(-150px);}
+}
 
-    h1 span.highlight {
-      color: var(--kf-red);
-    }
+.container{
+    width:min(1200px,92%);
+    margin:auto;
+    position:relative;
+    z-index:5;
+}
 
-    .subtext {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: rgba(248, 250, 252, 0.78);
-      max-width: 34rem;
-    }
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+}
 
-    .timer-section {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: center;
-      justify-content: space-between;
-    }
+.brand{
+    font-size:clamp(4rem,10vw,8rem);
+    font-weight:900;
+    letter-spacing:-3px;
+    line-height:.9;
+}
 
-    .timer-circle {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at 30% 0, rgba(248, 250, 252, 0.16), transparent 55%),
-        conic-gradient(
-          from 270deg,
-          var(--kf-red) var(--progress, 0deg),
-          rgba(51, 65, 85, 0.9) var(--progress, 0deg)
-        );
-      padding: 3px;
-      transition: background 0.25s ease-out;
-    }
+.subbrand{
+    color:var(--muted);
+    margin-top:.5rem;
+    font-size:1.2rem;
+}
 
-    .timer-inner {
-      width: 86%;
-      height: 86%;
-      border-radius: 50%;
-      background: rgba(15, 23, 42, 0.98);
-      display: grid;
-      place-items: center;
-      box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.9);
-    }
+.divider{
+    width:140px;
+    height:3px;
+    background:var(--kf-red);
+    margin:2rem auto;
+}
 
-    .timer-value {
-      font-size: 2.4rem;
-      font-weight: 700;
-      line-height: 1;
-    }
+.hero h1{
+    font-size:clamp(2rem,5vw,4rem);
+    margin-bottom:2rem;
+}
 
-    .timer-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: rgba(148, 163, 184, 0.95);
-      margin-top: 4px;
-    }
+.hero p{
+    max-width:850px;
+    margin:auto;
+    color:var(--muted);
+    line-height:2;
+    font-size:1.05rem;
+}
 
-    .timer-text-block {
-      flex: 1;
-      min-width: 220px;
-    }
+.section{
+    padding:8rem 0;
+}
 
-    .timer-heading {
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: rgba(248, 250, 252, 0.7);
-      margin-bottom: 8px;
-    }
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:4rem;
+    text-align:center;
+    transition:.3s;
+}
 
-    .timer-description {
-      font-size: 0.9rem;
-      color: rgba(209, 213, 219, 0.9);
-      margin-bottom: 12px;
-    }
+.card:hover{
+    transform:translateY(-8px);
+    border-color:rgba(225,29,46,.4);
+}
 
-    .progress-track {
-      width: 100%;
-      height: 5px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(15, 23, 42, 0.9);
-    }
+.card-logo{
+    font-size:clamp(2rem,5vw,4rem);
+    font-weight:900;
+    margin-bottom:1.5rem;
+}
 
-    .progress-bar {
-      height: 100%;
-      width: 0;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #fecaca, var(--kf-red));
-      transition: width 0.28s ease-out;
-    }
+.card p{
+    max-width:850px;
+    margin:auto;
+    color:var(--muted);
+    line-height:2;
+}
 
-    .redirect-note {
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: rgba(148, 163, 184, 0.9);
-    }
+.btn{
+    display:inline-block;
+    margin-top:2rem;
+    background:var(--kf-red);
+    color:#fff;
+    text-decoration:none;
+    padding:1rem 1.6rem;
+    border-radius:999px;
+    font-weight:700;
+}
 
-    .redirect-note a {
-      color: #fca5a5;
-      text-decoration: none;
-      border-bottom: 1px dotted rgba(252, 165, 165, 0.5);
-    }
+.btn:hover{
+    opacity:.9;
+}
 
-    .redirect-note a:hover {
-      text-decoration: underline;
-    }
+.spacer{
+    height:3rem;
+}
 
-    @media (max-width: 640px) {
-      .card {
-        padding: 24px 18px 22px;
-      }
-      .timer-section {
-        gap: 16px;
-      }
-      .timer-circle {
-        width: 100px;
-        height: 100px;
-      }
-      .timer-value {
-        font-size: 2rem;
-      }
+.journey{
+    text-align:center;
+}
+
+.journey-number{
+    font-size:clamp(6rem,14vw,10rem);
+    color:var(--kf-red);
+    font-weight:900;
+    line-height:1;
+}
+
+.bar-wrap{
+    max-width:900px;
+    margin:2rem auto;
+}
+
+.bar{
+    height:14px;
+    background:rgba(255,255,255,.08);
+    border-radius:999px;
+    overflow:hidden;
+    position:relative;
+}
+
+.bar-fill{
+    width:99%;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#E11D2E,#ff5f6d);
+    position:relative;
+}
+
+.bar-fill:after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100px;
+    width:100px;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.9),
+        transparent
+    );
+    animation:pulse 2.5s linear infinite;
+}
+
+@keyframes pulse{
+    from{
+        left:-100px;
     }
-  </style>
+    to{
+        left:100%;
+    }
+}
+
+.journey p{
+    max-width:850px;
+    margin:1rem auto;
+    color:var(--muted);
+    line-height:2;
+}
+
+.footer{
+    border-top:1px solid var(--border);
+    margin-top:6rem;
+}
+
+.footer-inner{
+    width:min(1200px,92%);
+    margin:auto;
+    padding:2rem 0;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:1rem;
+}
+
+.footer a{
+    color:#fff;
+    text-decoration:none;
+    margin-left:1rem;
+}
+
+.footer a:hover{
+    color:var(--kf-red);
+}
+
+@media(max-width:768px){
+
+.card{
+    padding:2rem;
+}
+
+.footer-inner{
+    flex-direction:column;
+    text-align:center;
+}
+
+}
+
+</style>
 </head>
 <body>
-  <main class="wrapper">
-    <section class="card" aria-labelledby="headline">
-      <div class="card-inner">
-        <div>
-          <div class="badge">
-            <span class="badge-dot"></span>
-            KenFolios Update
-          </div>
-          <h1 id="headline">
-            Our homepage is <span class="highlight">getting a new look.</span>
-          </h1>
-          <p class="subtext">
-            We’re refreshing the KenFolios experience. In just a moment, you’ll be taken to our
-            community space where the action continues as usual.
-          </p>
-        </div>
 
-        <div class="timer-section">
-          <div class="timer-circle" id="timerCircle">
-            <div class="timer-inner">
-              <div style="text-align:center;">
-                <div class="timer-value" id="countdownValue">10</div>
-                <div class="timer-label">seconds</div>
-              </div>
-            </div>
-          </div>
+<div class="watermark">KENFOLIOS</div>
 
-          <div class="timer-text-block">
-            <div class="timer-heading">Auto redirect in progress</div>
-            <div class="timer-description">
-              Please wait while we redirect you to the KenFolios Community.  
-              Your content, stories, and connections remain fully accessible.
-            </div>
-            <div class="progress-track" aria-hidden="true">
-              <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <p class="redirect-note">
-              If you’re not redirected automatically, 
-              <a href="https://kenfolios.com/community/" id="manualLink">click here to continue</a>.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-<script>
-/*
-  Homepage Order Loader
-  - Detects /community/order/<ref_id>
-  - POSTs to your worker: /api/order/by-ref
-  - Renders Saved Notice + Order Box using existing frontend helpers
-  - Shows friendly error & retry on failure
-*/
-(function () {
-  const WORKER_URL = "https://kf-members-submit-z9p4x-worker.ksn-nvl.workers.dev/api/order/by-ref";
+<div class="floating">
+<div class="float">Stories</div>
+<div class="float">Community</div>
+<div class="float">VStreet</div>
+<div class="float">Influence</div>
+<div class="float">Reputation</div>
+</div>
 
-  // match /community/order/<ref>
-  const path = window.location.pathname || "";
-  const m = path.match(/^\/community\/order\/([A-Za-z0-9\-_.]+)\/?$/);
-  if (!m) return; // not an order page
+<section class="hero">
 
-  const refId = m[1];
+<div class="container">
 
-  // Remove join form if present
-  const joinForm = document.getElementById("kfJoinInfoForm");
-  if (joinForm) joinForm.remove();
+<div class="brand">KenFolios</div>
+<div class="subbrand">Tales Extraordinaire</div>
 
-  // Create container at top of body
-  const container = document.createElement("div");
-  container.id = "kf-order-loader";
-  container.style.padding = "20px";
-  container.style.maxWidth = "980px";
-  container.style.margin = "18px auto";
-  container.style.fontFamily = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
-  container.style.fontSize = "1rem";
-  container.style.boxSizing = "border-box";
-  container.textContent = "Loading order…";
-  document.body.prepend(container);
+<div class="divider"></div>
 
-  function showError(msg, details) {
-    container.innerHTML = "";
-    const h = document.createElement("div");
-    h.style.color = "#b91c1c";
-    h.style.fontWeight = 700;
-    h.style.marginBottom = "8px";
-    h.textContent = msg;
-    container.appendChild(h);
+<h1>Three Chapters. One Journey.</h1>
 
-    if (details) {
-      const pre = document.createElement("pre");
-      pre.style.whiteSpace = "pre-wrap";
-      pre.style.fontSize = ".9rem";
-      pre.style.color = "#444";
-      pre.textContent = details;
-      container.appendChild(pre);
-    }
+<p>
+In January 2013, we started telling impactful stories and continued until we created more than 5,000 stories, built a community of nearly one million followers, and reached an audience exceeding 100 million people.
+</p>
 
-    const tryBtn = document.createElement("button");
-    tryBtn.textContent = "Try again";
-    tryBtn.style.marginTop = "12px";
-    tryBtn.style.padding = "8px 12px";
-    tryBtn.style.borderRadius = "6px";
-    tryBtn.style.border = "1px solid #ddd";
-    tryBtn.style.background = "#fff";
-    tryBtn.style.cursor = "pointer";
-    tryBtn.onclick = () => { container.textContent = "Loading order…"; load(); };
-    container.appendChild(tryBtn);
+</div>
 
-    const sup = document.createElement("div");
-    sup.style.marginTop = "12px";
-    sup.style.color = "#444";
-    sup.style.fontSize = ".9rem";
-    sup.textContent = "If this persists, contact support with Order ID: " + refId;
-    container.appendChild(sup);
-  }
+</section>
 
-  async function load() {
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ref_id: refId })
-      });
+<section class="section">
 
-      console.log("kf-order-loader: fetch status", res.status);
+<div class="container">
 
-      const text = await res.text();
-      let json;
-      try { json = text ? JSON.parse(text) : {}; } catch (e) { json = null; }
+<div class="card">
 
-      if (res.status === 200 && json && json.ok) {
-        const order = json.order;
-        container.innerHTML = "";
+<div class="card-logo">
+KENFOLIOS STORIES
+</div>
 
-        // Saved notice (uses your frontend function)
-        if (typeof createSavedNotice === "function") {
-          container.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
-        } else {
-          const h = document.createElement("div");
-          h.style.fontWeight = 700;
-          h.textContent = `Order: ${order.order_ref}`;
-          container.appendChild(h);
-        }
+<p>
+What started as a storytelling initiative evolved into one of India's most impactful digital storytelling journeys. Over the years, KenFolios published more than 5,000 stories across business, entrepreneurship, social impact, leadership, innovation, and countless other fields.
+</p>
 
-        // Build order UI (uses your frontend function)
-        if (typeof buildOrderBox === "function") {
-          const box = buildOrderBox(order);
-          container.appendChild(box.wrap);
+<a href="https://kenfolios.com/stories/" class="btn">
+Explore Stories
+</a>
 
-          // Wire up coupon & pay using the order.member.id
-          if (box.applyBtn) {
-            box.applyBtn.addEventListener("click", function () {
-              if (typeof applyCoupon === "function") {
-                applyCoupon(order.member.id, box.couponInput.value.trim(), box);
-              } else {
-                console.warn("applyCoupon() not defined");
-              }
-            });
-          }
-          if (box.payBtn) {
-            box.payBtn.addEventListener("click", function () {
-              if (typeof confirmPay === "function") {
-                confirmPay(order.member.id, box);
-              } else {
-                console.warn("confirmPay() not defined");
-              }
-            });
-          }
-        } else {
-          // fallback plain rendering if helpers missing
-          const msg = document.createElement("div");
-          msg.textContent = "Order loaded but UI helpers are not present on this page.";
-          container.appendChild(msg);
-        }
+</div>
 
-        return;
-      }
+</div>
 
-      // Not ok — show friendly error with backend message if available
-      const details = (json && json.message) ? json.message : (text || "No details");
-      showError("Order not found or cannot be loaded.", details);
+</section>
 
-    } catch (err) {
-      console.error("kf-order-loader error:", err);
-      showError("Network error while fetching order.", String(err));
-    }
-  }
+<section class="section">
 
-  // Kick off load
-  load();
+<div class="container">
 
-})();
-</script>
+<div class="card">
 
+<div class="card-logo">
+KENFOLIOS BUSINESS COMMUNITY
+</div>
 
-  <script>
-    (function () {
-      const REDIRECT_URL = "https://kenfolios.com/community/";
-      const TOTAL_SECONDS = 10;
+<p>
+In 2021, we started building a business community to leverage the knowledge, relationships, and insights accumulated through years of storytelling. As of May 2026, the ecosystem is more than 40,000 members strong.
+</p>
 
-      const countdownEl = document.getElementById("countdownValue");
-      const progressBarEl = document.getElementById("progressBar");
-      const timerCircleEl = document.getElementById("timerCircle");
-      const manualLinkEl = document.getElementById("manualLink");
+<a href="https://kenfolios.com/community/" class="btn">
+Visit Community
+</a>
 
-      let remaining = TOTAL_SECONDS;
+</div>
 
-      manualLinkEl.addEventListener("click", function (e) {
-        // allow normal navigation, but clear interval so we don't double-fire
-        clearInterval(intervalId);
-      });
+</div>
 
-      function updateUI() {
-        countdownEl.textContent = remaining.toString();
+</section>
 
-        const progressRatio = (TOTAL_SECONDS - remaining) / TOTAL_SECONDS;
-        progressBarEl.style.width = (progressRatio * 100).toFixed(2) + "%";
+<section class="section">
 
-        const degrees = 360 * progressRatio;
-        timerCircleEl.style.setProperty("--progress", degrees + "deg");
-      }
+<div class="container">
 
-      function tick() {
-        updateUI();
+<div class="card">
 
-        if (remaining <= 0) {
-          clearInterval(intervalId);
-          window.location.href = REDIRECT_URL;
-          return;
-        }
+<div class="card-logo">
+VSTREET
+</div>
 
-        remaining -= 1;
-      }
+<p>
+In 2025, we started building VStreet — India's own influence ecosystem. Inspired by decades of observations around reputation, visibility, influence, trust, and credibility, it represents the next chapter of the journey.
+</p>
 
-      // Initial paint
-      updateUI();
+<a href="https://vstreet.in/" class="btn">
+Explore VStreet
+</a>
 
-      // Start countdown (1-second interval)
-      const intervalId = setInterval(tick, 1000);
-    })();
-  </script>
-  
+</div>
+
+</div>
+
+</section>
+
+<section class="section journey">
+
+<div class="container">
+
+<div class="journey-number">
+99
+</div>
+
+<div class="bar-wrap">
+
+<div class="bar">
+<div class="bar-fill"></div>
+</div>
+
+</div>
+
+<p>
+We will always strive for 100.
+</p>
+
+<p>
+But perhaps the most meaningful journeys are never truly complete. Every story reveals another story. Every achievement creates a new challenge. Every destination becomes the beginning of another chapter.
+</p>
+
+<p>
+That is why we choose to remain at 99 — always learning, always building, always evolving.
+</p>
+
+<p>
+We still have much more to tell you.
+</p>
+
+<p style="color:#fff;font-weight:700;letter-spacing:.15em;text-transform:uppercase;">
+Keep Revisiting.
+</p>
+
+</div>
+
+</section>
+
+<footer class="footer">
+
+<div class="footer-inner">
+
+<div>
+© 2026 KenFolios Media Private Limited
+</div>
+
+<div>
+<a href="https://kenfolios.com/stories/">Stories</a>
+<a href="https://kenfolios.com/community/">Community</a>
+<a href="https://vstreet.in/">VStreet</a>
+<a href="https://kenfolios.com/privacy/">Privacy</a>
+<a href="https://kenfolios.com/terms/">Terms</a>
+<a href="https://kenfolios.com/support/">Support</a>
+</div>
+
+</div>
+
+</footer>
+
 </body>
 </html>
