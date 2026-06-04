@@ -3,387 +3,455 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KenFolios Stories</title>
+
+<title>KenFolios Stories | Tales Extraordinaire</title>
+
+<link rel="icon" href="/favicon.ico">
 
 <style>
 
 :root{
-  --kf-red:#E11D2E;
-  --border:#e5e7eb;
-  --bg:#f8fafc;
-  --text:#0f172a;
-  --muted:#64748b;
+    --kf-red:#E11D2E;
+    --bg:#0f172a;
+    --text:#ffffff;
+    --muted:#94a3b8;
+    --card:#111827;
+    --border:rgba(255,255,255,.08);
 }
 
 *{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
 html{
-  scroll-behavior:smooth;
+    scroll-behavior:smooth;
 }
 
 body{
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  overflow-x:hidden;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    overflow-x:hidden;
 }
+
+/* ===========================
+   WATERMARK
+=========================== */
+
+.watermark{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:20vw;
+    font-weight:900;
+    color:rgba(225,29,46,.03);
+    pointer-events:none;
+    user-select:none;
+    z-index:0;
+    white-space:nowrap;
+}
+
+/* ===========================
+   FLOATING STORIES
+=========================== */
+
+.floating{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    z-index:1;
+    pointer-events:none;
+}
+
+.story{
+    position:absolute;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.05);
+    padding:.8rem 1rem;
+    border-radius:14px;
+    color:rgba(255,255,255,.35);
+    backdrop-filter:blur(10px);
+    animation:float linear infinite;
+    font-size:.9rem;
+}
+
+.story:nth-child(1){left:5%;animation-duration:18s;}
+.story:nth-child(2){left:18%;animation-duration:25s;}
+.story:nth-child(3){left:30%;animation-duration:20s;}
+.story:nth-child(4){left:45%;animation-duration:16s;}
+.story:nth-child(5){left:60%;animation-duration:24s;}
+.story:nth-child(6){left:75%;animation-duration:18s;}
+.story:nth-child(7){left:88%;animation-duration:22s;}
+
+@keyframes float{
+    from{
+        transform:translateY(110vh);
+    }
+    to{
+        transform:translateY(-200px);
+    }
+}
+
+/* ===========================
+   GLOBAL
+=========================== */
 
 .container{
-  width:min(1200px,92%);
-  margin:auto;
+    width:min(1200px,92%);
+    margin:auto;
+    position:relative;
+    z-index:5;
 }
-
-/* =========================
-   HERO
-========================= */
-
-.hero{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  overflow:hidden;
-  background:
-  radial-gradient(circle at top,#fff 0%,#fdf2f3 35%,#f8fafc 100%);
-}
-
-.hero::before{
-  content:"";
-  position:absolute;
-  width:700px;
-  height:700px;
-  border-radius:50%;
-  background:rgba(225,29,46,.08);
-  filter:blur(90px);
-  animation:pulseGlow 8s ease-in-out infinite;
-}
-
-@keyframes pulseGlow{
-  0%,100%{
-    transform:scale(1);
-  }
-  50%{
-    transform:scale(1.2);
-  }
-}
-
-.hero-content{
-  position:relative;
-  z-index:2;
-  max-width:900px;
-  text-align:center;
-}
-
-.badge{
-  display:inline-block;
-  padding:.55rem 1rem;
-  border-radius:999px;
-  background:rgba(225,29,46,.08);
-  color:var(--kf-red);
-  font-size:.75rem;
-  letter-spacing:.12em;
-  font-weight:700;
-  margin-bottom:1.5rem;
-}
-
-.hero h1{
-  font-size:clamp(3rem,7vw,5.5rem);
-  line-height:1;
-  margin-bottom:1.5rem;
-}
-
-.hero p{
-  font-size:1.15rem;
-  color:var(--muted);
-  line-height:1.8;
-}
-
-.status{
-  margin-top:2rem;
-  display:inline-block;
-  padding:.75rem 1.2rem;
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:999px;
-  font-weight:600;
-}
-
-/* =========================
-   FLOATING STORY CARDS
-========================= */
-
-.story-float{
-  position:absolute;
-  background:#fff;
-  border:1px solid rgba(225,29,46,.15);
-  color:#475569;
-  padding:1rem;
-  border-radius:16px;
-  box-shadow:0 15px 40px rgba(0,0,0,.05);
-  font-size:.9rem;
-  animation:floatUp linear infinite;
-  opacity:.7;
-}
-
-@keyframes floatUp{
-  from{
-    transform:translateY(120vh);
-  }
-  to{
-    transform:translateY(-150px);
-  }
-}
-
-.f1{left:5%;animation-duration:18s;}
-.f2{left:15%;animation-duration:22s;}
-.f3{left:30%;animation-duration:16s;}
-.f4{left:45%;animation-duration:20s;}
-.f5{left:60%;animation-duration:18s;}
-.f6{left:75%;animation-duration:25s;}
-.f7{left:88%;animation-duration:21s;}
-
-/* =========================
-   STATS
-========================= */
 
 .section{
-  padding:6rem 0;
+    padding:7rem 0;
 }
 
 .section-title{
-  text-align:center;
-  margin-bottom:3rem;
+    text-align:center;
+    margin-bottom:3rem;
 }
 
 .section-title span{
-  color:var(--kf-red);
-  font-size:.8rem;
-  font-weight:700;
-  letter-spacing:.15em;
+    color:var(--kf-red);
+    font-size:.8rem;
+    letter-spacing:.15em;
+    font-weight:700;
 }
 
 .section-title h2{
-  margin-top:.75rem;
-  font-size:3rem;
+    margin-top:.8rem;
+    font-size:clamp(2rem,5vw,3.5rem);
 }
 
-.stats-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:1.5rem;
+/* ===========================
+   HERO
+=========================== */
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    position:relative;
+}
+
+.hero-glow{
+    position:absolute;
+    width:700px;
+    height:700px;
+    border-radius:50%;
+    background:rgba(225,29,46,.08);
+    filter:blur(80px);
+    animation:pulse 8s ease infinite;
+}
+
+@keyframes pulse{
+
+    0%,100%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.25);
+    }
+}
+
+.archive-badge{
+    display:inline-block;
+    padding:.7rem 1rem;
+    border-radius:999px;
+    background:rgba(225,29,46,.12);
+    color:#fff;
+    font-size:.75rem;
+    letter-spacing:.12em;
+    margin-bottom:2rem;
+}
+
+.brand{
+    font-size:clamp(4rem,9vw,8rem);
+    font-weight:900;
+    letter-spacing:-3px;
+    line-height:.9;
+}
+
+.subbrand{
+    color:var(--muted);
+    font-size:1.3rem;
+    margin-top:.5rem;
+}
+
+.hero-divider{
+    width:140px;
+    height:3px;
+    background:var(--kf-red);
+    margin:2rem auto;
+}
+
+.hero h1{
+    font-size:clamp(2.5rem,6vw,5rem);
+    margin-bottom:2rem;
+    line-height:1;
+}
+
+.hero-copy{
+    max-width:900px;
+    margin:auto;
+    color:var(--muted);
+    line-height:2;
+    font-size:1.05rem;
+}
+
+.status{
+    margin-top:2rem;
+    display:inline-block;
+    border:1px solid var(--border);
+    padding:1rem 1.2rem;
+    border-radius:999px;
+    background:rgba(255,255,255,.03);
+}
+
+/* ===========================
+   STATS
+=========================== */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:1.5rem;
 }
 
 .stat{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:24px;
-  padding:2rem;
-  text-align:center;
-  transition:.3s;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:2rem;
+    text-align:center;
+    transition:.3s;
 }
 
 .stat:hover{
-  transform:translateY(-8px);
-  border-color:var(--kf-red);
+    transform:translateY(-6px);
+    border-color:rgba(225,29,46,.4);
 }
 
 .stat-number{
-  color:var(--kf-red);
-  font-size:2.8rem;
-  font-weight:800;
+    font-size:3rem;
+    color:var(--kf-red);
+    font-weight:900;
 }
 
 .stat-label{
-  margin-top:.5rem;
-  color:var(--muted);
+    color:var(--muted);
 }
 
-/* =========================
-   CATEGORY CARDS
-========================= */
+/* ===========================
+   CATEGORIES
+=========================== */
 
 .categories{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:1.5rem;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:1.5rem;
 }
 
 .category{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:1.75rem;
-  transition:.3s;
-  position:relative;
-  overflow:hidden;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:1.5rem;
+    transition:.3s;
+    position:relative;
 }
 
-.category::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:0;
-  width:5px;
-  height:100%;
-  background:var(--kf-red);
+.category:before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    width:4px;
+    height:100%;
+    background:var(--kf-red);
+    border-radius:20px 0 0 20px;
 }
 
 .category:hover{
-  transform:translateY(-8px);
-  border-color:var(--kf-red);
-  box-shadow:0 25px 50px rgba(225,29,46,.08);
+    transform:translateY(-6px);
+    border-color:rgba(225,29,46,.4);
 }
 
 .category h3{
-  font-size:1.1rem;
+    font-size:1.05rem;
 }
 
-/* =========================
-   FEATURE CARD
-========================= */
+/* ===========================
+   IMPACT CARD
+=========================== */
 
-.impact-card{
-  grid-column:1/-1;
-  padding:4rem;
-  border-radius:32px;
-  background:
-  linear-gradient(
-  135deg,
-  rgba(225,29,46,.06),
-  rgba(225,29,46,.01)
-  );
-  border:1px solid rgba(225,29,46,.15);
-  position:relative;
-  overflow:hidden;
+.impact{
+    grid-column:1/-1;
+    background:
+    linear-gradient(
+        135deg,
+        rgba(225,29,46,.12),
+        rgba(255,255,255,.02)
+    );
+
+    border:1px solid rgba(225,29,46,.25);
+
+    border-radius:28px;
+    padding:3rem;
 }
 
-.impact-card::after{
-  content:"";
-  position:absolute;
-  right:-150px;
-  top:-150px;
-  width:400px;
-  height:400px;
-  border-radius:50%;
-  background:rgba(225,29,46,.08);
-  filter:blur(80px);
+.impact h2{
+    font-size:2.2rem;
+    margin-bottom:1rem;
 }
 
-.impact-card h2{
-  margin-bottom:1rem;
-  font-size:2.2rem;
+.impact p{
+    color:var(--muted);
+    line-height:2;
 }
 
-.impact-card p{
-  color:#475569;
-  line-height:1.8;
-  max-width:900px;
-}
-
-/* =========================
-   NOTICE
-========================= */
+/* ===========================
+   ARCHIVE NOTICE
+=========================== */
 
 .notice{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:28px;
-  padding:3rem;
-  text-align:center;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:3rem;
 }
 
 .notice h2{
-  margin-bottom:1rem;
+    margin-bottom:1rem;
 }
 
 .notice p{
-  color:var(--muted);
-  line-height:1.8;
+    color:var(--muted);
+    line-height:2;
 }
 
-/* =========================
+/* ===========================
    FOOTER
-========================= */
+=========================== */
 
-footer{
-  padding:2rem;
-  border-top:1px solid var(--border);
-  text-align:center;
-  color:var(--muted);
+.footer{
+    border-top:1px solid var(--border);
+    background:#111827;
 }
 
-footer nav{
-  margin-top:1rem;
+.footer-inner{
+    width:min(1400px,95%);
+    margin:auto;
+    padding:1.5rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:1rem;
 }
 
-footer a{
-  color:var(--kf-red);
-  text-decoration:none;
-  margin:0 12px;
+.footer-left{
+    color:var(--muted);
+    font-size:.9rem;
 }
 
-footer a:hover{
-  text-decoration:underline;
+.footer-links{
+    display:flex;
+    gap:1.5rem;
+    flex-wrap:wrap;
 }
 
-/* =========================
+.footer-links a{
+    color:#fff;
+    text-decoration:none;
+}
+
+.footer-links a:hover{
+    color:var(--kf-red);
+}
+
+/* ===========================
    MOBILE
-========================= */
+=========================== */
 
 @media(max-width:768px){
 
-.hero h1{
-  font-size:3rem;
-}
+    .hero{
+        min-height:auto;
+        padding:8rem 0;
+    }
 
-.hero p{
-  font-size:1rem;
-}
+    .footer-inner{
+        flex-direction:column;
+        text-align:center;
+    }
 
-.impact-card{
-  padding:2rem;
-}
+    .impact{
+        padding:2rem;
+    }
 
-.section-title h2{
-  font-size:2.2rem;
-}
-
+    .watermark{
+        font-size:30vw;
+    }
 }
 
 </style>
 </head>
+
 <body>
 
-<!-- FLOATERS -->
+<div class="watermark">
+STORIES
+</div>
 
-<div class="story-float f1">Business Success</div>
-<div class="story-float f2">Social Impact</div>
-<div class="story-float f3">Innovation</div>
-<div class="story-float f4">Leadership</div>
-<div class="story-float f5">Story #2548</div>
-<div class="story-float f6">Entrepreneur</div>
-<div class="story-float f7">Rags To Riches</div>
+<div class="floating">
 
-<!-- HERO -->
+<div class="story">Business Success</div>
+<div class="story">Social Impact</div>
+<div class="story">Innovation</div>
+<div class="story">Leadership</div>
+<div class="story">Entrepreneurship</div>
+<div class="story">Rags To Riches</div>
+<div class="story">Story #5000+</div>
+
+</div>
 
 <section class="hero">
 
-<div class="hero-content">
+<div class="hero-glow"></div>
 
-<div class="badge">
+<div class="container">
+
+<div class="archive-badge">
 KENFOLIOS STORIES • ARCHIVE IN TRANSITION
 </div>
 
-<h1>It Started With A Story</h1>
+<div class="brand">
+KenFolios
+</div>
 
-<p>
+<div class="subbrand">
+Tales Extraordinaire
+</div>
+
+<div class="hero-divider"></div>
+
+<h1>
+It Started With A Story
+</h1>
+
+<div class="hero-copy">
+
 In January 2013, we set out to use the emerging power of social media to tell stories that mattered. What followed was a journey of more than 5,000 stories, over 100 million people reached, and countless moments of recognition—helping many individuals, businesses, and ideas find wider audiences, and in some cases, even overnight fame. Our storytelling journey was eventually paused and later archived following an internal audit. We hope to begin again soon—wiser, stronger, and ready for the next chapter. Until then, all stories remain archived and inaccessible. When we return to publishing, this space will once again become home to both selected stories from our past and the new stories yet to be written.
-</p>
+
+</div>
 
 <div class="status">
 📚 Stories Archive Status • Preparing For The Next Chapter
@@ -392,8 +460,6 @@ In January 2013, we set out to use the emerging power of social media to tell st
 </div>
 
 </section>
-
-<!-- STATS -->
 
 <section class="section">
 
@@ -404,7 +470,7 @@ In January 2013, we set out to use the emerging power of social media to tell st
 <h2>Stories, Impact & Reach</h2>
 </div>
 
-<div class="stats-grid">
+<div class="stats">
 
 <div class="stat">
 <div class="stat-number">5000+</div>
@@ -442,8 +508,6 @@ In January 2013, we set out to use the emerging power of social media to tell st
 
 </section>
 
-<!-- CATEGORIES -->
-
 <section class="section">
 
 <div class="container">
@@ -476,9 +540,11 @@ In January 2013, we set out to use the emerging power of social media to tell st
 <div class="category"><h3>Personal Branding</h3></div>
 <div class="category"><h3>Professional Excellence</h3></div>
 
-<div class="impact-card">
+<div class="impact">
 
-<h2>And Everything That Matters</h2>
+<h2>
+And Everything That Matters
+</h2>
 
 <p>
 Entrepreneurship, social impact, innovation, leadership, education, culture, community building, and much more. The genres above represent only a small part of our storytelling journey.
@@ -498,15 +564,15 @@ Over the years, KenFolios featured people, businesses, organizations, ideas, mov
 
 </section>
 
-<!-- NOTICE -->
-
 <section class="section">
 
 <div class="container">
 
 <div class="notice">
 
-<h2>Archive Notice</h2>
+<h2>
+Archive Notice
+</h2>
 
 <p>
 Following an internal audit in 2021, the KenFolios Stories archive was placed into preservation mode while we reassessed and restructured our storytelling framework. While all stories currently remain archived and inaccessible, we remain optimistic about returning with a stronger foundation and renewed purpose in the future.
@@ -518,18 +584,22 @@ Following an internal audit in 2021, the KenFolios Stories archive was placed in
 
 </section>
 
-<footer>
+<footer class="footer">
 
-<div>
-© 2026 KenFolios Media Private Limited
+<div class="footer-inner">
+
+<div class="footer-left">
+© 2026 KenFolios Media Private Limited. All Rights Reserved.
 </div>
 
-<nav>
+<div class="footer-links">
 <a href="https://kenfolios.com/community/">Community</a>
 <a href="https://kenfolios.com/support/">Support</a>
-<a href="https://kenfolios.com/privacy/">Privacy</a>
-<a href="https://kenfolios.com/terms/">Terms</a>
-</nav>
+<a href="https://kenfolios.com/privacy/">Privacy Policy</a>
+<a href="https://kenfolios.com/terms/">Terms of Use</a>
+</div>
+
+</div>
 
 </footer>
 
