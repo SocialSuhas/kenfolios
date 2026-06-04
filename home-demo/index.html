@@ -1,0 +1,448 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenFolios | Tales Extraordinaire</title>
+
+<style>
+
+:root{
+    --kf-red:#E11D2E;
+    --bg:#0f172a;
+    --card:#111827;
+    --text:#ffffff;
+    --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    overflow-x:hidden;
+}
+
+.watermark{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18vw;
+    font-weight:900;
+    color:rgba(225,29,46,.03);
+    pointer-events:none;
+    z-index:0;
+}
+
+.floating{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:1;
+}
+
+.float{
+    position:absolute;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.05);
+    padding:.8rem 1rem;
+    border-radius:14px;
+    color:rgba(255,255,255,.35);
+    backdrop-filter:blur(10px);
+    animation:float linear infinite;
+}
+
+.float:nth-child(1){left:5%;animation-duration:18s;}
+.float:nth-child(2){left:20%;animation-duration:24s;}
+.float:nth-child(3){left:40%;animation-duration:20s;}
+.float:nth-child(4){left:60%;animation-duration:17s;}
+.float:nth-child(5){left:80%;animation-duration:22s;}
+
+@keyframes float{
+    from{transform:translateY(110vh);}
+    to{transform:translateY(-150px);}
+}
+
+.container{
+    width:min(1200px,92%);
+    margin:auto;
+    position:relative;
+    z-index:5;
+}
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+}
+
+.brand{
+    font-size:clamp(4rem,10vw,8rem);
+    font-weight:900;
+    letter-spacing:-3px;
+    line-height:.9;
+}
+
+.subbrand{
+    color:var(--muted);
+    margin-top:.5rem;
+    font-size:1.2rem;
+}
+
+.divider{
+    width:140px;
+    height:3px;
+    background:var(--kf-red);
+    margin:2rem auto;
+}
+
+.hero h1{
+    font-size:clamp(2rem,5vw,4rem);
+    margin-bottom:2rem;
+}
+
+.hero p{
+    max-width:850px;
+    margin:auto;
+    color:var(--muted);
+    line-height:2;
+    font-size:1.05rem;
+}
+
+.section{
+    padding:8rem 0;
+}
+
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:4rem;
+    text-align:center;
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-8px);
+    border-color:rgba(225,29,46,.4);
+}
+
+.card-logo{
+    font-size:clamp(2rem,5vw,4rem);
+    font-weight:900;
+    margin-bottom:1.5rem;
+}
+
+.card p{
+    max-width:850px;
+    margin:auto;
+    color:var(--muted);
+    line-height:2;
+}
+
+.btn{
+    display:inline-block;
+    margin-top:2rem;
+    background:var(--kf-red);
+    color:#fff;
+    text-decoration:none;
+    padding:1rem 1.6rem;
+    border-radius:999px;
+    font-weight:700;
+}
+
+.btn:hover{
+    opacity:.9;
+}
+
+.spacer{
+    height:3rem;
+}
+
+.journey{
+    text-align:center;
+}
+
+.journey-number{
+    font-size:clamp(6rem,14vw,10rem);
+    color:var(--kf-red);
+    font-weight:900;
+    line-height:1;
+}
+
+.bar-wrap{
+    max-width:900px;
+    margin:2rem auto;
+}
+
+.bar{
+    height:14px;
+    background:rgba(255,255,255,.08);
+    border-radius:999px;
+    overflow:hidden;
+    position:relative;
+}
+
+.bar-fill{
+    width:99%;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#E11D2E,#ff5f6d);
+    position:relative;
+}
+
+.bar-fill:after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100px;
+    width:100px;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.9),
+        transparent
+    );
+    animation:pulse 2.5s linear infinite;
+}
+
+@keyframes pulse{
+    from{
+        left:-100px;
+    }
+    to{
+        left:100%;
+    }
+}
+
+.journey p{
+    max-width:850px;
+    margin:1rem auto;
+    color:var(--muted);
+    line-height:2;
+}
+
+.footer{
+    border-top:1px solid var(--border);
+    margin-top:6rem;
+}
+
+.footer-inner{
+    width:min(1200px,92%);
+    margin:auto;
+    padding:2rem 0;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:1rem;
+}
+
+.footer a{
+    color:#fff;
+    text-decoration:none;
+    margin-left:1rem;
+}
+
+.footer a:hover{
+    color:var(--kf-red);
+}
+
+@media(max-width:768px){
+
+.card{
+    padding:2rem;
+}
+
+.footer-inner{
+    flex-direction:column;
+    text-align:center;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="watermark">KENFOLIOS</div>
+
+<div class="floating">
+<div class="float">Stories</div>
+<div class="float">Community</div>
+<div class="float">VStreet</div>
+<div class="float">Influence</div>
+<div class="float">Reputation</div>
+</div>
+
+<section class="hero">
+
+<div class="container">
+
+<div class="brand">KenFolios</div>
+<div class="subbrand">Tales Extraordinaire</div>
+
+<div class="divider"></div>
+
+<h1>Three Chapters. One Journey.</h1>
+
+<p>
+In January 2013, we started telling impactful stories and continued until we created more than 5,000 stories, built a community of nearly one million followers, and reached an audience exceeding 100 million people.
+</p>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<div class="container">
+
+<div class="card">
+
+<div class="card-logo">
+KENFOLIOS STORIES
+</div>
+
+<p>
+What started as a storytelling initiative evolved into one of India's most impactful digital storytelling journeys. Over the years, KenFolios published more than 5,000 stories across business, entrepreneurship, social impact, leadership, innovation, and countless other fields.
+</p>
+
+<a href="https://kenfolios.com/stories/" class="btn">
+Explore Stories
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<div class="container">
+
+<div class="card">
+
+<div class="card-logo">
+KENFOLIOS BUSINESS COMMUNITY
+</div>
+
+<p>
+In 2021, we started building a business community to leverage the knowledge, relationships, and insights accumulated through years of storytelling. As of May 2026, the ecosystem is more than 40,000 members strong.
+</p>
+
+<a href="https://kenfolios.com/community/" class="btn">
+Visit Community
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<div class="container">
+
+<div class="card">
+
+<div class="card-logo">
+VSTREET
+</div>
+
+<p>
+In 2025, we started building VStreet — India's own influence ecosystem. Inspired by decades of observations around reputation, visibility, influence, trust, and credibility, it represents the next chapter of the journey.
+</p>
+
+<a href="https://vstreet.in/" class="btn">
+Explore VStreet
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section journey">
+
+<div class="container">
+
+<div class="journey-number">
+99
+</div>
+
+<div class="bar-wrap">
+
+<div class="bar">
+<div class="bar-fill"></div>
+</div>
+
+</div>
+
+<p>
+We will always strive for 100.
+</p>
+
+<p>
+But perhaps the most meaningful journeys are never truly complete. Every story reveals another story. Every achievement creates a new challenge. Every destination becomes the beginning of another chapter.
+</p>
+
+<p>
+That is why we choose to remain at 99 — always learning, always building, always evolving.
+</p>
+
+<p>
+We still have much more to tell you.
+</p>
+
+<p style="color:#fff;font-weight:700;letter-spacing:.15em;text-transform:uppercase;">
+Keep Revisiting.
+</p>
+
+</div>
+
+</section>
+
+<footer class="footer">
+
+<div class="footer-inner">
+
+<div>
+© 2026 KenFolios Media Private Limited
+</div>
+
+<div>
+<a href="https://kenfolios.com/stories/">Stories</a>
+<a href="https://kenfolios.com/community/">Community</a>
+<a href="https://vstreet.in/">VStreet</a>
+<a href="https://kenfolios.com/privacy/">Privacy</a>
+<a href="https://kenfolios.com/terms/">Terms</a>
+<a href="https://kenfolios.com/support/">Support</a>
+</div>
+
+</div>
+
+</footer>
+
+</body>
+</html>
+```
