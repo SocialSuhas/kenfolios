@@ -1382,8 +1382,98 @@
   </style>
 </head>
 <body>
+<!-- KenFolios Activation Notice Lightbox -->
+<div
+  id="telegramNoticeModal"
+  aria-hidden="true"
+>
+  <div
+    class="modal-content"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="telegramNoticeTitle"
+  >
+    <button
+      type="button"
+      class="modal-close"
+      aria-label="Close notice"
+    >
+      &times;
+    </button>
 
-  <div id="shell" class="shell">
+    <h2 id="telegramNoticeTitle">Important Update</h2>
+
+    <p>
+      KenFolios Business Community was originally launched on WhatsApp. To
+      support our growing member base and enable automation features, our
+      flagship networking groups were migrated to Telegram on 4 December 2025.
+    </p>
+
+    <p>
+      As per publicly available reports, Telegram services are currently
+      subject to temporary restrictions in India until 22 June 2026.
+    </p>
+
+    <p>
+      As a result, community activation links are temporarily unavailable and
+      may not function during this period.
+    </p>
+
+    <p>
+      Please note that this situation is beyond our control. Once access is
+      restored, your activation link is expected to work seamlessly without any
+      additional action from your side.
+    </p>
+
+    <p>
+      We are closely monitoring the situation and will keep members informed.
+    </p>
+
+    <p><strong>— Team KenFolios</strong></p>
+
+    <button type="button" class="modal-button">
+      I Understand
+    </button>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const activationCode = urlParams.get("activation");
+
+    if (!activationCode) return;
+
+    const modal = document.getElementById("telegramNoticeModal");
+    const closeButton = modal.querySelector(".modal-close");
+    const actionButton = modal.querySelector(".modal-button");
+
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+
+    function closeModal() {
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    closeButton.addEventListener("click", closeModal);
+    actionButton.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+  });
+</script>
+<!-- KenFolios Activation Notice Lightbox -->
+ <div id="shell" class="shell">
     <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
     <!-- Left -->
@@ -4740,95 +4830,6 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
  
 
 </script>
-<!-- KenFolios Activation Notice Lightbox -->
-<div
-  id="telegramNoticeModal"
-  aria-hidden="true"
->
-  <div
-    class="modal-content"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="telegramNoticeTitle"
-  >
-    <button
-      type="button"
-      class="modal-close"
-      aria-label="Close notice"
-    >
-      &times;
-    </button>
 
-    <h2 id="telegramNoticeTitle">Important Update</h2>
-
-    <p>
-      KenFolios Business Community was originally launched on WhatsApp. To
-      support our growing member base and enable automation features, our
-      flagship networking groups were migrated to Telegram on 4 December 2025.
-    </p>
-
-    <p>
-      As per publicly available reports, Telegram services are currently
-      subject to temporary restrictions in India until 22 June 2026.
-    </p>
-
-    <p>
-      As a result, community activation links are temporarily unavailable and
-      may not function during this period.
-    </p>
-
-    <p>
-      Please note that this situation is beyond our control. Once access is
-      restored, your activation link is expected to work seamlessly without any
-      additional action from your side.
-    </p>
-
-    <p>
-      We are closely monitoring the situation and will keep members informed.
-    </p>
-
-    <p><strong>— Team KenFolios</strong></p>
-
-    <button type="button" class="modal-button">
-      I Understand
-    </button>
-  </div>
-</div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const activationCode = urlParams.get("activation");
-
-    if (!activationCode) return;
-
-    const modal = document.getElementById("telegramNoticeModal");
-    const closeButton = modal.querySelector(".modal-close");
-    const actionButton = modal.querySelector(".modal-button");
-
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-
-    function closeModal() {
-      modal.classList.remove("active");
-      document.body.style.overflow = "";
-    }
-
-    closeButton.addEventListener("click", closeModal);
-    actionButton.addEventListener("click", closeModal);
-
-    modal.addEventListener("click", function (event) {
-      if (event.target === modal) {
-        closeModal();
-      }
-    });
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") {
-        closeModal();
-      }
-    });
-  });
-</script>
 </body>
 </html>
