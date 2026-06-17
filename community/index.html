@@ -3304,27 +3304,47 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   if (window.__KF_JOINFORM_V6_3) return;
   window.__KF_JOINFORM_V6_3 = true;
 
- /* -------- Auto-redirect activation URL → Telegram bot -------- */
- (function kfActivationAutoRedirect(){
-  try {
-    var url = new URL(window.location.href);
-    var token = url.searchParams.get('activation');
+/* ------------------------------------------------------------------
+   TEMPORARILY DISABLED: Telegram activation auto-redirect
 
-    if (!token) return; // not an activation URL → do nothing
+   Reason:
+   Telegram services are temporarily restricted in India until
+   22 June 2026, based on publicly available reports.
 
-    token = token.trim();
-    if (!token) return;
+   During this period, activation links should display the
+   Telegram notice lightbox instead of redirecting users to
+   @kfactivationbot.
 
-    // Build Telegram deep link: @kfactivationbot
-    var telegramUrl = 'https://t.me/kfactivationbot?start=' + encodeURIComponent(token);
+   To restore normal functionality after the restriction ends,
+   remove the leading // characters from the code below.
 
-    // Use replace() so the activation URL isn't left in browser history
-    window.location.replace(telegramUrl);
-  } catch (e) {
-    console.error('KF activation auto-redirect error:', e);
-  }
- })();
+   Original functionality:
+   https://kenfolios.com/community?activation=<token>
+   → https://t.me/kfactivationbot?start=<token>
+------------------------------------------------------------------- */
 
+// (function kfActivationAutoRedirect(){
+//   try {
+//     var url = new URL(window.location.href);
+//     var token = url.searchParams.get('activation');
+
+//     if (!token) return; // Not an activation URL
+
+//     token = token.trim();
+//     if (!token) return;
+
+//     // Build Telegram deep link: @kfactivationbot
+//     var telegramUrl = 'https://t.me/kfactivationbot?start=' +
+//       encodeURIComponent(token);
+
+//     // Use replace() so the activation URL isn't left in browser history
+//     window.location.replace(telegramUrl);
+
+//   } catch (e) {
+//     console.error('KF activation auto-redirect error:', e);
+//   }
+// })();
+ 
   /* ------------------ CSS Injection (responsive classes) ------------------ */
   (function injectKFStyles(){
     const css = `
