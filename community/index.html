@@ -1279,200 +1279,12 @@
   }
 }
 
-/* ==========================================================
-   KENFOLIOS ACTIVATION NOTICE LIGHTBOX
-   ========================================================== */
 
-/* Full-screen overlay */
-#telegramNoticeModal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-}
-
-/* Show modal */
-#telegramNoticeModal.active {
-  display: flex;
-}
-
-/* Modal container */
-#telegramNoticeModal .modal-content {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  max-height: 85vh;
-  overflow-y: auto;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-sizing: border-box;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-}
-
-/* Modal heading */
-#telegramNoticeModal h2 {
-  margin: 0 0 16px;
-  font-size: 1.5rem;
-  line-height: 1.3;
-  color: #111827;
-}
-
-/* Modal body text */
-#telegramNoticeModal p {
-  margin: 0 0 14px;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #4b5563;
-}
-
-/* Close button (X) */
-#telegramNoticeModal .modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  border: 0;
-  background: transparent;
-  font-size: 1.8rem;
-  line-height: 1;
-  color: #6b7280;
-  cursor: pointer;
-}
-
-/* Primary action button */
-#telegramNoticeModal .modal-button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 14px 20px;
-  border: 0;
-  border-radius: 10px;
-  background: #e11d2e;
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* Hover state */
-#telegramNoticeModal .modal-button:hover {
-  opacity: 0.95;
-}
-
-/* Mobile adjustments */
-@media (max-width: 480px) {
-  #telegramNoticeModal .modal-content {
-    padding: 20px;
-    border-radius: 14px;
-  }
-
-  #telegramNoticeModal h2 {
-    font-size: 1.25rem;
-  }
-
-  #telegramNoticeModal p {
-    font-size: 0.9rem;
-  }
-}
 
   </style>
 </head>
 <body>
-<!-- KenFolios Activation Notice Lightbox -->
-<div
-  id="telegramNoticeModal"
-  aria-hidden="true"
->
-  <div
-    class="modal-content"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="telegramNoticeTitle"
-  >
-    <button
-      type="button"
-      class="modal-close"
-      aria-label="Close notice"
-    >
-      &times;
-    </button>
 
-    <h2 id="telegramNoticeTitle">Important Update</h2>
-
-    <p>
-      KenFolios Business Community was originally launched on WhatsApp. To
-      support our growing member base and enable automation features, our
-      flagship networking groups were migrated to Telegram on 4 December 2025.
-    </p>
-
-    <p>
-      As per publicly available reports, Telegram services are currently
-      subject to temporary restrictions in India until 22 June 2026.
-    </p>
-
-    <p>
-      As a result, community activation links are temporarily unavailable and
-      may not function during this period.
-    </p>
-
-    <p>
-      Please note that this situation is beyond our control. Once access is
-      restored, your activation link is expected to work seamlessly without any
-      additional action from your side.
-    </p>
-
-    <p>
-      We are closely monitoring the situation and will keep members informed.
-    </p>
-
-    <p><strong>— Team KenFolios</strong></p>
-
-    <button type="button" class="modal-button">
-      I Understand
-    </button>
-  </div>
-</div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const activationCode = urlParams.get("activation");
-
-    if (!activationCode) return;
-
-    const modal = document.getElementById("telegramNoticeModal");
-    const closeButton = modal.querySelector(".modal-close");
-    const actionButton = modal.querySelector(".modal-button");
-
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-
-    function closeModal() {
-      modal.classList.remove("active");
-      document.body.style.overflow = "";
-    }
-
-    closeButton.addEventListener("click", closeModal);
-    actionButton.addEventListener("click", closeModal);
-
-    modal.addEventListener("click", function (event) {
-      if (event.target === modal) {
-        closeModal();
-      }
-    });
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") {
-        closeModal();
-      }
-    });
-  });
-</script>
-<!-- KenFolios Activation Notice Lightbox -->
  <div id="shell" class="shell">
     <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
@@ -3305,45 +3117,43 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   window.__KF_JOINFORM_V6_3 = true;
 
 /* ------------------------------------------------------------------
-   TEMPORARILY DISABLED: Telegram activation auto-redirect
+   KenFolios Activation Auto-Redirect
 
-   Reason:
-   Telegram services are temporarily restricted in India until
-   22 June 2026, based on publicly available reports.
+   Purpose:
+   When a member opens an activation URL containing the
+   `activation` parameter, automatically redirect them to
+   the KenFolios Telegram activation bot.
 
-   During this period, activation links should display the
-   Telegram notice lightbox instead of redirecting users to
-   @kfactivationbot.
-
-   To restore normal functionality after the restriction ends,
-   remove the leading // characters from the code below.
-
-   Original functionality:
+   Example:
    https://kenfolios.com/community?activation=<token>
    → https://t.me/kfactivationbot?start=<token>
+
+   To temporarily disable this functionality, comment out
+   the entire function below.
 ------------------------------------------------------------------- */
 
-// (function kfActivationAutoRedirect(){
-//   try {
-//     var url = new URL(window.location.href);
-//     var token = url.searchParams.get('activation');
+(function kfActivationAutoRedirect() {
+  try {
+    const url = new URL(window.location.href);
+    let token = url.searchParams.get('activation');
 
-//     if (!token) return; // Not an activation URL
+    if (!token) return; // Not an activation URL
 
-//     token = token.trim();
-//     if (!token) return;
+    token = token.trim();
+    if (!token) return;
 
-//     // Build Telegram deep link: @kfactivationbot
-//     var telegramUrl = 'https://t.me/kfactivationbot?start=' +
-//       encodeURIComponent(token);
+    // Build Telegram deep link
+    const telegramUrl =
+      'https://t.me/kfactivationbot?start=' +
+      encodeURIComponent(token);
 
-//     // Use replace() so the activation URL isn't left in browser history
-//     window.location.replace(telegramUrl);
+    // Redirect without leaving the activation URL in history
+    window.location.replace(telegramUrl);
 
-//   } catch (e) {
-//     console.error('KF activation auto-redirect error:', e);
-//   }
-// })();
+  } catch (e) {
+    console.error('KF activation auto-redirect error:', e);
+  }
+})();
  
   /* ------------------ CSS Injection (responsive classes) ------------------ */
   (function injectKFStyles(){
