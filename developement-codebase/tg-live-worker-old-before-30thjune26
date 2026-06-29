@@ -1,0 +1,255 @@
+/**
+ * LIVE INTERACTION CONTROL WORKER
+ *
+ * GROUP RULE:
+ * User MUST be a member of TELEGRAM_ANNOUNCEMENT_CHAT_ID
+ * to be allowed in TELEGRAM_LIVE_CHAT_ID
+ *
+ * WINDOW:
+ * OPEN  : 5:00 PM IST
+ * CLOSE : 7:00 PM IST
+ */
+
+const LIVE_JOIN_LINK = "https://t.me/+WVY6y9gGEZhlYjhl";
+
+/* -------------------- REMINDER TEMPLATES -------------------- */
+
+const REMINDER_TEMPLATES = [
+`🟡 Live Session Reminder
+
+This live interaction window is open for organic, business-focused conversations.
+You may discuss your business, professional work, ideas, challenges, or opportunities.
+The intent is meaningful exchange, not noise.`,
+
+`🟡 Live Session Reminder
+
+If you haven’t already, feel free to briefly introduce your business or professional work.
+What do you do?
+Who do you work with?
+What problem do you solve?
+Short, clear introductions help others engage better.`,
+
+`🟡 Live Session Reminder
+
+This is a good time to ask for practical input or perspectives from fellow members.
+You may share a real business situation, decision point, or challenge and invite thoughtful responses.
+Specific questions usually lead to better discussions.`,
+
+`🟡 Live Session Reminder
+
+Members are welcome to share real experiences or learnings from their business journey.
+Honest insights — including what didn’t work — often add the most value to discussions.`,
+
+`🟡 Live Session Reminder
+
+Please keep conversations strictly business-related.
+Topics unrelated to business, including community operations, services, or support queries, should be ignored so this session remains valuable.`,
+
+`🟡 Live Session Reminder
+
+Occasionally, irrelevant or distracting posts may appear as part of a personal or external agenda.
+The best response is to not engage and continue with meaningful business discussions.`,
+
+`🟡 Live Session Reminder
+
+Engaging with irrelevant or disruptive messages often amplifies them.
+Ignoring such posts helps keep the session focused and prevents unnecessary distraction.`,
+
+`🟡 Live Session Reminder
+
+If you notice inappropriate, repetitive, or agenda-driven messages, members may consider using Telegram’s built-in reporting tools (where available).
+Quiet moderation helps conversations continue smoothly.`,
+
+`🟡 Live Session Reminder
+
+When responding to others, try to add value through experience, clarity, or perspective.
+Thoughtful replies create stronger conversations than quick reactions.`,
+
+`🟡 Live Session Reminder
+
+This live window is intentionally kept open without rigid automated controls to support real, human conversations.
+That freedom works best when members act responsibly and stay aligned with purpose.`,
+
+`🟡 Live Session Reminder
+
+As the session approaches its close, please keep discussions focused and respectful.
+Thank you for contributing to a meaningful, business-driven conversation space.`
+];
+
+/* -------------------- FETCH / WEBHOOK -------------------- */
+
+export default {
+  async fetch(request, env) {
+    if (request.method !== "POST") return new Response("OK");
+    const update = await request.json().catch(() => null);
+    if (!update) return new Response("OK");
+
+    if (update.chat_join_request) {
+      await handleJoinRequest(update.chat_join_request, env);
+    }
+
+    if (update.chat_member) {
+      await handleChatMember(update.chat_member, env);
+    }
+
+    return new Response("OK");
+  },
+
+  async scheduled(event, env, ctx) {
+    const d = new Date(event.scheduledTime);
+    const h = d.getUTCHours();
+    const m = d.getUTCMinutes();
+
+    // 🟢 OPEN — 5:00 PM IST (11:30 UTC)
+    if (h === 11 && m === 30) {
+      ctx.waitUntil(openLiveWindow(env));
+      return;
+    }
+
+    // 🔴 CLOSE — 7:00 PM IST (13:30 UTC)
+    if (h === 13 && m === 30) {
+      ctx.waitUntil(closeLiveWindow(env));
+      return;
+    }
+
+    // 🟡 REMINDERS — 5:10 PM to 6:50 PM IST (11:40–13:20 UTC)
+    if (
+      (h === 11 && m >= 40) ||
+      (h === 12) ||
+      (h === 13 && m <= 20)
+    ) {
+      ctx.waitUntil(postReminder(env, h, m));
+    }
+  }
+};
+
+/* -------------------- OPEN / CLOSE -------------------- */
+
+async function openLiveWindow(env) {
+  await postAnnouncement(env);
+  await setLivePermissions(env, true);
+  await postLiveOpen(env);
+}
+
+async function closeLiveWindow(env) {
+  await postLiveClose(env);
+  await setLivePermissions(env, false);
+}
+
+/* -------------------- ANNOUNCEMENT GROUP -------------------- */
+
+async function postAnnouncement(env) {
+  await sendMessage(env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
+`Dear Members,
+
+We are running a live business discussion session in the Live Interaction Group from 5 PM to 7 PM.
+
+Join here:
+${LIVE_JOIN_LINK}
+
+This space is intentionally kept open without automated posting restrictions to support natural, human conversations.
+The sole purpose is meaningful business discussion.
+
+Please ignore and do not engage with irrelevant or agenda-driven posts.
+Let’s keep the conversations real, focused, and valuable.`,
+env);
+}
+
+/* -------------------- LIVE GROUP -------------------- */
+
+async function postLiveOpen(env) {
+  await sendMessage(env.TELEGRAM_LIVE_CHAT_ID,
+`🟢 Live Interaction Window Open
+
+The group is now open for business discussions.
+Please keep conversations professional, relevant, and respectful.`,
+env);
+}
+
+async function postLiveClose(env) {
+  await sendMessage(env.TELEGRAM_LIVE_CHAT_ID,
+`🔴 Live Interaction Window Closed
+
+Posting is now disabled.
+Thank you for participating and keeping the discussions meaningful.
+The group will reopen during the next scheduled session.`,
+env);
+}
+
+/* -------------------- REMINDERS -------------------- */
+
+async function postReminder(env, h, m) {
+  const index = Math.floor(((h * 60 + m) - (11 * 60 + 40)) / 10);
+  const text = REMINDER_TEMPLATES[index] || null;
+  if (!text) return;
+
+  await sendMessage(env.TELEGRAM_LIVE_CHAT_ID, text, env);
+}
+
+/* -------------------- PERMISSIONS -------------------- */
+
+async function setLivePermissions(env, allow) {
+  await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setChatPermissions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: env.TELEGRAM_LIVE_CHAT_ID,
+      permissions: {
+        can_send_messages: allow,
+        can_send_media_messages: allow,
+        can_send_polls: allow,
+        can_send_other_messages: allow,
+        can_add_web_page_previews: allow
+      }
+    })
+  });
+}
+
+/* -------------------- JOIN ENFORCEMENT -------------------- */
+
+async function handleJoinRequest(jr, env) {
+  if (jr.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) return;
+  if (await isUserInAnnouncement(jr.from.id, env)) {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/approveChatJoinRequest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: jr.chat.id, user_id: jr.from.id })
+    });
+  }
+}
+
+async function handleChatMember(cm, env) {
+  if (cm.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) return;
+  if (cm.new_chat_member.status !== "member") return;
+  if (!(await isUserInAnnouncement(cm.new_chat_member.user.id, env))) {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/banChatMember`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: cm.chat.id,
+        user_id: cm.new_chat_member.user.id,
+        until_date: Math.floor(Date.now() / 1000) + 60
+      })
+    });
+  }
+}
+
+async function isUserInAnnouncement(uid, env) {
+  const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: env.TELEGRAM_ANNOUNCEMENT_CHAT_ID, user_id: uid })
+  });
+  const d = await r.json().catch(() => null);
+  return d?.result?.status === "member";
+}
+
+/* -------------------- UTILITY -------------------- */
+
+async function sendMessage(chatId, text, env) {
+  await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true })
+  });
+}
