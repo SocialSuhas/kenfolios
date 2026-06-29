@@ -1,35 +1,35 @@
 /**
  * ============================================================
- * KENFOLIOS LIVE INTERACTION GROUP WORKER
+ * KENFOLIOS 24×7 LIVE INTERACTION GROUP WORKER
  * ============================================================
  *
- * This Cloudflare Worker manages the KenFolios Live
- * Interaction Group on Telegram.
+ * This Cloudflare Worker manages the KenFolios
+ * 24×7 Live Interaction Group on Telegram.
  *
  * Features
  * --------
+ *
  * • Approves join requests only for members of the
  *   Announcement Group.
  *
- * • Removes members who are no longer part of the
- *   Announcement Group.
- *
- * • Opens the Live Interaction Group every day at
- *   9:00 AM IST.
- *
- * • Closes the Live Interaction Group every day at
- *   9:00 PM IST.
+ * • Automatically removes members who are no longer
+ *   part of the Announcement Group.
  *
  * • Posts one randomly selected community reminder
- *   every 15 minutes while the group is open.
+ *   every 15 minutes.
+ *
+ * • Uses a growing reminder library
+ *   (96 templates initially).
  *
  * Cloudflare Cron
  * ---------------
- * Configure ONE Cron Trigger to execute every
- * 15 minutes.
+ *
+ * Configure ONE Cron Trigger in Cloudflare
+ * to run every 15 minutes.
  *
  * Environment Variables
  * ---------------------
+ *
  * TELEGRAM_BOT_TOKEN
  * TELEGRAM_LIVE_CHAT_ID
  * TELEGRAM_ANNOUNCEMENT_CHAT_ID
@@ -52,33 +52,12 @@ const LIVE_JOIN_LINK =
 
 
 /* ------------------------------------------------------------
-   Live Interaction Window (IST)
------------------------------------------------------------- */
-
-const LIVE_OPEN_HOUR = 9;
-const LIVE_OPEN_MINUTE = 0;
-
-const LIVE_CLOSE_HOUR = 21;
-const LIVE_CLOSE_MINUTE = 0;
-
-
-/* ------------------------------------------------------------
    Reminder Schedule
 ------------------------------------------------------------ */
 
 const REMINDER_INTERVAL_MINUTES = 15;
 
 
-/* ------------------------------------------------------------
-   Time Zone
------------------------------------------------------------- */
-
-const IST_OFFSET_MINUTES = 330;
-
-
-/* ============================================================
-   END OF PART 1
-============================================================ */
 /* ============================================================
    WORKER ENTRY POINT
 ============================================================ */
@@ -103,25 +82,34 @@ export default {
     }
 
     /* ------------------------------------------------------
-       Join Request
+       Join Requests
     ------------------------------------------------------ */
 
     if (update.chat_join_request) {
+
       await handleJoinRequest(
+
         update.chat_join_request,
         env
+
       );
+
     }
+
 
     /* ------------------------------------------------------
        Member Updates
     ------------------------------------------------------ */
 
     if (update.chat_member) {
+
       await handleChatMember(
+
         update.chat_member,
         env
+
       );
+
     }
 
     return new Response("OK");
@@ -130,67 +118,24 @@ export default {
 
 
   /* ----------------------------------------------------------
-     Cloudflare Cron Trigger
+     Cloudflare Scheduled Event
   ---------------------------------------------------------- */
 
   async scheduled(event, env, ctx) {
 
-    // Convert UTC to IST.
-    const utcNow = new Date(event.scheduledTime);
+    /*
+     * This worker is scheduled to run
+     * every 15 minutes.
+     *
+     * Each execution posts one randomly
+     * selected community reminder.
+     */
 
-    const istNow = new Date(
-      utcNow.getTime() + (IST_OFFSET_MINUTES * 60 * 1000)
+    ctx.waitUntil(
+
+      postReminder(env)
+
     );
-
-    const hour = istNow.getHours();
-    const minute = istNow.getMinutes();
-
-
-    /* ------------------------------------------------------
-       Open Live Interaction Group
-       9:00 AM IST
-    ------------------------------------------------------ */
-
-    if (
-      hour === LIVE_OPEN_HOUR &&
-      minute === LIVE_OPEN_MINUTE
-    ) {
-      ctx.waitUntil(openLiveWindow(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       Close Live Interaction Group
-       9:00 PM IST
-    ------------------------------------------------------ */
-
-    if (
-      hour === LIVE_CLOSE_HOUR &&
-      minute === LIVE_CLOSE_MINUTE
-    ) {
-      ctx.waitUntil(closeLiveWindow(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       Community Reminder
-       Every 15 minutes between
-       9:15 AM and 8:45 PM IST
-    ------------------------------------------------------ */
-
-    if (isReminderTime(hour, minute)) {
-      ctx.waitUntil(postReminder(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       Outside Live Interaction Window
-    ------------------------------------------------------ */
-
-    return;
 
   }
 
@@ -198,7 +143,7 @@ export default {
 
 
 /* ============================================================
-   END OF PART 2
+   END OF PART 1
 ============================================================ */
 /* ============================================================
    TELEGRAM MEMBERSHIP MANAGEMENT
@@ -212,20 +157,26 @@ export default {
 async function handleJoinRequest(joinRequest, env) {
 
   // Ignore requests for other groups.
-  if (joinRequest.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) {
+  if (
+    joinRequest.chat.id !==
+    Number(env.TELEGRAM_LIVE_CHAT_ID)
+  ) {
     return;
   }
 
-  // Only Announcement Group members are allowed.
+  // Only Announcement Group members are eligible.
   const isEligible = await isUserInAnnouncement(
+
     joinRequest.from.id,
     env
+
   );
 
   if (!isEligible) {
     return;
   }
 
+  // Approve the join request.
   await telegramApi(
 
     "approveChatJoinRequest",
@@ -249,35 +200,55 @@ async function handleJoinRequest(joinRequest, env) {
 async function handleChatMember(chatMember, env) {
 
   // Ignore updates from other groups.
-  if (chatMember.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) {
+  if (
+    chatMember.chat.id !==
+    Number(env.TELEGRAM_LIVE_CHAT_ID)
+  ) {
     return;
   }
 
-  // Only check members who have joined.
-  if (chatMember.new_chat_member.status !== "member") {
+  /*
+   * Only evaluate members who are currently
+   * part of the Live Interaction Group.
+   */
+
+  if (
+    chatMember.new_chat_member.status !== "member"
+  ) {
     return;
   }
 
   const isEligible = await isUserInAnnouncement(
+
     chatMember.new_chat_member.user.id,
     env
+
   );
 
   if (isEligible) {
     return;
   }
 
-  // Remove members who are not in the Announcement Group.
+  /*
+   * Member is no longer in the
+   * Announcement Group.
+   *
+   * Remove them from the Live Group.
+   */
+
   await telegramApi(
 
     "banChatMember",
 
     {
       chat_id: chatMember.chat.id,
-      user_id: chatMember.new_chat_member.user.id,
+
+      user_id:
+        chatMember.new_chat_member.user.id,
 
       // Temporary ban (60 seconds).
-      until_date: Math.floor(Date.now() / 1000) + 60
+      until_date:
+        Math.floor(Date.now() / 1000) + 60
 
     },
 
@@ -289,7 +260,7 @@ async function handleChatMember(chatMember, env) {
 
 
 /* ------------------------------------------------------------
-   Check Announcement Group Membership
+   Verify Announcement Group Membership
 ------------------------------------------------------------ */
 
 async function isUserInAnnouncement(userId, env) {
@@ -299,7 +270,9 @@ async function isUserInAnnouncement(userId, env) {
     "getChatMember",
 
     {
-      chat_id: env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
+      chat_id:
+        env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
+
       user_id: userId
     },
 
@@ -314,202 +287,12 @@ async function isUserInAnnouncement(userId, env) {
   const status = response.result?.status;
 
   return (
+
     status === "creator" ||
+
     status === "administrator" ||
+
     status === "member"
-  );
-
-}
-
-
-/* ============================================================
-   END OF PART 3
-============================================================ */
-/* ============================================================
-   LIVE INTERACTION OPERATIONS
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Open Live Interaction Window
------------------------------------------------------------- */
-
-async function openLiveWindow(env) {
-
-  // Notify Announcement Group.
-  await postAnnouncement(env);
-
-  // Allow members to post.
-  await setLivePermissions(env, true);
-
-  // Notify Live Group.
-  await postLiveOpen(env);
-
-}
-
-
-/* ------------------------------------------------------------
-   Close Live Interaction Window
------------------------------------------------------------- */
-
-async function closeLiveWindow(env) {
-
-  // Notify Live Group.
-  await postLiveClose(env);
-
-  // Disable posting.
-  await setLivePermissions(env, false);
-
-}
-
-
-/* ------------------------------------------------------------
-   Post Community Reminder
------------------------------------------------------------- */
-
-async function postReminder(env) {
-
-  const message = getRandomTemplate();
-
-  if (!message) {
-    return;
-  }
-
-  await sendMessage(
-    env.TELEGRAM_LIVE_CHAT_ID,
-    message,
-    env
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   Reminder Schedule
------------------------------------------------------------- */
-
-function isReminderTime(hour, minute) {
-
-  // Only every 15 minutes.
-  if (minute % REMINDER_INTERVAL_MINUTES !== 0) {
-    return false;
-  }
-
-  // Skip opening time.
-  if (
-    hour === LIVE_OPEN_HOUR &&
-    minute === LIVE_OPEN_MINUTE
-  ) {
-    return false;
-  }
-
-  // Skip closing time.
-  if (
-    hour === LIVE_CLOSE_HOUR &&
-    minute === LIVE_CLOSE_MINUTE
-  ) {
-    return false;
-  }
-
-  // Before opening.
-  if (hour < LIVE_OPEN_HOUR) {
-    return false;
-  }
-
-  // After closing.
-  if (hour >= LIVE_CLOSE_HOUR) {
-    return false;
-  }
-
-  return true;
-
-}
-
-
-/* ============================================================
-   LIVE GROUP MESSAGES
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Announcement Group Message
------------------------------------------------------------- */
-
-async function postAnnouncement(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-The Live Interaction Group is now open.
-
-🕘 Open Daily
-9:00 AM – 9:00 PM
-
-Join here:
-${LIVE_JOIN_LINK}
-
-This group is dedicated to meaningful business and professional conversations.
-
-If you're already a member, simply open the Live Interaction Group and join the discussion.
-
-Please help maintain a positive and productive environment by focusing on business-related conversations.`,
-
-    env
-
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   Live Group Opening Message
------------------------------------------------------------- */
-
-async function postLiveOpen(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_LIVE_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-Good morning!
-
-The group is now open for today's business and professional discussions.
-
-Introduce yourself, build new connections, ask questions, share opportunities, and help fellow members grow through meaningful conversations.
-
-Have a productive day!`,
-
-    env
-
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   Live Group Closing Message
------------------------------------------------------------- */
-
-async function postLiveClose(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_LIVE_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-The Live Interaction Group is now closed for today.
-
-Posting has been disabled and will automatically resume tomorrow at 9:00 AM IST.
-
-Thank you for contributing to a professional, respectful, and valuable community.`,
-
-    env
 
   );
 
@@ -517,43 +300,11 @@ Thank you for contributing to a professional, respectful, and valuable community
 
 
 /* ============================================================
-   END OF PART 4
+   END OF PART 2
 ============================================================ */
 /* ============================================================
    TELEGRAM UTILITIES
 ============================================================ */
-
-
-/* ------------------------------------------------------------
-   Set Live Group Permissions
------------------------------------------------------------- */
-
-async function setLivePermissions(env, allow) {
-
-  await telegramApi(
-
-    "setChatPermissions",
-
-    {
-      chat_id: env.TELEGRAM_LIVE_CHAT_ID,
-
-      permissions: {
-
-        can_send_messages: allow,
-        can_send_media_messages: allow,
-        can_send_polls: allow,
-        can_send_other_messages: allow,
-        can_add_web_page_previews: allow
-
-      }
-
-    },
-
-    env
-
-  );
-
-}
 
 
 /* ------------------------------------------------------------
@@ -568,7 +319,9 @@ async function sendMessage(chatId, text, env) {
 
     {
       chat_id: chatId,
+
       text: text,
+
       disable_web_page_preview: true
     },
 
@@ -606,7 +359,9 @@ async function telegramApi(method, payload, env) {
 
     return await response.json();
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.error(
 
@@ -624,10 +379,10 @@ async function telegramApi(method, payload, env) {
 
 
 /* ============================================================
-   END OF PART 5
+   END OF PART 3
 ============================================================ */
 /* ============================================================
-   REMINDER TEMPLATE LOGIC
+   REMINDER ENGINE
 ============================================================ */
 
 
@@ -636,6 +391,31 @@ async function telegramApi(method, payload, env) {
 ------------------------------------------------------------ */
 
 let previousTemplateIndex = -1;
+
+
+/* ------------------------------------------------------------
+   Post Community Reminder
+------------------------------------------------------------ */
+
+async function postReminder(env) {
+
+  const message = getRandomTemplate();
+
+  if (!message) {
+    return;
+  }
+
+  await sendMessage(
+
+    env.TELEGRAM_LIVE_CHAT_ID,
+
+    message,
+
+    env
+
+  );
+
+}
 
 
 /* ------------------------------------------------------------
@@ -656,14 +436,25 @@ function getRandomTemplate() {
 
   let randomIndex;
 
-  // Avoid repeating the previous template.
+  /*
+   * Avoid repeating
+   * the previous template.
+   */
+
   do {
 
     randomIndex = Math.floor(
-      Math.random() * REMINDER_TEMPLATES.length
+
+      Math.random() *
+      REMINDER_TEMPLATES.length
+
     );
 
-  } while (randomIndex === previousTemplateIndex);
+  }
+
+  while (
+    randomIndex === previousTemplateIndex
+  );
 
   previousTemplateIndex = randomIndex;
 
@@ -677,327 +468,377 @@ function getRandomTemplate() {
 ============================================================ */
 
 const REMINDER_TEMPLATES = [
+
+  /*
+   * Templates 1–96
+   * will be added in
+   * Parts 5–8.
+   */
+
+];
+
+
+/* ============================================================
+   END OF PART 4
+============================================================ */
 /* ------------------------------------------------------------
    TEMPLATE 1
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-This is the KenFolios Live Interaction Group, created exclusively for meaningful business and professional conversations. Connect with fellow members, exchange ideas, build relationships, discover opportunities, and help make this community valuable for everyone.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Welcome to the KenFolios Live Interaction Group. This space is dedicated to meaningful business networking, knowledge sharing, collaborations, referrals, partnerships, and professional growth.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 2
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-If you're new here, introduce yourself in a few lines. Share your name, city, business, the people you work with, and the opportunities or collaborations you're currently looking for.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+New here? Introduce yourself by sharing your name, city, business, industry, and the kind of opportunities or collaborations you're looking for.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 3
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Tell members what your business offers and how you can help others. A simple introduction today can lead to valuable conversations, referrals, partnerships, and long-term business relationships.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Tell the community what your business offers and how members can benefit from your products, services, or expertise.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 4
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Looking for clients, suppliers, service providers, business partners, referrals, or investors? Share your requirement clearly. Specific requests usually receive better and more useful responses.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for clients, referrals, suppliers, distributors, investors, or business partners? Share your requirement clearly to receive better responses.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 5
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Mention your city whenever you introduce yourself or ask for help. Members from the same location often connect faster for meetings, referrals, collaborations, and local business opportunities.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Mention your city whenever you post. Local members often connect faster for meetings, referrals, collaborations, and business opportunities.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 6
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Need advice on a business challenge? Ask the community. Whether it's sales, marketing, finance, hiring, technology, or operations, someone here may have practical experience to share.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Need advice on sales, marketing, finance, hiring, technology, operations, or business strategy? Ask the community—someone may have valuable experience to share.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 7
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-If you can genuinely help another member with advice, referrals, introductions, or experience, consider replying. Strong communities grow when members support one another.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+If you can genuinely help another member with advice, introductions, referrals, or experience, consider replying. Strong communities grow through mutual support.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 8
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Share a useful lesson from your business journey. Your experience, including mistakes and learnings, may help another entrepreneur make better decisions and avoid common challenges.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Share one lesson from your entrepreneurial journey. Your experience may help another entrepreneur avoid mistakes or discover a better approach.`,
+
+
 /* ------------------------------------------------------------
    TEMPLATE 9
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Meaningful conversations create meaningful opportunities. Keep discussions focused on business, entrepreneurship, careers, learning, collaborations, and professional growth.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Meaningful conversations create meaningful opportunities. Keep discussions focused on business, entrepreneurship, careers, learning, and professional growth.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 10
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Occasionally you may notice agenda-driven or distracting posts. The best response is to simply ignore them and continue meaningful business conversations. Positive discussions naturally become more visible.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Ignore distracting or agenda-driven conversations and continue contributing to constructive business discussions. Positive participation strengthens the community.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 11
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Your time and attention are valuable. Invest them in conversations that help you learn, solve business challenges, discover opportunities, build relationships, or support fellow members.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Your time is valuable. Invest it in conversations that help you learn, build relationships, solve problems, or discover new opportunities.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 12
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-KenFolios Business Community primarily operates through WhatsApp. Telegram helps support automation, larger discussion groups, and additional community features as we continue improving the member experience.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+The KenFolios Business Community primarily operates through WhatsApp. This Telegram group enables larger discussions, automation, and continuous networking.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 13
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-New members join the community regularly. Feel free to introduce yourself again from time to time. A conversation that didn't happen yesterday may begin today with someone new.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+New members join regularly. Feel free to introduce yourself again from time to time—someone new may be looking for exactly what you offer.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 14
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-When introducing yourself, mention your business, the industries you serve, your city, and the kind of clients or collaborations you're looking for. It helps members connect with you more easily.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+When introducing yourself, mention your business, industry, city, and the kind of customers or collaborations you're looking for.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 15
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Every meaningful conversation helps build your professional reputation. Be helpful, respectful, and genuine. People often remember valuable contributors long after the conversation ends.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every meaningful conversation builds your professional reputation. Be helpful, respectful, and authentic in your interactions.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 16
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-You don't always have to promote your business. Sharing your experience, knowledge, or practical insights often builds stronger trust and naturally creates new business opportunities.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+You don't always need to promote your business. Sharing useful knowledge and practical experience often creates stronger business opportunities.`,
+
 
 /* ------------------------------------------------------------
    TEMPLATE 17
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Looking for referrals? Explain exactly what you're looking for and describe your ideal customer. Clear requirements make it much easier for fellow members to connect you with the right people.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for referrals? Describe your ideal customer, the problem you solve, and where members can help connect you with the right people.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 18
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Need a trusted service provider? Ask the community. Whether it's legal, finance, marketing, technology, logistics, or any other professional service, someone here may have a reliable recommendation.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Need a trusted service provider? Ask the community for recommendations in areas such as legal, finance, marketing, technology, logistics, or consulting.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 19
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-If another member asks a question within your area of expertise, consider sharing your knowledge. Helpful replies build trust and strengthen your professional reputation within the community.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+If someone asks a question within your area of expertise, consider helping. Valuable contributions build trust and long-term professional relationships.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 20
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Planning to expand into another city? Ask if fellow KenFolios members are based there. Local connections often make business expansion faster, easier, and more effective.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Planning to expand into another city or state? Ask whether fellow KenFolios members are based there. Local connections often accelerate business growth.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 21
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Meeting another member in person? Feel free to use this group to connect, schedule a meeting, or continue a professional discussion. Great business relationships often begin with a simple introduction.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Meeting another member offline? Use this group to connect, schedule meetings, and continue meaningful professional conversations.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 22
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Telegram notifications can be customized anytime. If you prefer fewer alerts, simply mute the group and visit whenever convenient. Stay connected in the way that works best for you.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+This is a community built on relationships, not advertisements. Participate in conversations, help others, and build trust before expecting business.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 23
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-KenFolios Business Community continues to evolve with better technology, automation, and platform integrations to make networking, collaboration, and member engagement more effective.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+KenFolios continues to evolve with better technology, automation, networking opportunities, and member-focused features. Thank you for being part of the journey.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 24
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-The value of this community depends on its members. Every thoughtful conversation, helpful reply, genuine introduction, and shared experience makes KenFolios stronger for everyone.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+The value of this community depends on its members. Every thoughtful conversation, helpful reply, referral, and introduction makes KenFolios stronger for everyone.`,
 
 /* ------------------------------------------------------------
    TEMPLATE 25
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Conversation Starter: What products or services does your business offer? A short introduction today may help fellow members understand how they can become your customers, partners, or referral sources.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Conversation Starter: What products or services does your business offer? A short introduction today may help fellow members become your customers, partners, or referral sources.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 26
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Need help with your business today? Share your question with the community. Practical advice from experienced entrepreneurs can often save valuable time, effort, and resources.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Need help with your business today? Share your question with the community. Practical advice from experienced entrepreneurs can often save valuable time and resources.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 27
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Can you help another member today? Sharing your knowledge, experience, contacts, or referrals is one of the best ways to build meaningful relationships within the community.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Can you help another member today? Sharing your knowledge, experience, contacts, or referrals is one of the best ways to build meaningful business relationships.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 28
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Every reply contributes to your professional reputation. Thoughtful conversations help members remember you long after the discussion has ended. Make every interaction count.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every reply contributes to your professional reputation. Thoughtful conversations help members remember you long after the discussion has ended.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 29
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Business conversations create lasting value. Avoid forwarding unrelated content or engaging in unnecessary debates. A focused community benefits every member.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Business conversations create lasting value. Avoid forwarding unrelated content or engaging in unnecessary debates. A focused community benefits everyone.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 30
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Have you recently solved a business problem? Share your experience with fellow members. Practical solutions from real entrepreneurs often help others facing similar challenges.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Have you recently solved a business problem? Share your experience with fellow members. Practical solutions often help others facing similar challenges.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 31
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Instead of only promoting your business, participate in conversations. Helpful members naturally become more visible, trusted, and remembered by the community.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Instead of only promoting your business, participate in conversations. Helpful members naturally become more visible, trusted, and remembered.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 32
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Every entrepreneur has a unique journey. Whether you're just starting or leading an established business, your experiences may encourage, guide, or inspire another member today.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every entrepreneur has a unique journey. Whether you're just starting or leading an established business, your experiences may guide or inspire another member today.`,
+
 
 /* ------------------------------------------------------------
    TEMPLATE 33
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Looking for your next customer? Tell members who your ideal customer is, what problem you solve, and how they can refer the right people to you.`,
 
@@ -1006,8 +847,9 @@ Looking for your next customer? Tell members who your ideal customer is, what pr
    TEMPLATE 34
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Planning to visit another city? Let members know. There may be fellow entrepreneurs there who would be happy to connect for a business meeting or coffee.`,
 
@@ -1016,8 +858,9 @@ Planning to visit another city? Let members know. There may be fellow entreprene
    TEMPLATE 35
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Business grows through conversations. Introduce yourself, ask thoughtful questions, answer others when you can, and build relationships before expecting business opportunities.`,
 
@@ -1026,8 +869,9 @@ Business grows through conversations. Introduce yourself, ask thoughtful questio
    TEMPLATE 36
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Ignore negativity and avoid unnecessary debates. The easiest way to reduce distractions is to focus your attention on meaningful business conversations instead.`,
 
@@ -1036,47 +880,53 @@ Ignore negativity and avoid unnecessary debates. The easiest way to reduce distr
    TEMPLATE 37
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Question for today: What is one business challenge you're trying to solve right now? Share it with the community and invite practical suggestions from fellow members.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Question for today: What is one business challenge you're trying to solve right now? Share it with the community and invite practical suggestions.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 38
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Question for today: What opportunities are you currently looking for? Clients, referrals, partnerships, distributors, investors, suppliers, or collaborations? Let members know.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Question for today: What opportunities are you currently looking for—clients, referrals, partnerships, distributors, investors, suppliers, or collaborations?`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 39
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Can another member help you today? If you're looking for recommendations, introductions, feedback, or professional advice, don't hesitate to ask the community.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Can another member help you today? If you're looking for recommendations, introductions, feedback, or professional advice, don't hesitate to ask.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 40
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-Every helpful reply increases your professional visibility within the community. People remember those who consistently contribute value through knowledge, experience, and genuine support.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every helpful reply increases your professional visibility within the community. People remember those who consistently contribute value through knowledge and genuine support.`,
+
 
 /* ------------------------------------------------------------
    TEMPLATE 41
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Introduce yourself in a few lines. Share your business, your city, who you work with, and the kind of opportunities you're currently looking for.`,
 
@@ -1085,18 +935,20 @@ Introduce yourself in a few lines. Share your business, your city, who you work 
    TEMPLATE 42
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-What can you offer fellow members? Whether it's products, services, expertise, referrals, mentoring, or business guidance, let the community know how you can help.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What can you offer fellow members? Whether it's products, services, expertise, referrals, mentoring, or business guidance, let the community know.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 43
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Looking to meet members in your city? Feel free to post a meeting request. Business breakfasts, coffee meetings, and networking conversations often lead to valuable relationships.`,
 
@@ -1105,8 +957,9 @@ Looking to meet members in your city? Feel free to post a meeting request. Busin
    TEMPLATE 44
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Meaningful communities are built through meaningful conversations. Before posting, ask yourself whether your message will help someone learn, connect, collaborate, or grow.`,
 
@@ -1115,8 +968,9 @@ Meaningful communities are built through meaningful conversations. Before postin
    TEMPLATE 45
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Some posts are intended only to distract or provoke reactions. The smartest response is to ignore them completely and continue participating in constructive business discussions.`,
 
@@ -1125,8 +979,9 @@ Some posts are intended only to distract or provoke reactions. The smartest resp
    TEMPLATE 46
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 KenFolios Business Community primarily operates through WhatsApp. Telegram enables larger discussion groups, automation, and additional community features that continue to evolve over time.`,
 
@@ -1135,28 +990,559 @@ KenFolios Business Community primarily operates through WhatsApp. Telegram enabl
    TEMPLATE 47
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
 
-If frequent notifications interrupt your work, simply mute this group and visit whenever convenient. You can stay connected without feeling overwhelmed by notifications.`,
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+The best communities are built by members who consistently participate, support one another, and create value through meaningful conversations.`,
 
 
 /* ------------------------------------------------------------
    TEMPLATE 48
 ------------------------------------------------------------ */
 
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
 
 Thank you for being part of the KenFolios Business Community. Let's build a trusted network through respectful conversations, genuine support, valuable introductions, and meaningful business relationships.`,
 
-/* ============================================================
-   END OF REMINDER TEMPLATE LIBRARY
-============================================================ */
+/* ------------------------------------------------------------
+   TEMPLATE 49
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What's one business goal you're working towards this month? Share it with the community and let others know how they can help.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 50
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every introduction has the potential to create a new opportunity. Take a moment to introduce yourself if you haven't done so recently.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 51
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What problem does your business solve? Helping members understand your value makes referrals much easier.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 52
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Have you worked with another KenFolios member? Share your experience and encourage more collaborations within the community.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 53
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every meaningful reply adds value to the community. Even a simple suggestion or introduction could make a big difference to another member.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 54
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What is one lesson your business taught you recently? Share practical insights that others can learn from.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 55
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+If you're looking for business partnerships, explain what you're building and the kind of partner you're looking for.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 56
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Networking works best when everyone participates. Ask questions, answer others, and support fellow members whenever you can.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 57
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What industries do you serve? Sharing this information helps members identify opportunities to connect and collaborate with you.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 58
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+If another member's post interests you, don't hesitate to continue the conversation. Many successful partnerships begin with a simple reply.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 59
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every business has a story. Share what inspired you to start your entrepreneurial journey.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 60
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What business achievement are you most proud of? Celebrate milestones and inspire fellow entrepreneurs.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 61
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for feedback on an idea, product, or service? Ask the community for constructive suggestions and fresh perspectives.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 62
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Tell members what makes your business different. Your unique strengths often become your biggest advantage.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 63
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Business relationships grow through trust. Focus on helping first, and opportunities often follow naturally.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 64
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Have a useful business resource, tool, or productivity tip? Share it with the community and help others work smarter.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 65
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Your next customer, collaborator, mentor, or investor could already be part of this community. Stay active and keep participating.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 66
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Business networking is about building long-term relationships. Take time to know the people behind the businesses.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 67
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What skills or expertise can you offer other members? Your knowledge may solve someone's biggest challenge today.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 68
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+When asking for referrals, be as specific as possible. Clear requests make it easier for members to connect you with the right people.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 69
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What business book, podcast, or resource has influenced you recently? Share recommendations with fellow members.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 70
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Strong communities thrive when members share knowledge, opportunities, introductions, and encouragement. Thank you for contributing.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 71
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Take a few minutes today to reconnect with another member you've met through KenFolios. Great opportunities often come from staying in touch.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 72
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Thank you for helping build a positive, professional, and trusted business community where meaningful relationships and opportunities can grow.`,
+
+/* ------------------------------------------------------------
+   TEMPLATE 73
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every meaningful introduction can open new opportunities. If you haven't introduced yourself recently, today is a great day to do so.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 74
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for a supplier, consultant, agency, freelancer, or service provider? Ask the community. Someone here may have the right recommendation.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 75
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Business is built on trust. Focus on genuine conversations, meaningful relationships, and helping others whenever you can.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 76
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Have an achievement you'd like to celebrate? Share your milestone with the community and inspire fellow entrepreneurs.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 77
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Tell members about a challenge you've overcome in business. Your experience may encourage someone facing a similar situation today.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 78
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for collaborators on a project? Explain your idea clearly and let members know how they can contribute.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 79
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Networking isn't about collecting contacts. It's about building relationships based on trust, respect, and shared value.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 80
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Share a productivity tip, business habit, or workflow that has helped you become more effective.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 81
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+What industries would you like to connect with? Let members know where you'd like to expand your professional network.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 82
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Have you discovered a useful AI tool, business app, or software recently? Share it with the community and explain how it helps.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 83
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+When asking for help, provide enough context so members can offer practical and relevant suggestions.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 84
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Take a moment to acknowledge another member whose advice, support, or introduction has helped you. Appreciation strengthens communities.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 85
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking for employees, freelancers, interns, or consultants? Share your requirements and the community may help you find the right people.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 86
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Your expertise has value. Don't hesitate to answer questions and share practical advice with fellow members.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 87
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Business opportunities often come through conversations, not advertisements. Stay active and engage with the community regularly.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 88
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Share one piece of advice you wish someone had given you when you started your business journey.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 89
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Looking to expand into new markets? Tell members where you're planning to grow and explore opportunities together.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 90
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every interaction is an opportunity to build your professional reputation. Be respectful, constructive, and helpful in every conversation.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 91
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+If you're attending an event, exhibition, conference, or business meetup, let fellow members know. You might find someone attending too.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 92
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Communities become stronger when members ask questions, share experiences, and support one another. Your participation matters.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 93
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Take a few minutes today to reconnect with someone you've met through KenFolios. A simple message can restart a valuable business relationship.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 94
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Every successful entrepreneur started somewhere. Share your journey and encourage members who are just beginning theirs.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 95
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+The strongest business communities are built on trust, generosity, and consistent participation. Thank you for helping make KenFolios valuable for everyone.`,
+
+
+/* ------------------------------------------------------------
+   TEMPLATE 96
+------------------------------------------------------------ */
+
+`🎯 KENFOLIOS 24×7 LIVE INTERACTION GROUP
+
+🔕 RECOMMENDED: KEEP THIS GROUP MUTED AND VISIT ANYTIME. THIS COMMUNITY IS ACTIVE 24×7. PLEASE REMAIN A MEMBER OF THE KENFOLIOS ANNOUNCEMENT GROUP TO CONTINUE ACCESS.
+
+Together, let's continue building one of India's most trusted business communities through meaningful conversations, genuine support, valuable introductions, and long-term professional relationships.`
 
 ];
 
 
 /* ============================================================
-   END OF KENFOLIOS LIVE INTERACTION GROUP WORKER
+   END OF REMINDER TEMPLATE LIBRARY
 ============================================================ */
+
+
+/* ============================================================
+   END OF KENFOLIOS 24×7 LIVE INTERACTION GROUP WORKER
+============================================================ */
+
+
