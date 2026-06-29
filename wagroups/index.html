@@ -156,6 +156,63 @@
       padding:32px;
       font-size:14px;
     }
+    /* ==========================================================
+   NOTICE / ANNOUNCEMENT BANNER
+   Displays an important message above the page heading.
+   ========================================================== */
+.notice{
+
+  /* Space below the banner before the page heading */
+  margin-bottom:20px;
+
+  /* Inner spacing */
+  padding:14px 18px;
+
+  /* Soft warning background */
+  background:#fff8e1;
+
+  /* Rounded corners */
+  border-radius:12px;
+
+  /* Subtle border */
+  border:1px solid #f6d365;
+
+  /* Brand accent on the left */
+  border-left:5px solid #E11D2E;
+
+  /* Text colour */
+  color:#78350f;
+
+  /* Typography */
+  font-size:15px;
+  line-height:1.6;
+
+  /* Prevent the banner from becoming too wide */
+  max-width:560px;
+}
+
+/* ==========================================================
+   Highlight important text inside the notification
+   ========================================================== */
+.notice strong{
+  color:#7c2d12;
+  font-weight:700;
+}
+
+/* ==========================================================
+   Mobile Layout
+   Keep the notification centred while preserving
+   left-aligned text for readability.
+   ========================================================== */
+@media (max-width:900px){
+
+  .notice{
+    margin-left:auto;
+    margin-right:auto;
+    text-align:left;
+  }
+
+}
   </style>
 </head>
 
@@ -178,6 +235,20 @@
   <div class="hero-inner">
 
     <div>
+      <!-- ==========================================================
+     NOTICE / ANNOUNCEMENT
+     Displayed above the main page heading.
+     Update this text whenever a new announcement is required.
+     ========================================================== -->
+<div class="notice" role="status" aria-live="polite">
+
+  <strong>📢 Notice</strong><br>
+
+  Our existing <strong>200+ WhatsApp Groups</strong> are currently at capacity.
+  New WhatsApp Groups will begin rolling out from
+  <strong>4th July 2026</strong>.
+
+</div>
       <h1>WhatsApp Groups Directory</h1>
       <p>
         Discover city, industry, and interest-based WhatsApp groups built for
