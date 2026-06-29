@@ -4,7 +4,7 @@ const TELEGRAM_API = "https://api.telegram.org";
  * =========================
  * SLOT CONTROL PANEL
  * =========================
- * Enable/disable by commenting lines
+ * Enable / disable by commenting lines
  */
 
 const ACTIVE_SLOT = {
@@ -32,33 +32,6 @@ const ACTIVE_SLOT = {
   "22:00": true
 
 };
-
-/**
- * =========================
- * MESSAGE (SINGLE SOURCE)
- * =========================
- */
-
-const MESSAGE = `
-🔶 <b>KENFOLIOS ANNOUNCEMENT GROUP</b> 🔶
-
-Note: This is the default landing group for all members. Leaving this group may pause your membership and prevent important announcements from reaching you. Please keep notifications enabled or check the group regularly for updates.
-
-Use the links below to join our WhatsApp Groups, Live Discussion Group, and read about the Hidden Advantage of the KenFolios Community.
-
-<b>Important:</b> Our existing 200+ WhatsApp groups are currently at capacity. New WhatsApp groups will begin rolling out from <b>4th July 2026</b>.
-
-📲 <b>WhatsApp Groups</b>
-${env.WHATSAPP_GROUPS_URL}
-
-💬 <b>Live Discussion Group</b>
-${env.LIVE_DISCUSSION_GROUP_URL}
-
-📖 <b>The Hidden Advantage</b>
-${env.ADVANTAGE_URL}
-
-More important announcements, updates, events and new features will be shared here soon. Stay tuned.
-`;
 
 /**
  * =========================
@@ -115,7 +88,7 @@ async function sendTelegram(env, text) {
 
 /**
  * =========================
- * CORE HANDLER
+ * CORE SCHEDULER
  * =========================
  */
 
@@ -123,12 +96,31 @@ async function handleScheduled(env) {
 
   const slot = getISTSlot();
 
-  // If slot is not enabled → exit
-  if (!ACTIVE_SLOT[slot]) {
-    return;
-  }
+  // ignore if slot is not enabled
+  if (!ACTIVE_SLOT[slot]) return;
 
-  // Send message
+  // message MUST be inside function (env fix)
+  const MESSAGE = `
+🔶 <b>KENFOLIOS ANNOUNCEMENT GROUP</b> 🔶
+
+Note: This is the default landing group for all members. Leaving this group may pause your membership and prevent important announcements from reaching you. Please keep notifications enabled or check the group regularly for updates.
+
+Use the links below to join our WhatsApp Groups, Live Discussion Group, and read about the Hidden Advantage of the KenFolios Community.
+
+<b>Important:</b> Our existing 200+ WhatsApp groups are currently at capacity. New WhatsApp groups will begin rolling out from <b>4th July 2026</b>.
+
+📲 <b>WhatsApp Groups</b>
+${env.WHATSAPP_GROUPS_URL}
+
+💬 <b>Live Discussion Group</b>
+${env.LIVE_DISCUSSION_GROUP_URL}
+
+📖 <b>The Hidden Advantage</b>
+${env.ADVANTAGE_URL}
+
+More important announcements, updates, events and new features will be shared here soon. Stay tuned.
+`;
+
   await sendTelegram(env, MESSAGE);
 }
 
