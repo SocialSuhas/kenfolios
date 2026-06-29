@@ -3,28 +3,37 @@
  * KENFOLIOS LIVE INTERACTION GROUP WORKER
  * ============================================================
  *
- * This worker manages the KenFolios Live Interaction Group.
+ * This Cloudflare Worker manages the KenFolios Live
+ * Interaction Group on Telegram.
  *
  * Features
  * --------
- * • Approves join requests only for Announcement Group members.
- * • Removes members who leave the Announcement Group.
- * • Opens the Live Group every day at 9:00 AM IST.
- * • Closes the Live Group every day at 9:00 PM IST.
- * • Posts one community reminder every 15 minutes.
- * • Randomly selects reminder templates while avoiding repetition.
+ * • Approves join requests only for members of the
+ *   Announcement Group.
+ *
+ * • Removes members who are no longer part of the
+ *   Announcement Group.
+ *
+ * • Opens the Live Interaction Group every day at
+ *   9:00 AM IST.
+ *
+ * • Closes the Live Interaction Group every day at
+ *   9:00 PM IST.
+ *
+ * • Posts one randomly selected community reminder
+ *   every 15 minutes while the group is open.
  *
  * Cloudflare Cron
  * ---------------
- * Configure a single Cron Trigger to run every 15 minutes.
+ * Configure ONE Cron Trigger to execute every
+ * 15 minutes.
  *
- * Existing Environment Variables
- * ------------------------------
+ * Environment Variables
+ * ---------------------
  * TELEGRAM_BOT_TOKEN
  * TELEGRAM_LIVE_CHAT_ID
  * TELEGRAM_ANNOUNCEMENT_CHAT_ID
  *
- * No additional environment variables are required.
  * ============================================================
  */
 
@@ -33,7 +42,13 @@
    CONFIGURATION
 ============================================================ */
 
-const LIVE_JOIN_LINK = "https://t.me/+WVY6y9gGEZhlYjhl";
+
+/* ------------------------------------------------------------
+   Telegram Groups
+------------------------------------------------------------ */
+
+const LIVE_JOIN_LINK =
+  "https://t.me/+WVY6y9gGEZhlYjhl";
 
 
 /* ------------------------------------------------------------
@@ -48,7 +63,7 @@ const LIVE_CLOSE_MINUTE = 0;
 
 
 /* ------------------------------------------------------------
-   Reminder Settings
+   Reminder Schedule
 ------------------------------------------------------------ */
 
 const REMINDER_INTERVAL_MINUTES = 15;
@@ -61,23 +76,607 @@ const REMINDER_INTERVAL_MINUTES = 15;
 const IST_OFFSET_MINUTES = 330;
 
 
+/* ============================================================
+   END OF PART 1
+============================================================ */
+/* ============================================================
+   WORKER ENTRY POINT
+============================================================ */
+
+export default {
+
+  /* ----------------------------------------------------------
+     Telegram Webhook
+  ---------------------------------------------------------- */
+
+  async fetch(request, env) {
+
+    // Telegram sends webhook updates via POST.
+    if (request.method !== "POST") {
+      return new Response("OK");
+    }
+
+    const update = await request.json().catch(() => null);
+
+    if (!update) {
+      return new Response("OK");
+    }
+
+    /* ------------------------------------------------------
+       Join Request
+    ------------------------------------------------------ */
+
+    if (update.chat_join_request) {
+      await handleJoinRequest(
+        update.chat_join_request,
+        env
+      );
+    }
+
+    /* ------------------------------------------------------
+       Member Updates
+    ------------------------------------------------------ */
+
+    if (update.chat_member) {
+      await handleChatMember(
+        update.chat_member,
+        env
+      );
+    }
+
+    return new Response("OK");
+
+  },
+
+
+  /* ----------------------------------------------------------
+     Cloudflare Cron Trigger
+  ---------------------------------------------------------- */
+
+  async scheduled(event, env, ctx) {
+
+    // Convert UTC to IST.
+    const utcNow = new Date(event.scheduledTime);
+
+    const istNow = new Date(
+      utcNow.getTime() + (IST_OFFSET_MINUTES * 60 * 1000)
+    );
+
+    const hour = istNow.getHours();
+    const minute = istNow.getMinutes();
+
+
+    /* ------------------------------------------------------
+       Open Live Interaction Group
+       9:00 AM IST
+    ------------------------------------------------------ */
+
+    if (
+      hour === LIVE_OPEN_HOUR &&
+      minute === LIVE_OPEN_MINUTE
+    ) {
+      ctx.waitUntil(openLiveWindow(env));
+      return;
+    }
+
+
+    /* ------------------------------------------------------
+       Close Live Interaction Group
+       9:00 PM IST
+    ------------------------------------------------------ */
+
+    if (
+      hour === LIVE_CLOSE_HOUR &&
+      minute === LIVE_CLOSE_MINUTE
+    ) {
+      ctx.waitUntil(closeLiveWindow(env));
+      return;
+    }
+
+
+    /* ------------------------------------------------------
+       Community Reminder
+       Every 15 minutes between
+       9:15 AM and 8:45 PM IST
+    ------------------------------------------------------ */
+
+    if (isReminderTime(hour, minute)) {
+      ctx.waitUntil(postReminder(env));
+      return;
+    }
+
+
+    /* ------------------------------------------------------
+       Outside Live Interaction Window
+    ------------------------------------------------------ */
+
+    return;
+
+  }
+
+};
+
+
+/* ============================================================
+   END OF PART 2
+============================================================ */
+/* ============================================================
+   TELEGRAM MEMBERSHIP MANAGEMENT
+============================================================ */
+
+
 /* ------------------------------------------------------------
-   Reminder Templates
-------------------------------------------------------------
-
-One template is posted every 15 minutes while the
-Live Interaction Group is open.
-
-Templates are selected randomly by the worker while
-avoiding immediate repetition.
-
-Additional templates can be added without changing
-any worker logic.
-
+   Handle Join Requests
 ------------------------------------------------------------ */
 
-const REMINDER_TEMPLATES = [
+async function handleJoinRequest(joinRequest, env) {
 
+  // Ignore requests for other groups.
+  if (joinRequest.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) {
+    return;
+  }
+
+  // Only Announcement Group members are allowed.
+  const isEligible = await isUserInAnnouncement(
+    joinRequest.from.id,
+    env
+  );
+
+  if (!isEligible) {
+    return;
+  }
+
+  await telegramApi(
+
+    "approveChatJoinRequest",
+
+    {
+      chat_id: joinRequest.chat.id,
+      user_id: joinRequest.from.id
+    },
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Monitor Live Group Membership
+------------------------------------------------------------ */
+
+async function handleChatMember(chatMember, env) {
+
+  // Ignore updates from other groups.
+  if (chatMember.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)) {
+    return;
+  }
+
+  // Only check members who have joined.
+  if (chatMember.new_chat_member.status !== "member") {
+    return;
+  }
+
+  const isEligible = await isUserInAnnouncement(
+    chatMember.new_chat_member.user.id,
+    env
+  );
+
+  if (isEligible) {
+    return;
+  }
+
+  // Remove members who are not in the Announcement Group.
+  await telegramApi(
+
+    "banChatMember",
+
+    {
+      chat_id: chatMember.chat.id,
+      user_id: chatMember.new_chat_member.user.id,
+
+      // Temporary ban (60 seconds).
+      until_date: Math.floor(Date.now() / 1000) + 60
+
+    },
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Check Announcement Group Membership
+------------------------------------------------------------ */
+
+async function isUserInAnnouncement(userId, env) {
+
+  const response = await telegramApi(
+
+    "getChatMember",
+
+    {
+      chat_id: env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
+      user_id: userId
+    },
+
+    env
+
+  );
+
+  if (!response?.ok) {
+    return false;
+  }
+
+  const status = response.result?.status;
+
+  return (
+    status === "creator" ||
+    status === "administrator" ||
+    status === "member"
+  );
+
+}
+
+
+/* ============================================================
+   END OF PART 3
+============================================================ */
+/* ============================================================
+   LIVE INTERACTION OPERATIONS
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   Open Live Interaction Window
+------------------------------------------------------------ */
+
+async function openLiveWindow(env) {
+
+  // Notify Announcement Group.
+  await postAnnouncement(env);
+
+  // Allow members to post.
+  await setLivePermissions(env, true);
+
+  // Notify Live Group.
+  await postLiveOpen(env);
+
+}
+
+
+/* ------------------------------------------------------------
+   Close Live Interaction Window
+------------------------------------------------------------ */
+
+async function closeLiveWindow(env) {
+
+  // Notify Live Group.
+  await postLiveClose(env);
+
+  // Disable posting.
+  await setLivePermissions(env, false);
+
+}
+
+
+/* ------------------------------------------------------------
+   Post Community Reminder
+------------------------------------------------------------ */
+
+async function postReminder(env) {
+
+  const message = getRandomTemplate();
+
+  if (!message) {
+    return;
+  }
+
+  await sendMessage(
+    env.TELEGRAM_LIVE_CHAT_ID,
+    message,
+    env
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Reminder Schedule
+------------------------------------------------------------ */
+
+function isReminderTime(hour, minute) {
+
+  // Only every 15 minutes.
+  if (minute % REMINDER_INTERVAL_MINUTES !== 0) {
+    return false;
+  }
+
+  // Skip opening time.
+  if (
+    hour === LIVE_OPEN_HOUR &&
+    minute === LIVE_OPEN_MINUTE
+  ) {
+    return false;
+  }
+
+  // Skip closing time.
+  if (
+    hour === LIVE_CLOSE_HOUR &&
+    minute === LIVE_CLOSE_MINUTE
+  ) {
+    return false;
+  }
+
+  // Before opening.
+  if (hour < LIVE_OPEN_HOUR) {
+    return false;
+  }
+
+  // After closing.
+  if (hour >= LIVE_CLOSE_HOUR) {
+    return false;
+  }
+
+  return true;
+
+}
+
+
+/* ============================================================
+   LIVE GROUP MESSAGES
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   Announcement Group Message
+------------------------------------------------------------ */
+
+async function postAnnouncement(env) {
+
+  await sendMessage(
+
+    env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
+
+`🎯 KenFolios Live Interaction Group
+
+The Live Interaction Group is now open.
+
+🕘 Open Daily
+9:00 AM – 9:00 PM
+
+Join here:
+${LIVE_JOIN_LINK}
+
+This group is dedicated to meaningful business and professional conversations.
+
+If you're already a member, simply open the Live Interaction Group and join the discussion.
+
+Please help maintain a positive and productive environment by focusing on business-related conversations.`,
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Live Group Opening Message
+------------------------------------------------------------ */
+
+async function postLiveOpen(env) {
+
+  await sendMessage(
+
+    env.TELEGRAM_LIVE_CHAT_ID,
+
+`🎯 KenFolios Live Interaction Group
+
+Good morning!
+
+The group is now open for today's business and professional discussions.
+
+Introduce yourself, build new connections, ask questions, share opportunities, and help fellow members grow through meaningful conversations.
+
+Have a productive day!`,
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Live Group Closing Message
+------------------------------------------------------------ */
+
+async function postLiveClose(env) {
+
+  await sendMessage(
+
+    env.TELEGRAM_LIVE_CHAT_ID,
+
+`🎯 KenFolios Live Interaction Group
+
+The Live Interaction Group is now closed for today.
+
+Posting has been disabled and will automatically resume tomorrow at 9:00 AM IST.
+
+Thank you for contributing to a professional, respectful, and valuable community.`,
+
+    env
+
+  );
+
+}
+
+
+/* ============================================================
+   END OF PART 4
+============================================================ */
+/* ============================================================
+   TELEGRAM UTILITIES
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   Set Live Group Permissions
+------------------------------------------------------------ */
+
+async function setLivePermissions(env, allow) {
+
+  await telegramApi(
+
+    "setChatPermissions",
+
+    {
+      chat_id: env.TELEGRAM_LIVE_CHAT_ID,
+
+      permissions: {
+
+        can_send_messages: allow,
+        can_send_media_messages: allow,
+        can_send_polls: allow,
+        can_send_other_messages: allow,
+        can_add_web_page_previews: allow
+
+      }
+
+    },
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Send Telegram Message
+------------------------------------------------------------ */
+
+async function sendMessage(chatId, text, env) {
+
+  return telegramApi(
+
+    "sendMessage",
+
+    {
+      chat_id: chatId,
+      text: text,
+      disable_web_page_preview: true
+    },
+
+    env
+
+  );
+
+}
+
+
+/* ------------------------------------------------------------
+   Telegram API Helper
+------------------------------------------------------------ */
+
+async function telegramApi(method, payload, env) {
+
+  try {
+
+    const response = await fetch(
+
+      `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`,
+
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(payload)
+
+      }
+
+    );
+
+    return await response.json();
+
+  } catch (error) {
+
+    console.error(
+
+      `Telegram API Error (${method})`,
+
+      error
+
+    );
+
+    return null;
+
+  }
+
+}
+
+
+/* ============================================================
+   END OF PART 5
+============================================================ */
+/* ============================================================
+   REMINDER TEMPLATE LOGIC
+============================================================ */
+
+
+/* ------------------------------------------------------------
+   Previous Template
+------------------------------------------------------------ */
+
+let previousTemplateIndex = -1;
+
+
+/* ------------------------------------------------------------
+   Get Random Reminder Template
+------------------------------------------------------------ */
+
+function getRandomTemplate() {
+
+  // No templates available.
+  if (REMINDER_TEMPLATES.length === 0) {
+    return null;
+  }
+
+  // Only one template.
+  if (REMINDER_TEMPLATES.length === 1) {
+    return REMINDER_TEMPLATES[0];
+  }
+
+  let randomIndex;
+
+  // Avoid repeating the previous template.
+  do {
+
+    randomIndex = Math.floor(
+      Math.random() * REMINDER_TEMPLATES.length
+    );
+
+  } while (randomIndex === previousTemplateIndex);
+
+  previousTemplateIndex = randomIndex;
+
+  return REMINDER_TEMPLATES[randomIndex];
+
+}
+
+
+/* ============================================================
+   REMINDER TEMPLATE LIBRARY
+============================================================ */
+
+const REMINDER_TEMPLATES = [
 /* ------------------------------------------------------------
    TEMPLATE 1
 ------------------------------------------------------------ */
@@ -128,734 +727,6 @@ Looking for clients, suppliers, service providers, business partners, referrals,
 Mention your city whenever you introduce yourself or ask for help. Members from the same location often connect faster for meetings, referrals, collaborations, and local business opportunities.`,
 
 
-/* Remaining templates will be added in Part 6. */
-
-];
-/* ============================================================
-   WORKER ENTRY POINT
-============================================================ */
-
-export default {
-
-  /* ----------------------------------------------------------
-     Telegram Webhook
-  ---------------------------------------------------------- */
-
-  async fetch(request, env) {
-
-    if (request.method !== "POST") {
-      return new Response("OK");
-    }
-
-    const update = await request.json().catch(() => null);
-
-    if (!update) {
-      return new Response("OK");
-    }
-
-    if (update.chat_join_request) {
-      await handleJoinRequest(update.chat_join_request, env);
-    }
-
-    if (update.chat_member) {
-      await handleChatMember(update.chat_member, env);
-    }
-
-    return new Response("OK");
-
-  },
-
-
-  /* ----------------------------------------------------------
-     Scheduled Cron Trigger
-  ---------------------------------------------------------- */
-
-  async scheduled(event, env, ctx) {
-
-    const utcNow = new Date(event.scheduledTime);
-
-    // Convert UTC → IST
-    const istNow = new Date(
-      utcNow.getTime() + (IST_OFFSET_MINUTES * 60 * 1000)
-    );
-
-    const hour = istNow.getHours();
-    const minute = istNow.getMinutes();
-
-
-    /* ------------------------------------------------------
-       9:00 AM IST
-       Open Live Interaction Group
-    ------------------------------------------------------ */
-
-    if (
-      hour === LIVE_OPEN_HOUR &&
-      minute === LIVE_OPEN_MINUTE
-    ) {
-      ctx.waitUntil(openLiveWindow(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       9:00 PM IST
-       Close Live Interaction Group
-    ------------------------------------------------------ */
-
-    if (
-      hour === LIVE_CLOSE_HOUR &&
-      minute === LIVE_CLOSE_MINUTE
-    ) {
-      ctx.waitUntil(closeLiveWindow(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       Reminder Window
-       Every 15 minutes
-       9:15 AM → 8:45 PM IST
-    ------------------------------------------------------ */
-
-    if (isReminderTime(hour, minute)) {
-      ctx.waitUntil(postReminder(env));
-      return;
-    }
-
-
-    /* ------------------------------------------------------
-       Outside Live Window
-       Nothing to do.
-    ------------------------------------------------------ */
-
-    return;
-
-  }
-
-};
-
-
-/* ============================================================
-   SCHEDULER HELPERS
-============================================================ */
-
-
-/**
- * Returns true if a reminder should be posted.
- *
- * Reminder timings:
- *
- * 09:15
- * 09:30
- * 09:45
- * ...
- * 20:45
- */
-
-function isReminderTime(hour, minute) {
-
-  // Only every 15 minutes.
-  if (minute % REMINDER_INTERVAL_MINUTES !== 0) {
-    return false;
-  }
-
-  // Skip opening minute.
-  if (
-    hour === LIVE_OPEN_HOUR &&
-    minute === LIVE_OPEN_MINUTE
-  ) {
-    return false;
-  }
-
-  // Skip closing minute.
-  if (
-    hour === LIVE_CLOSE_HOUR &&
-    minute === LIVE_CLOSE_MINUTE
-  ) {
-    return false;
-  }
-
-  // Before 9 AM
-  if (hour < LIVE_OPEN_HOUR) {
-    return false;
-  }
-
-  // After 9 PM
-  if (hour >= LIVE_CLOSE_HOUR) {
-    return false;
-  }
-
-  return true;
-
-}
-
-
-/* ============================================================
-   END OF PART 2
-============================================================ */
-/* ============================================================
-   LIVE GROUP OPERATIONS
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Open Live Interaction Window
------------------------------------------------------------- */
-
-async function openLiveWindow(env) {
-
-  await postAnnouncement(env);
-
-  await setLivePermissions(env, true);
-
-  await postLiveOpen(env);
-
-}
-
-
-/* ------------------------------------------------------------
-   Close Live Interaction Window
------------------------------------------------------------- */
-
-async function closeLiveWindow(env) {
-
-  await postLiveClose(env);
-
-  await setLivePermissions(env, false);
-
-}
-
-
-/* ============================================================
-   ANNOUNCEMENT GROUP
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Announcement Group Message
------------------------------------------------------------- */
-
-async function postAnnouncement(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-The Live Interaction Group is now open.
-
-🕘 Open Daily
-9:00 AM – 9:00 PM
-
-Join here:
-${LIVE_JOIN_LINK}
-
-This group is meant for meaningful business and professional conversations.
-
-Please ignore unnecessary or agenda-driven discussions and help maintain a positive environment for everyone.`,
-
-    env
-
-  );
-
-}
-
-
-/* ============================================================
-   LIVE GROUP MESSAGES
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Opening Message
------------------------------------------------------------- */
-
-async function postLiveOpen(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_LIVE_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-The group is now open.
-
-Feel free to introduce yourself, network with fellow members, seek business opportunities, exchange ideas, and participate in meaningful professional conversations.
-
-Have a productive day!`,
-
-    env
-
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   Closing Message
------------------------------------------------------------- */
-
-async function postLiveClose(env) {
-
-  await sendMessage(
-
-    env.TELEGRAM_LIVE_CHAT_ID,
-
-`🎯 KenFolios Live Interaction Group
-
-The Live Interaction Group is now closed for today.
-
-Posting has been disabled and will automatically resume tomorrow at 9:00 AM IST.
-
-Thank you for helping keep the discussions professional and valuable.`,
-
-    env
-
-  );
-
-}
-
-
-/* ============================================================
-   REMINDER POSTING
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Post Random Reminder
------------------------------------------------------------- */
-
-async function postReminder(env) {
-
-  const message = getRandomTemplate();
-
-  if (!message) {
-    return;
-  }
-
-  await sendMessage(
-    env.TELEGRAM_LIVE_CHAT_ID,
-    message,
-    env
-  );
-
-}
-
-
-/* ============================================================
-   TEMPLATE SELECTION
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Random Template Selector
-
-   Current Version:
-   • Picks a random template.
-
-   Future Version:
-   • Avoid immediate repetition.
-   • Avoid recently used templates.
-   • Cycle through all templates before repeating.
------------------------------------------------------------- */
-
-function getRandomTemplate() {
-
-  const index = Math.floor(
-    Math.random() * REMINDER_TEMPLATES.length
-  );
-
-  return REMINDER_TEMPLATES[index];
-
-}
-
-
-/* ============================================================
-   END OF PART 3
-============================================================ */
-/* ============================================================
-   TELEGRAM GROUP MANAGEMENT
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Live Group Permissions
------------------------------------------------------------- */
-
-async function setLivePermissions(env, allow) {
-
-  await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setChatPermissions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-
-        chat_id: env.TELEGRAM_LIVE_CHAT_ID,
-
-        permissions: {
-
-          can_send_messages: allow,
-          can_send_media_messages: allow,
-          can_send_polls: allow,
-          can_send_other_messages: allow,
-          can_add_web_page_previews: allow
-
-        }
-
-      })
-    }
-  );
-
-}
-
-
-/* ============================================================
-   JOIN REQUEST HANDLING
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Handle Join Request
------------------------------------------------------------- */
-
-async function handleJoinRequest(joinRequest, env) {
-
-  // Ignore requests for other groups.
-  if (
-    joinRequest.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)
-  ) {
-    return;
-  }
-
-  const isEligible = await isUserInAnnouncement(
-    joinRequest.from.id,
-    env
-  );
-
-  if (!isEligible) {
-    return;
-  }
-
-  await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/approveChatJoinRequest`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-
-        chat_id: joinRequest.chat.id,
-        user_id: joinRequest.from.id
-
-      })
-    }
-  );
-
-}
-
-
-/* ============================================================
-   MEMBER MONITORING
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Verify Members
------------------------------------------------------------- */
-
-async function handleChatMember(chatMember, env) {
-
-  if (
-    chatMember.chat.id !== Number(env.TELEGRAM_LIVE_CHAT_ID)
-  ) {
-    return;
-  }
-
-  if (
-    chatMember.new_chat_member.status !== "member"
-  ) {
-    return;
-  }
-
-  const isEligible = await isUserInAnnouncement(
-    chatMember.new_chat_member.user.id,
-    env
-  );
-
-  if (isEligible) {
-    return;
-  }
-
-  await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/banChatMember`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-
-        chat_id: chatMember.chat.id,
-        user_id: chatMember.new_chat_member.user.id,
-
-        // Temporary ban (60 seconds)
-        until_date: Math.floor(Date.now() / 1000) + 60
-
-      })
-    }
-  );
-
-}
-
-
-/* ============================================================
-   ANNOUNCEMENT GROUP VERIFICATION
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Check Announcement Group Membership
------------------------------------------------------------- */
-
-async function isUserInAnnouncement(userId, env) {
-
-  const response = await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getChatMember`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-
-        chat_id: env.TELEGRAM_ANNOUNCEMENT_CHAT_ID,
-        user_id: userId
-
-      })
-    }
-  );
-
-  const data = await response.json().catch(() => null);
-
-  if (!data?.ok) {
-    return false;
-  }
-
-  const status = data.result?.status;
-
-  return (
-    status === "creator" ||
-    status === "administrator" ||
-    status === "member"
-  );
-
-}
-
-
-/* ============================================================
-   END OF PART 4
-============================================================ */
-/* ============================================================
-   TELEGRAM API HELPERS
-============================================================ */
-
-
-/* ------------------------------------------------------------
-   Send Telegram Message
------------------------------------------------------------- */
-
-async function sendMessage(chatId, text, env) {
-
-  return telegramApi(
-
-    "sendMessage",
-
-    {
-      chat_id: chatId,
-      text,
-      disable_web_page_preview: true
-    },
-
-    env
-
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   Generic Telegram API Helper
------------------------------------------------------------- */
-
-async function telegramApi(method, payload, env) {
-
-  const response = await fetch(
-
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`,
-
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    }
-
-  );
-
-  return response.json().catch(() => null);
-
-}
-
-
-/* ============================================================
-   RANDOM TEMPLATE SELECTION
-============================================================ */
-
-
-/*
-|--------------------------------------------------------------------------
-| Current Logic
-|--------------------------------------------------------------------------
-|
-| Randomly selects one reminder template.
-|
-| Immediate repetition is avoided.
-|
-| In a future version we can extend this to remember recently
-| posted templates using KV or D1 without changing the rest
-| of the worker.
-|
-*/
-
-let lastTemplateIndex = -1;
-
-
-/* ------------------------------------------------------------
-   Get Random Template
------------------------------------------------------------- */
-
-function getRandomTemplate() {
-
-  if (REMINDER_TEMPLATES.length === 0) {
-    return null;
-  }
-
-  if (REMINDER_TEMPLATES.length === 1) {
-    return REMINDER_TEMPLATES[0];
-  }
-
-  let randomIndex;
-
-  do {
-
-    randomIndex = Math.floor(
-      Math.random() * REMINDER_TEMPLATES.length
-    );
-
-  } while (randomIndex === lastTemplateIndex);
-
-  lastTemplateIndex = randomIndex;
-
-  return REMINDER_TEMPLATES[randomIndex];
-
-}
-
-
-/* ============================================================
-   NOTES
-============================================================ */
-
-/*
-
-This worker intentionally uses only three environment variables:
-
-• TELEGRAM_BOT_TOKEN
-• TELEGRAM_LIVE_CHAT_ID
-• TELEGRAM_ANNOUNCEMENT_CHAT_ID
-
-Cloudflare Cron:
-
-Configure ONE Cron Trigger
-to execute every 15 minutes.
-
-The worker automatically decides whether to:
-
-• Open the group
-• Post a reminder
-• Close the group
-• Exit immediately
-
-based on the current IST time.
-
-*/
-
-
-/* ============================================================
-   END OF PART 5
-============================================================ */
-const REMINDER_TEMPLATES = [
-
-/* ------------------------------------------------------------
-   TEMPLATE 1
------------------------------------------------------------- */
-
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
-
-This is the KenFolios Live Interaction Group, created exclusively for meaningful business and professional conversations. Connect with fellow members, exchange ideas, build relationships, discover opportunities, and help make this community valuable for everyone.`,
-
-
-
-/* ------------------------------------------------------------
-   TEMPLATE 2
------------------------------------------------------------- */
-
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
-
-If you're new here, introduce yourself in a few lines. Share your name, city, business, the people you work with, and the opportunities or collaborations you're currently looking for. Your next business connection could begin with a simple introduction.`,
-
-
-
-/* ------------------------------------------------------------
-   TEMPLATE 3
------------------------------------------------------------- */
-
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
-
-Tell members what your business offers and how you can help others. A brief introduction today may lead to referrals, partnerships, collaborations, new clients, or meaningful professional relationships.`,
-
-
-
-/* ------------------------------------------------------------
-   TEMPLATE 4
------------------------------------------------------------- */
-
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
-
-Looking for clients, suppliers, service providers, investors, business partners, or referrals? Share your requirement clearly. Specific requests usually receive more relevant and useful responses.`,
-
-
-
-/* ------------------------------------------------------------
-   TEMPLATE 5
------------------------------------------------------------- */
-
-`🎯 KenFolios Live Interaction Group
-9:00 AM – 9:00 PM
-
-Mention your city whenever you introduce yourself or seek help. Members from the same location often connect faster for meetings, referrals, collaborations, and local business opportunities.`,
-
-
-
 /* ------------------------------------------------------------
    TEMPLATE 6
 ------------------------------------------------------------ */
@@ -866,7 +737,6 @@ Mention your city whenever you introduce yourself or seek help. Members from the
 Need advice on a business challenge? Ask the community. Whether it's sales, marketing, finance, hiring, technology, or operations, someone here may have practical experience to share.`,
 
 
-
 /* ------------------------------------------------------------
    TEMPLATE 7
 ------------------------------------------------------------ */
@@ -874,8 +744,7 @@ Need advice on a business challenge? Ask the community. Whether it's sales, mark
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-If you can genuinely help another member with advice, referrals, introductions, or experience, consider replying. Communities become stronger when members support one another.`,
-
+If you can genuinely help another member with advice, referrals, introductions, or experience, consider replying. Strong communities grow when members support one another.`,
 
 
 /* ------------------------------------------------------------
@@ -885,10 +754,7 @@ If you can genuinely help another member with advice, referrals, introductions, 
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Share a useful lesson from your business journey. Your experience, including mistakes and learnings, could help another entrepreneur make better decisions and avoid common challenges.`,
-
-
-
+Share a useful lesson from your business journey. Your experience, including mistakes and learnings, may help another entrepreneur make better decisions and avoid common challenges.`,
 /* ------------------------------------------------------------
    TEMPLATE 9
 ------------------------------------------------------------ */
@@ -899,7 +765,6 @@ Share a useful lesson from your business journey. Your experience, including mis
 Meaningful conversations create meaningful opportunities. Keep discussions focused on business, entrepreneurship, careers, learning, collaborations, and professional growth.`,
 
 
-
 /* ------------------------------------------------------------
    TEMPLATE 10
 ------------------------------------------------------------ */
@@ -907,8 +772,7 @@ Meaningful conversations create meaningful opportunities. Keep discussions focus
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Occasionally you may notice agenda-driven or distracting posts. The best response is simply to ignore them and continue meaningful business conversations. Positive discussions naturally become more visible.`,
-
+Occasionally you may notice agenda-driven or distracting posts. The best response is to simply ignore them and continue meaningful business conversations. Positive discussions naturally become more visible.`,
 
 
 /* ------------------------------------------------------------
@@ -921,7 +785,6 @@ Occasionally you may notice agenda-driven or distracting posts. The best respons
 Your time and attention are valuable. Invest them in conversations that help you learn, solve business challenges, discover opportunities, build relationships, or support fellow members.`,
 
 
-
 /* ------------------------------------------------------------
    TEMPLATE 12
 ------------------------------------------------------------ */
@@ -929,9 +792,9 @@ Your time and attention are valuable. Invest them in conversations that help you
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-KenFolios Business Community primarily operates through WhatsApp. Telegram helps support automation, larger discussion groups, and additional community features as we continue improving the member experience.`
+KenFolios Business Community primarily operates through WhatsApp. Telegram helps support automation, larger discussion groups, and additional community features as we continue improving the member experience.`,
 
-];
+
 /* ------------------------------------------------------------
    TEMPLATE 13
 ------------------------------------------------------------ */
@@ -939,7 +802,7 @@ KenFolios Business Community primarily operates through WhatsApp. Telegram helps
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-New members join the community regularly. Don't hesitate to introduce yourself again occasionally. A conversation that didn't happen yesterday may begin today with someone new.`,
+New members join the community regularly. Feel free to introduce yourself again from time to time. A conversation that didn't happen yesterday may begin today with someone new.`,
 
 
 /* ------------------------------------------------------------
@@ -969,8 +832,7 @@ Every meaningful conversation helps build your professional reputation. Be helpf
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-You don't always have to promote your business. Sometimes sharing your experience, knowledge, or perspective creates stronger trust and naturally attracts opportunities.`,
-
+You don't always have to promote your business. Sharing your experience, knowledge, or practical insights often builds stronger trust and naturally creates new business opportunities.`,
 
 /* ------------------------------------------------------------
    TEMPLATE 17
@@ -979,7 +841,7 @@ You don't always have to promote your business. Sometimes sharing your experienc
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Looking for referrals? Explain exactly what you're looking for and who your ideal customer is. Clear requirements help fellow members recommend the right people.`,
+Looking for referrals? Explain exactly what you're looking for and describe your ideal customer. Clear requirements make it much easier for fellow members to connect you with the right people.`,
 
 
 /* ------------------------------------------------------------
@@ -989,7 +851,7 @@ Looking for referrals? Explain exactly what you're looking for and who your idea
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Need a trusted service provider? Ask the community. Whether it's legal, finance, marketing, technology, logistics, or any professional service, someone may have a reliable recommendation.`,
+Need a trusted service provider? Ask the community. Whether it's legal, finance, marketing, technology, logistics, or any other professional service, someone here may have a reliable recommendation.`,
 
 
 /* ------------------------------------------------------------
@@ -999,7 +861,7 @@ Need a trusted service provider? Ask the community. Whether it's legal, finance,
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-If another member asks a question within your expertise, consider sharing your knowledge. Helpful replies create trust and strengthen your professional identity within the community.`,
+If another member asks a question within your area of expertise, consider sharing your knowledge. Helpful replies build trust and strengthen your professional reputation within the community.`,
 
 
 /* ------------------------------------------------------------
@@ -1009,7 +871,7 @@ If another member asks a question within your expertise, consider sharing your k
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Looking to expand into a new city? Ask if fellow KenFolios members are based there. Local connections often make business expansion smoother and more effective.`,
+Planning to expand into another city? Ask if fellow KenFolios members are based there. Local connections often make business expansion faster, easier, and more effective.`,
 
 
 /* ------------------------------------------------------------
@@ -1019,7 +881,7 @@ Looking to expand into a new city? Ask if fellow KenFolios members are based the
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Meeting another member in person? Feel free to use this group to connect, schedule a meeting, or continue a professional conversation. Strong business relationships often begin with a simple introduction.`,
+Meeting another member in person? Feel free to use this group to connect, schedule a meeting, or continue a professional discussion. Great business relationships often begin with a simple introduction.`,
 
 
 /* ------------------------------------------------------------
@@ -1029,7 +891,7 @@ Meeting another member in person? Feel free to use this group to connect, schedu
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Telegram notifications can be customized anytime. If you prefer fewer alerts, adjust your notification settings while continuing to stay connected with the community.`,
+Telegram notifications can be customized anytime. If you prefer fewer alerts, simply mute the group and visit whenever convenient. Stay connected in the way that works best for you.`,
 
 
 /* ------------------------------------------------------------
@@ -1039,7 +901,7 @@ Telegram notifications can be customized anytime. If you prefer fewer alerts, ad
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-KenFolios Business Community continues to evolve with new technology, automation, and platform integrations to make networking, collaboration, and member engagement even more effective.`,
+KenFolios Business Community continues to evolve with better technology, automation, and platform integrations to make networking, collaboration, and member engagement more effective.`,
 
 
 /* ------------------------------------------------------------
@@ -1049,8 +911,7 @@ KenFolios Business Community continues to evolve with new technology, automation
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-The quality of this community depends on its members. Every thoughtful conversation, helpful reply, and genuine introduction makes KenFolios more valuable for everyone.`
-
+The value of this community depends on its members. Every thoughtful conversation, helpful reply, genuine introduction, and shared experience makes KenFolios stronger for everyone.`,
 
 /* ------------------------------------------------------------
    TEMPLATE 25
@@ -1059,7 +920,7 @@ The quality of this community depends on its members. Every thoughtful conversat
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Keep discussions focused on business, entrepreneurship, careers, investments, innovation, and professional growth. Quality conversations make this community more valuable for everyone.`,
+Conversation Starter: What products or services does your business offer? A short introduction today may help fellow members understand how they can become your customers, partners, or referral sources.`,
 
 
 /* ------------------------------------------------------------
@@ -1069,7 +930,7 @@ Keep discussions focused on business, entrepreneurship, careers, investments, in
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Not every message deserves your attention. If you notice agenda-driven or distracting posts, simply ignore them and continue contributing to meaningful business discussions.`,
+Need help with your business today? Share your question with the community. Practical advice from experienced entrepreneurs can often save valuable time, effort, and resources.`,
 
 
 /* ------------------------------------------------------------
@@ -1079,7 +940,7 @@ Not every message deserves your attention. If you notice agenda-driven or distra
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Your replies represent your personal and professional brand. Every respectful, thoughtful, and helpful response helps build trust and strengthens your reputation within the community.`,
+Can you help another member today? Sharing your knowledge, experience, contacts, or referrals is one of the best ways to build meaningful relationships within the community.`,
 
 
 /* ------------------------------------------------------------
@@ -1089,7 +950,7 @@ Your replies represent your personal and professional brand. Every respectful, t
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Healthy discussions help everyone learn. Respect different opinions, exchange ideas professionally, and keep conversations constructive even when viewpoints differ.`,
+Every reply contributes to your professional reputation. Thoughtful conversations help members remember you long after the discussion has ended. Make every interaction count.`,
 
 
 /* ------------------------------------------------------------
@@ -1099,7 +960,7 @@ Healthy discussions help everyone learn. Respect different opinions, exchange id
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Avoid forwarding unrelated messages or unnecessary content. This group is most valuable when discussions remain relevant, useful, and focused on business and professional networking.`,
+Business conversations create lasting value. Avoid forwarding unrelated content or engaging in unnecessary debates. A focused community benefits every member.`,
 
 
 /* ------------------------------------------------------------
@@ -1109,7 +970,7 @@ Avoid forwarding unrelated messages or unnecessary content. This group is most v
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-If you've solved a business problem recently, share your experience with the community. Practical insights from real situations often help fellow entrepreneurs the most.`,
+Have you recently solved a business problem? Share your experience with fellow members. Practical solutions from real entrepreneurs often help others facing similar challenges.`,
 
 
 /* ------------------------------------------------------------
@@ -1119,7 +980,7 @@ If you've solved a business problem recently, share your experience with the com
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Instead of only promoting your business, try participating in conversations. Members are more likely to remember people who contribute useful knowledge and thoughtful insights.`,
+Instead of only promoting your business, participate in conversations. Helpful members naturally become more visible, trusted, and remembered by the community.`,
 
 
 /* ------------------------------------------------------------
@@ -1129,8 +990,7 @@ Instead of only promoting your business, try participating in conversations. Mem
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Every entrepreneur has a unique journey. Whether your business is just starting or well established, your experiences may encourage or guide another member today.`,
-
+Every entrepreneur has a unique journey. Whether you're just starting or leading an established business, your experiences may encourage, guide, or inspire another member today.`,
 
 /* ------------------------------------------------------------
    TEMPLATE 33
@@ -1139,7 +999,7 @@ Every entrepreneur has a unique journey. Whether your business is just starting 
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Meaningful conversations naturally receive attention. Avoid responding to negativity or unnecessary debates, and help keep this space welcoming, professional, and productive.`,
+Looking for your next customer? Tell members who your ideal customer is, what problem you solve, and how they can refer the right people to you.`,
 
 
 /* ------------------------------------------------------------
@@ -1149,7 +1009,7 @@ Meaningful conversations naturally receive attention. Avoid responding to negati
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Before asking for help, provide enough context about your business or requirement. Clear questions usually lead to faster, more relevant, and more useful responses.`,
+Planning to visit another city? Let members know. There may be fellow entrepreneurs there who would be happy to connect for a business meeting or coffee.`,
 
 
 /* ------------------------------------------------------------
@@ -1159,7 +1019,7 @@ Before asking for help, provide enough context about your business or requiremen
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-You can ask for introductions, recommendations, referrals, partnerships, feedback, or business advice. Clear communication helps fellow members understand how they can support you.`,
+Business grows through conversations. Introduce yourself, ask thoughtful questions, answer others when you can, and build relationships before expecting business opportunities.`,
 
 
 /* ------------------------------------------------------------
@@ -1169,7 +1029,8 @@ You can ask for introductions, recommendations, referrals, partnerships, feedbac
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Every positive interaction strengthens this community. Thank you for contributing with professionalism, respect, and a genuine willingness to help fellow members grow.`,
+Ignore negativity and avoid unnecessary debates. The easiest way to reduce distractions is to focus your attention on meaningful business conversations instead.`,
+
 
 /* ------------------------------------------------------------
    TEMPLATE 37
@@ -1178,7 +1039,7 @@ Every positive interaction strengthens this community. Thank you for contributin
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-What does your business do? Introduce yourself in a few lines and tell members the products or services you offer. Your next client or business connection could already be part of this community.`,
+Question for today: What is one business challenge you're trying to solve right now? Share it with the community and invite practical suggestions from fellow members.`,
 
 
 /* ------------------------------------------------------------
@@ -1188,7 +1049,7 @@ What does your business do? Introduce yourself in a few lines and tell members t
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Who is your ideal customer? Tell members the type of clients, industries, or businesses you work with. The more specific you are, the easier it is for others to refer the right people to you.`,
+Question for today: What opportunities are you currently looking for? Clients, referrals, partnerships, distributors, investors, suppliers, or collaborations? Let members know.`,
 
 
 /* ------------------------------------------------------------
@@ -1198,7 +1059,7 @@ Who is your ideal customer? Tell members the type of clients, industries, or bus
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Which cities does your business serve? Mention your location and service areas. Fellow members nearby may be interested in meeting, collaborating, or referring business to you.`,
+Can another member help you today? If you're looking for recommendations, introductions, feedback, or professional advice, don't hesitate to ask the community.`,
 
 
 /* ------------------------------------------------------------
@@ -1208,8 +1069,7 @@ Which cities does your business serve? Mention your location and service areas. 
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Travelling or available for business meetings? Let members know your city and schedule. A simple coffee meeting today could become a valuable long-term business relationship tomorrow.`,
-
+Every helpful reply increases your professional visibility within the community. People remember those who consistently contribute value through knowledge, experience, and genuine support.`,
 
 /* ------------------------------------------------------------
    TEMPLATE 41
@@ -1218,7 +1078,7 @@ Travelling or available for business meetings? Let members know your city and sc
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Every entrepreneur has a story worth sharing. Tell members about one recent success, milestone, or achievement from your business journey. Your experience may inspire someone else.`,
+Introduce yourself in a few lines. Share your business, your city, who you work with, and the kind of opportunities you're currently looking for.`,
 
 
 /* ------------------------------------------------------------
@@ -1228,7 +1088,7 @@ Every entrepreneur has a story worth sharing. Tell members about one recent succ
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Facing a business challenge? Describe it clearly and invite suggestions from fellow members. Different perspectives and practical experiences often lead to better solutions.`,
+What can you offer fellow members? Whether it's products, services, expertise, referrals, mentoring, or business guidance, let the community know how you can help.`,
 
 
 /* ------------------------------------------------------------
@@ -1238,7 +1098,7 @@ Facing a business challenge? Describe it clearly and invite suggestions from fel
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Everyone has expertise in something. If another member asks a question you can help with, take a moment to reply. Sharing knowledge is one of the easiest ways to build credibility.`,
+Looking to meet members in your city? Feel free to post a meeting request. Business breakfasts, coffee meetings, and networking conversations often lead to valuable relationships.`,
 
 
 /* ------------------------------------------------------------
@@ -1248,7 +1108,7 @@ Everyone has expertise in something. If another member asks a question you can h
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Looking for referrals? Tell members exactly what you're looking for, who your ideal customer is, and the cities you serve. Clear requests usually receive better responses.`,
+Meaningful communities are built through meaningful conversations. Before posting, ask yourself whether your message will help someone learn, connect, collaborate, or grow.`,
 
 
 /* ------------------------------------------------------------
@@ -1258,7 +1118,7 @@ Looking for referrals? Tell members exactly what you're looking for, who your id
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-The best way to handle distracting or agenda-driven posts is to simply ignore them. Stay focused on meaningful business conversations and help maintain a positive environment for everyone.`,
+Some posts are intended only to distract or provoke reactions. The smartest response is to ignore them completely and continue participating in constructive business discussions.`,
 
 
 /* ------------------------------------------------------------
@@ -1268,7 +1128,7 @@ The best way to handle distracting or agenda-driven posts is to simply ignore th
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-KenFolios Business Community primarily runs on WhatsApp. Telegram is used for automation, larger discussion groups, and community features as we continue improving the member experience.`,
+KenFolios Business Community primarily operates through WhatsApp. Telegram enables larger discussion groups, automation, and additional community features that continue to evolve over time.`,
 
 
 /* ------------------------------------------------------------
@@ -1278,7 +1138,7 @@ KenFolios Business Community primarily runs on WhatsApp. Telegram is used for au
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Every helpful reply, thoughtful suggestion, and genuine introduction strengthens your professional reputation. Small contributions today can create valuable opportunities in the future.`,
+If frequent notifications interrupt your work, simply mute this group and visit whenever convenient. You can stay connected without feeling overwhelmed by notifications.`,
 
 
 /* ------------------------------------------------------------
@@ -1288,36 +1148,15 @@ Every helpful reply, thoughtful suggestion, and genuine introduction strengthens
 `🎯 KenFolios Live Interaction Group
 9:00 AM – 9:00 PM
 
-Thank you for being part of the KenFolios Business Community. Let's keep this group professional, welcoming, and focused on meaningful conversations that help members learn, connect, and grow together.`
+Thank you for being part of the KenFolios Business Community. Let's build a trusted network through respectful conversations, genuine support, valuable introductions, and meaningful business relationships.`
+
+/* ============================================================
+   END OF REMINDER TEMPLATE LIBRARY
+============================================================ */
 
 ];
 
+
 /* ============================================================
-   RANDOM TEMPLATE SELECTION
+   END OF KENFOLIOS LIVE INTERACTION GROUP WORKER
 ============================================================ */
-
-let lastTemplateIndex = -1;
-
-function getRandomTemplate() {
-
-  if (REMINDER_TEMPLATES.length === 0) {
-    return null;
-  }
-
-  if (REMINDER_TEMPLATES.length === 1) {
-    return REMINDER_TEMPLATES[0];
-  }
-
-  let randomIndex;
-
-  do {
-    randomIndex = Math.floor(
-      Math.random() * REMINDER_TEMPLATES.length
-    );
-  } while (randomIndex === lastTemplateIndex);
-
-  lastTemplateIndex = randomIndex;
-
-  return REMINDER_TEMPLATES[randomIndex];
-
-}
