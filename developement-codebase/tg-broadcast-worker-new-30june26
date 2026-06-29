@@ -49,13 +49,13 @@ Use the links below to join our WhatsApp Groups, Live Discussion Group, and read
 <b>Important:</b> Our existing 200+ WhatsApp groups are currently at capacity. New WhatsApp groups will begin rolling out from <b>4th July 2026</b>.
 
 📲 <b>WhatsApp Groups</b>
-${WHATSAPP_GROUPS_URL}
+${env.WHATSAPP_GROUPS_URL}
 
 💬 <b>Live Discussion Group</b>
-${LIVE_DISCUSSION_GROUP_URL}
+${env.LIVE_DISCUSSION_GROUP_URL}
 
 📖 <b>The Hidden Advantage</b>
-${ADVANTAGE_URL}
+${env.ADVANTAGE_URL}
 
 More important announcements, updates, events and new features will be shared here soon. Stay tuned.
 `;
