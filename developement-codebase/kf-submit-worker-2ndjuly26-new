@@ -1543,16 +1543,14 @@ if (!activation_token) {
 // Sent once after successful payment confirmation
 // Independent of email delivery
 // --------------------------------------------------
-ctx.waitUntil(
-  sendWhatsAppMessage(
-    env,
-    env.TWILIO_TEMPLATE_ACTIVATION_LINK,
-    member.phone,
-    {
-      "1": member.full_name || "Member",
-      "2": activation_token
-    }
-  )
+await sendWhatsAppMessage(
+  env,
+  env.TWILIO_TEMPLATE_ACTIVATION_LINK,
+  member.phone,
+  {
+    "1": member.full_name || "Member",
+    "2": activation_token
+  }
 );
     // --------------------------------------------------
     // 11) Final response
