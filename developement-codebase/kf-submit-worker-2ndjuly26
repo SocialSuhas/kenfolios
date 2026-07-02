@@ -850,7 +850,22 @@ ctx.waitUntil(
   })()
 );
 
-
+// --------------------------------------------------
+// TWILIO WHATSAPP — ORDER CREATED (EXISTING UNPAID MEMBER)
+// Sent once after successful /api/join (independent of email)
+// --------------------------------------------------
+ctx.waitUntil(
+  sendWhatsAppMessage(
+    env,
+    env.TWILIO_TEMPLATE_ORDER_CREATED,
+    existing.phone,
+    {
+      "1": existing.full_name || "Member",
+      "2": order.order_ref,
+      "3": String(order.totals.total)
+    }
+  )
+);
       return json({ ok: true, member_id: Number(existing.id), dbCount, order }, 200, origin);
     }
 
@@ -1012,7 +1027,43 @@ ctx.waitUntil(
     }
   })()
 );
+  } catch (e) {
+      console.error("Order email send failed, fallback to Brevo:", String(e));
 
+      // Absolute safety net
+      await sendOrderCreatedEmailBrevo(env, {
+        toEmail: memberRow.email,
+        fullName: memberRow.full_name || "Member",
+        orderUrl: order.order_url,
+        orderRef: order.order_ref,
+        orderCreatedAt: order.order_created_at,
+        orderTotal: order.totals.total
+      });
+    }
+  })()
+);
+
+// --------------------------------------------------
+// TWILIO WHATSAPP — ORDER CREATED (NEW MEMBER)
+// Sent once after successful /api/join (independent of email)
+// --------------------------------------------------
+ctx.waitUntil(
+  sendWhatsAppMessage(
+    env,
+    env.TWILIO_TEMPLATE_ORDER_CREATED,
+    memberRow.phone,
+    {
+      "1": memberRow.full_name || "Member",
+      "2": order.order_ref,
+      "3": String(order.totals.total)
+    }
+  )
+);
+
+return json(
+  {
+    ok: true,
+    ...
     return json(
       { ok: true, member_id, message: "Joined", dbCount, order },
       201,
@@ -1504,6 +1555,21 @@ async function handlePaymentConfirm(request, env, origin) {
         console.error("Email send failed:", String(e));
       }
     }
+    // --------------------------------------------------
+// TWILIO WHATSAPP — MEMBERSHIP ACTIVATED
+// Sent once after successful payment confirmation
+// --------------------------------------------------
+ctx.waitUntil(
+  sendWhatsAppMessage(
+    env,
+    env.TWILIO_TEMPLATE_ACTIVATION_LINK,
+    member.phone,
+    {
+      "1": member.full_name || "Member",
+      "2": order.activation_url
+    }
+  )
+);
 
     // --------------------------------------------------
     // 11) Final response
