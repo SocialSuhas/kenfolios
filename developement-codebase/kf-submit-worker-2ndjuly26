@@ -2034,9 +2034,13 @@ async function sendWhatsAppMessage(env, templateSid, toPhone, variables = {}) {
     }
 
     // Normalise phone number
-    let phone = String(toPhone).trim();
-    if (!phone.startsWith("+")) {
-      phone = `+${phone}`;
+    let phone = String(toPhone).trim().replace(/[\s()-]/g, "");
+
+    // If the user entered exactly 10 digits, assume it is an Indian
+    // mobile number and automatically prefix +91.
+    // If the number already starts with '+', leave it unchanged.
+    if (/^\d{10}$/.test(phone)) {
+      phone = `+91${phone}`;
     }
 
     const body = new URLSearchParams();
