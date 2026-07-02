@@ -850,22 +850,7 @@ ctx.waitUntil(
   })()
 );
 
-// --------------------------------------------------
-// TWILIO WHATSAPP — ORDER CREATED (EXISTING UNPAID MEMBER)
-// Sent once after successful /api/join (independent of email)
-// --------------------------------------------------
-ctx.waitUntil(
-  sendWhatsAppMessage(
-    env,
-    env.TWILIO_TEMPLATE_ORDER_CREATED,
-    existing.phone,
-    {
-      "1": existing.full_name || "Member",
-      "2": order.order_ref,
-      "3": String(order.totals.total)
-    }
-  )
-);
+
       return json({ ok: true, member_id: Number(existing.id), dbCount, order }, 200, origin);
     }
 
@@ -1027,43 +1012,7 @@ ctx.waitUntil(
     }
   })()
 );
-  } catch (e) {
-      console.error("Order email send failed, fallback to Brevo:", String(e));
 
-      // Absolute safety net
-      await sendOrderCreatedEmailBrevo(env, {
-        toEmail: memberRow.email,
-        fullName: memberRow.full_name || "Member",
-        orderUrl: order.order_url,
-        orderRef: order.order_ref,
-        orderCreatedAt: order.order_created_at,
-        orderTotal: order.totals.total
-      });
-    }
-  })()
-);
-
-// --------------------------------------------------
-// TWILIO WHATSAPP — ORDER CREATED (NEW MEMBER)
-// Sent once after successful /api/join (independent of email)
-// --------------------------------------------------
-ctx.waitUntil(
-  sendWhatsAppMessage(
-    env,
-    env.TWILIO_TEMPLATE_ORDER_CREATED,
-    memberRow.phone,
-    {
-      "1": memberRow.full_name || "Member",
-      "2": order.order_ref,
-      "3": String(order.totals.total)
-    }
-  )
-);
-
-return json(
-  {
-    ok: true,
-    ...
     return json(
       { ok: true, member_id, message: "Joined", dbCount, order },
       201,
@@ -1555,21 +1504,6 @@ async function handlePaymentConfirm(request, env, origin) {
         console.error("Email send failed:", String(e));
       }
     }
-    // --------------------------------------------------
-// TWILIO WHATSAPP — MEMBERSHIP ACTIVATED
-// Sent once after successful payment confirmation
-// --------------------------------------------------
-ctx.waitUntil(
-  sendWhatsAppMessage(
-    env,
-    env.TWILIO_TEMPLATE_ACTIVATION_LINK,
-    member.phone,
-    {
-      "1": member.full_name || "Member",
-      "2": order.activation_url
-    }
-  )
-);
 
     // --------------------------------------------------
     // 11) Final response
@@ -2081,70 +2015,3 @@ async function sendOrderCreatedEmailZepto(env, data) {
     console.error("ZeptoMail fetch error:", String(e));
   }
 }
-// ===== TWILIO WHATSAPP CONTENT TEMPLATE SENDER =====
-async function sendWhatsAppMessage(env, templateSid, toPhone, variables = {}) {
-  try {
-    // Feature flag
-    if (env.TWILIO_ENABLED !== "true") return;
-
-    // Validate configuration
-    if (
-      !env.TWILIO_ACCOUNT_SID ||
-      !env.TWILIO_AUTH_TOKEN ||
-      !env.TWILIO_WHATSAPP_FROM ||
-      !templateSid ||
-      !toPhone
-    ) {
-      console.error("Twilio WhatsApp configuration missing.");
-      return;
-    }
-
-    // Normalise phone number
-    let phone = String(toPhone).trim().replace(/[\s()-]/g, "");
-
-    // If the user entered exactly 10 digits, assume it is an Indian
-    // mobile number and automatically prefix +91.
-    // If the number already starts with '+', leave it unchanged.
-    if (/^\d{10}$/.test(phone)) {
-      phone = `+91${phone}`;
-    }
-
-    const body = new URLSearchParams();
-    body.append("From", env.TWILIO_WHATSAPP_FROM);
-    body.append("To", `whatsapp:${phone}`);
-    body.append("ContentSid", templateSid);
-    body.append("ContentVariables", JSON.stringify(variables));
-
-    const auth = btoa(
-      `${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`
-    );
-
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        "Twilio WhatsApp send failed:",
-        response.status,
-        await response.text()
-      );
-      return;
-    }
-
-    const result = await response.json();
-    console.log("Twilio WhatsApp sent:", result.sid);
-
-  } catch (e) {
-    console.error("Twilio WhatsApp error:", String(e));
-  }
-}
-// ===== END TWILIO WHATSAPP CONTENT TEMPLATE SENDER =====
