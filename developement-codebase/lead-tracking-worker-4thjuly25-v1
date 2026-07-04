@@ -1,0 +1,1043 @@
+/**
+ * ============================================================================
+ * KENFOLIOS LEAD TRACKER
+ * ============================================================================
+ *
+ * PURPOSE
+ * -------
+ * Syncs leads from a public Google Sheet into D1 and periodically checks
+ * against the master Members database for payment status.
+ *
+ * D1 Bindings
+ * ------------
+ * LEADS_DB
+ * MEMBERS_DB
+ *
+ * Environment Variables
+ * ---------------------
+ * SHEET_URL
+ *
+ * Google Sheet Columns
+ * --------------------
+ * Name
+ * Phone
+ * Assigned To
+ * Batch
+ *
+ * Lead Status Mapping
+ * -------------------
+ * Not Found
+ * Pending
+ * Paid
+ *
+ * ============================================================================
+ */
+
+export default {
+
+  async fetch(request, env, ctx) {
+
+    try {
+
+      const url = new URL(request.url);
+
+      switch (url.pathname) {
+
+        case "/":
+
+          return json({
+            success: true,
+            service: "KenFolios Lead Tracker",
+            version: "1.0.0",
+            endpoints: [
+              "/health",
+              "/sync"
+            ]
+          });
+
+        case "/health":
+
+          return json({
+            success: true,
+            status: "healthy",
+            timestamp: new Date().toISOString()
+          });
+
+        case "/sync":
+
+          return json(
+            await syncLeads(env)
+          );
+
+        default:
+
+          return new Response(
+            "Not Found",
+            {
+              status: 404
+            }
+          );
+
+      }
+
+    }
+
+    catch (err) {
+
+      return json({
+
+        success: false,
+
+        error: err.message,
+
+        stack: err.stack
+
+      }, 500);
+
+    }
+
+  },
+
+  async scheduled(event, env, ctx) {
+
+    ctx.waitUntil(
+      syncLeads(env)
+    );
+
+  }
+
+};
+
+/* ============================================================================
+   MAIN SYNC
+============================================================================ */
+
+async function syncLeads(env) {
+
+  const started = Date.now();
+
+  const summary = {
+
+    success: true,
+
+    rowsFetched: 0,
+
+    inserted: 0,
+
+    updated: 0,
+
+    matched: 0,
+
+    paid: 0,
+
+    pending: 0,
+
+    notFound: 0,
+
+    errors: 0
+
+  };
+
+  try {
+
+    const csvUrl = buildCsvUrl(
+      env.SHEET_URL
+    );
+
+    const response =
+      await fetch(csvUrl);
+
+    if (!response.ok) {
+
+      throw new Error(
+        `Google Sheet returned ${response.status}`
+      );
+
+    }
+
+    const csv =
+      await response.text();
+
+    const rows =
+      parseCSV(csv);
+
+    summary.rowsFetched =
+      rows.length;
+
+    for (const row of rows) {
+
+      try {
+
+        await processLead(
+
+          env,
+
+          row,
+
+          summary
+
+        );
+
+      }
+
+      catch (err) {
+
+        summary.errors++;
+
+        console.error(err);
+
+      }
+
+    }
+
+    summary.durationMs =
+      Date.now() - started;
+
+    await writeWorkerLog(
+      env,
+      summary
+    );
+
+    return summary;
+
+  }
+
+  catch (err) {
+
+    return {
+
+      success: false,
+
+      error: err.message
+
+    };
+
+  }
+
+}
+
+/* ============================================================================
+   PROCESS ONE LEAD
+============================================================================ */
+
+async function processLead(
+  env,
+  row,
+  summary
+) {
+
+  const name =
+    (row["Name"] || "").trim();
+
+  let phone =
+    (row["Phone"] || "").trim();
+
+  const assignedTo =
+    (row["Assigned To"] || "").trim();
+
+  const batch =
+    (row["Batch"] || "").trim();
+
+  if (!phone)
+    return;
+
+  const lead =
+    await env.LEADS_DB
+      .prepare(`
+SELECT *
+FROM leads
+WHERE phone=?
+LIMIT 1
+`)
+      .bind(phone)
+      .first();
+
+  if (!lead) {
+
+    await env.LEADS_DB
+      .prepare(`
+INSERT INTO leads
+(
+name,
+phone,
+assigned_to,
+batch,
+payment_status
+)
+VALUES
+(
+?,
+?,
+?,
+?,
+'Not Found'
+)
+`)
+      .bind(
+        name,
+        phone,
+        assignedTo,
+        batch
+      )
+      .run();
+
+    summary.inserted++;
+
+  }
+
+  else {
+
+    if (
+
+      lead.name !== name ||
+
+      lead.assigned_to !== assignedTo ||
+
+      lead.batch !== batch
+
+    ) {
+
+      await env.LEADS_DB
+        .prepare(`
+UPDATE leads
+SET
+name=?,
+assigned_to=?,
+batch=?,
+updated_at=CURRENT_TIMESTAMP
+WHERE phone=?
+`)
+        .bind(
+          name,
+          assignedTo,
+          batch,
+          phone
+        )
+        .run();
+
+      summary.updated++;
+
+    }
+
+  }
+
+  await syncMemberStatus(
+    env,
+    phone,
+    summary
+  );
+
+}
+
+/* ============================================================================
+   GOOGLE SHEET URL
+============================================================================ */
+
+function buildCsvUrl(url) {
+
+  if (!url)
+    throw new Error(
+      "SHEET_URL missing."
+    );
+
+  const match =
+    url.match(
+      /\/d\/([^/]+)\//
+    );
+
+  if (!match)
+    throw new Error(
+      "Invalid Google Sheet URL."
+    );
+
+  return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+
+}
+
+/* ============================================================================
+   JSON
+============================================================================ */
+
+function json(data, status = 200) {
+
+  return new Response(
+
+    JSON.stringify(
+      data,
+      null,
+      2
+    ),
+
+    {
+
+      status,
+
+      headers: {
+
+        "Content-Type":
+          "application/json"
+
+      }
+
+    }
+
+  );
+
+}
+/* ============================================================================
+   CSV PARSER
+============================================================================ */
+
+function parseCSV(csv) {
+
+  csv = csv.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  const lines = csv
+    .split("\n")
+    .filter(x => x.trim() !== "");
+
+  if (lines.length <= 1)
+    return [];
+
+  const headers =
+    splitCSV(lines[0]);
+
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+
+    const values =
+      splitCSV(lines[i]);
+
+    const row = {};
+
+    headers.forEach((h, index) => {
+
+      row[h.trim()] =
+        (values[index] || "").trim();
+
+    });
+
+    rows.push(row);
+
+  }
+
+  return rows;
+
+}
+
+function splitCSV(line) {
+
+  const result = [];
+
+  let value = "";
+
+  let quoted = false;
+
+  for (let i = 0; i < line.length; i++) {
+
+    const ch = line[i];
+
+    if (ch === '"') {
+
+      if (
+        quoted &&
+        line[i + 1] === '"'
+      ) {
+
+        value += '"';
+
+        i++;
+
+      }
+
+      else {
+
+        quoted = !quoted;
+
+      }
+
+    }
+
+    else if (
+      ch === "," &&
+      !quoted
+    ) {
+
+      result.push(value);
+
+      value = "";
+
+    }
+
+    else {
+
+      value += ch;
+
+    }
+
+  }
+
+  result.push(value);
+
+  return result;
+
+}
+
+/* ============================================================================
+   MEMBER SYNC
+============================================================================ */
+
+async function syncMemberStatus(
+  env,
+  phone,
+  summary
+) {
+
+ const lookupPhone = phone.replace(/^'?=/, "");
+
+const member =
+  await env.MEMBERS_DB
+    .prepare(`
+SELECT
+id,
+activation_gateway_status,
+activation_fee_paid_at
+FROM members
+WHERE phone LIKE ?
+ORDER BY id DESC
+LIMIT 1
+`)
+    .bind(`%${lookupPhone}%`)
+    .first();
+  const lead =
+    await env.LEADS_DB
+      .prepare(`
+SELECT *
+FROM leads
+WHERE phone=?
+LIMIT 1
+`)
+      .bind(phone)
+      .first();
+
+  if (!lead)
+    return;
+
+  let paymentStatus = "Not Found";
+
+  let memberId = null;
+
+  let paymentDate = null;
+
+  if (!member) {
+
+    summary.notFound++;
+
+  }
+
+  else {
+
+    summary.matched++;
+
+    memberId = member.id;
+
+    paymentDate =
+      member.activation_fee_paid_at;
+
+    if (
+      member.activation_gateway_status ===
+      "captured"
+    ) {
+
+      paymentStatus = "Paid";
+
+      summary.paid++;
+
+    }
+
+    else {
+
+      paymentStatus = "Pending";
+
+      summary.pending++;
+
+    }
+
+  }
+
+  await updateLeadRecord(
+
+    env,
+
+    lead,
+
+    paymentStatus,
+
+    memberId,
+
+    paymentDate
+
+  );
+
+}
+
+/* ============================================================================
+   UPDATE LEAD
+============================================================================ */
+
+async function updateLeadRecord(
+
+  env,
+
+  lead,
+
+  paymentStatus,
+
+  memberId,
+
+  paymentDate
+
+) {
+
+  const now =
+    new Date().toISOString();
+
+  let firstDetected =
+    lead.first_detected_at;
+
+  let converted =
+    lead.converted_at;
+
+  let previous =
+    lead.payment_status;
+
+  let lastStatus =
+    lead.last_status;
+
+  let lastChanged =
+    lead.last_status_change_at;
+
+  if (
+    memberId &&
+    !firstDetected
+  ) {
+
+    firstDetected = now;
+
+  }
+
+  if (
+    paymentStatus === "Paid" &&
+    !converted
+  ) {
+
+    converted = now;
+
+  }
+
+  if (
+    previous !== paymentStatus
+  ) {
+
+    lastStatus = previous;
+
+    lastChanged = now;
+
+  }
+
+  const checks =
+    (lead.check_count || 0) + 1;
+
+  await env.LEADS_DB
+    .prepare(`
+UPDATE leads
+SET
+
+payment_status=?,
+
+member_id=?,
+
+payment_date=?,
+
+first_detected_at=?,
+
+last_checked_at=?,
+
+converted_at=?,
+
+check_count=?,
+
+last_status=?,
+
+last_status_change_at=?,
+
+updated_at=CURRENT_TIMESTAMP
+
+WHERE id=?
+`)
+    .bind(
+
+      paymentStatus,
+
+      memberId,
+
+      paymentDate,
+
+      firstDetected,
+
+      now,
+
+      converted,
+
+      checks,
+
+      lastStatus,
+
+      lastChanged,
+
+      lead.id
+
+    )
+    .run();
+
+}
+/* ============================================================================
+   WORKER LOGGING
+============================================================================ */
+
+async function writeWorkerLog(env, summary) {
+
+  try {
+
+    await env.LEADS_DB
+      .prepare(`
+INSERT INTO worker_log
+(
+started_at,
+completed_at,
+
+rows_fetched,
+
+inserted,
+updated,
+
+matched,
+paid,
+pending,
+not_found,
+
+errors,
+
+duration_ms,
+
+status
+)
+VALUES
+(
+datetime('now', '-' || ? || ' milliseconds'),
+
+CURRENT_TIMESTAMP,
+
+?,
+
+?,
+?,
+
+?,
+?,
+?,
+?,
+
+?,
+
+?,
+
+?
+)
+`)
+      .bind(
+
+        summary.durationMs,
+
+        summary.rowsFetched,
+
+        summary.inserted,
+        summary.updated,
+
+        summary.matched,
+        summary.paid,
+        summary.pending,
+        summary.notFound,
+
+        summary.errors,
+
+        summary.durationMs,
+
+        summary.success
+          ? "Success"
+          : "Failed"
+
+      )
+      .run();
+
+  }
+
+  catch (err) {
+
+    console.error(
+      "Unable to write worker log",
+      err
+    );
+
+  }
+
+}
+
+/* ============================================================================
+   DASHBOARD COUNTS
+============================================================================ */
+
+async function getDashboardCounts(env) {
+
+  const row =
+    await env.LEADS_DB
+      .prepare(`
+SELECT
+
+COUNT(*) total,
+
+SUM(
+CASE
+WHEN payment_status='Paid'
+THEN 1
+ELSE 0
+END
+) paid,
+
+SUM(
+CASE
+WHEN payment_status='Pending'
+THEN 1
+ELSE 0
+END
+) pending,
+
+SUM(
+CASE
+WHEN payment_status='Not Found'
+THEN 1
+ELSE 0
+END
+) not_found
+
+FROM leads
+`)
+      .first();
+
+  return row;
+
+}
+
+/* ============================================================================
+   OPTIONAL REPORT
+============================================================================ */
+
+async function getWorkerSummary(env) {
+
+  const stats =
+    await getDashboardCounts(env);
+
+  const latest =
+    await env.LEADS_DB
+      .prepare(`
+SELECT
+*
+FROM worker_log
+ORDER BY id DESC
+LIMIT 1
+`)
+      .first();
+
+  return {
+
+    leads: stats,
+
+    latestRun: latest
+
+  };
+
+}
+
+/* ============================================================================
+   DATE HELPERS
+============================================================================ */
+
+function now() {
+
+  return new Date().toISOString();
+
+}
+
+function currentTimestamp() {
+
+  return new Date()
+    .toISOString()
+    .replace("T", " ")
+    .substring(0, 19);
+
+}
+
+/* ============================================================================
+   STRING HELPERS
+============================================================================ */
+
+function safe(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+  return String(value).trim();
+
+}
+
+function isBlank(value) {
+
+  return (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  );
+
+}
+
+/* ============================================================================
+   LOGGING
+============================================================================ */
+
+function log(...args) {
+
+  console.log(
+    "[LeadTracker]",
+    ...args
+  );
+
+}
+
+function error(...args) {
+
+  console.error(
+    "[LeadTracker]",
+    ...args
+  );
+
+}
+/* ============================================================================
+   OPTIONAL ENDPOINT HELPERS
+============================================================================ */
+
+async function getLatestWorkerRun(env) {
+
+  return await env.LEADS_DB
+    .prepare(`
+SELECT *
+FROM worker_log
+ORDER BY id DESC
+LIMIT 1
+`)
+    .first();
+
+}
+
+async function getLeadCount(env) {
+
+  const row =
+    await env.LEADS_DB
+      .prepare(`
+SELECT COUNT(*) total
+FROM leads
+`)
+      .first();
+
+  return row?.total || 0;
+
+}
+
+/* ============================================================================
+   DATABASE PING
+============================================================================ */
+
+async function databaseHealth(env) {
+
+  try {
+
+    await env.LEADS_DB
+      .prepare("SELECT 1")
+      .first();
+
+    await env.MEMBERS_DB
+      .prepare("SELECT 1")
+      .first();
+
+    return true;
+
+  }
+
+  catch {
+
+    return false;
+
+  }
+
+}
+
+/* ============================================================================
+   VALIDATION
+============================================================================ */
+
+function validateSheetRow(row) {
+
+  if (!row)
+    return false;
+
+  if (!row["Phone"])
+    return false;
+
+  return true;
+
+}
+
+/* ============================================================================
+   FUTURE PLACEHOLDERS
+============================================================================ */
+
+/*
+Future enhancements:
+
+✓ Incremental sheet sync
+✓ Sync log table
+✓ Batch processing
+✓ Retry queue
+✓ Webhook notifications
+✓ Email summary
+✓ Telegram summary
+✓ Slack alerts
+✓ Analytics views
+✓ Lead ageing
+✓ Conversion timeline
+✓ Duplicate detector
+*/
+
+/* ============================================================================
+   WORKER COMPLETE
+============================================================================ */
+
+console.log(
+  "KenFolios Lead Tracker Worker Loaded"
+);
