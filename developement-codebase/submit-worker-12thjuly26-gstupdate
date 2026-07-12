@@ -1134,6 +1134,14 @@ async function handleCreateOrder(request, env, origin) {
   const member_id = Number(body.member_id || body.memberId);
   const coupon = body.coupon || body.coupon_code || body.couponCode || null;
   const simulate = !!body.simulate;
+const business_category =
+  (body.business_category || "").toString().trim() || null;
+
+const gst_number =
+  (body.gst_number || "").toString().trim().toUpperCase() || null;
+
+const business_name =
+  (body.business_name || "").toString().trim() || null;
 
   if (!member_id) {
     return json({ ok: false, message: "member_id required" }, 400, origin);
@@ -1152,6 +1160,23 @@ async function handleCreateOrder(request, env, origin) {
   }
 
   const member = lookup.results[0];
+// Added for GST integration
+await db.prepare(`
+  UPDATE members
+  SET
+    business_category = ?,
+    gst_number = ?
+    business_name = ?,
+  WHERE id = ?
+`)
+.bind(
+business_name,
+  business_category,
+  gst_number,
+  member_id
+)
+.run();
+
 
   // --------------------------------------------------
   // 2) HARD GUARD — already paid
@@ -1596,6 +1621,7 @@ async function handleFetchOrderByRef(request, env, origin) {
       return json({ ok: false, message: "Order not found" }, 404, origin);
     }
     const member = lookup.results[0];
+
     const order = buildOrderObject(member.id, member, null);
     return json({ ok: true, order }, 200, origin);
   } catch (err) {
