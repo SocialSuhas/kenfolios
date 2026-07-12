@@ -1164,13 +1164,13 @@ const business_name =
 await db.prepare(`
   UPDATE members
   SET
+    business_name = ?,
     business_category = ?,
     gst_number = ?
-    business_name = ?,
   WHERE id = ?
 `)
 .bind(
-business_name,
+  business_name,
   business_category,
   gst_number,
   member_id
