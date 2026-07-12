@@ -3928,24 +3928,35 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   }
 
   /* ------------------ Networking helpers for coupon/payment ------------------ */
-  async function patchMember(id,box){
-    const body={
-      name:$id('ord_full_name').value.trim(),
-      email:$id('ord_email').value.trim(),
-      phone:$id('ord_phone').value.trim(),
-      city:$id('ord_city').value.trim()
-    };
-    try{
-      const resp=await fetch(PATCH_MEMBER_BASE+id,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(body)
-      });
-      const j=await resp.json();
-      if(!resp.ok||!j.ok) return null;
-      return j.order;
-    }catch{return null;}
+ async function patchMember(id, box) {
+  const body = {
+    name: $id('ord_full_name').value.trim(),
+    email: $id('ord_email').value.trim(),
+    phone: $id('ord_phone').value.trim(),
+    city: $id('ord_city').value.trim(),
+
+    // Business profile fields
+    business_category: ($id('ord_business_category')?.value || '').trim(),
+    business_name: ($id('ord_business_name')?.value || '').trim(),
+    gst_number: (($id('ord_gst_number')?.value || '').trim()).toUpperCase()
+  };
+
+  try {
+    const resp = await fetch(PATCH_MEMBER_BASE + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const j = await resp.json();
+
+    if (!resp.ok || !j.ok) return null;
+
+    return j.order;
+  } catch {
+    return null;
   }
+}
 
   async function applyCoupon(id,code,box){
     try{
