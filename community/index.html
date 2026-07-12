@@ -3780,7 +3780,7 @@ box.appendChild(mk('City', 'ord_city', order.member.city));
 
 // Reserved Business Category (full width)
 const businessCategoryField = mk(
-  'Reserved Business Category (Optional)',
+  'Reserved Business Category(Optional)',
   'ord_business_category',
   order.member.business_category || ''
 );
@@ -3868,7 +3868,7 @@ const businessNameWrap = document.createElement('div');
 businessNameWrap.style.marginTop = '14px';
 
 const businessNameLabel = document.createElement('div');
-businessNameLabel.textContent = 'Business Name';
+businessNameLabel.textContent = 'Business Name (Optional)';
 businessNameLabel.style.fontSize = '.85rem';
 businessNameLabel.style.color = '#555';
 businessNameLabel.style.marginBottom = '6px';
@@ -3876,7 +3876,7 @@ businessNameLabel.style.marginBottom = '6px';
 const businessNameInput = document.createElement('input');
 businessNameInput.id = 'ord_business_name';
 businessNameInput.className = 'kf-input';
-businessNameInput.placeholder = 'Enter your business name (optional)';
+businessNameInput.placeholder = 'Your business name, website, or social handle.';
 businessNameInput.value = order.member.business_name || '';
 businessNameInput.style.width = '100%';
 businessNameInput.style.boxSizing = 'border-box';
@@ -3893,7 +3893,7 @@ const gstWrap = document.createElement('div');
 gstWrap.style.marginTop = '12px';
 
 const gstLabel = document.createElement('div');
-gstLabel.textContent = 'GST No.';
+gstLabel.textContent = 'GST No.(Optional)';
 gstLabel.style.fontSize = '.85rem';
 gstLabel.style.color = '#555';
 gstLabel.style.marginBottom = '6px';
@@ -3901,7 +3901,7 @@ gstLabel.style.marginBottom = '6px';
 const gstInput = document.createElement('input');
 gstInput.id = 'ord_gst_number';
 gstInput.className = 'kf-input';
-gstInput.placeholder = 'Enter GST number (optional)';
+gstInput.placeholder = 'Enter GST number to get a GST invoice';
 gstInput.value = order.member.gst_number || '';
 gstInput.maxLength = 15;
 gstInput.style.width = '100%';
@@ -3909,7 +3909,6 @@ gstInput.style.boxSizing = 'border-box';
 gstInput.style.padding = '10px';
 gstInput.style.border = '1px solid #e6e6e6';
 gstInput.style.borderRadius = '8px';
-gstInput.style.textTransform = 'uppercase';
 
 gstInput.addEventListener('input', () => {
   gstInput.value = gstInput.value.toUpperCase();
