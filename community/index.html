@@ -3770,10 +3770,21 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     }
 
     box.appendChild(mk('Full Name', 'ord_full_name', order.member.full_name));
-    box.appendChild(mk('Email', 'ord_email', order.member.email));
-    box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
-    box.appendChild(mk('City', 'ord_city', order.member.city));
-    wrap.appendChild(box);
+box.appendChild(mk('Email', 'ord_email', order.member.email));
+box.appendChild(mk('Phone', 'ord_phone', order.member.phone));
+box.appendChild(mk('City', 'ord_city', order.member.city));
+
+// Reserved Business Category (full width)
+const businessCategoryField = mk(
+  'Reserved Business Category',
+  'ord_business_category',
+  order.member.business_category || ''
+);
+businessCategoryField.style.gridColumn = '1 / -1';
+
+box.appendChild(businessCategoryField);
+
+wrap.appendChild(box);
 
     // PRODUCT + fee note
     const prod = document.createElement('div');
