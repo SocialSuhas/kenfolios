@@ -3859,6 +3859,62 @@ wrap.appendChild(box);
 
     wrap.appendChild(couponWrap);
 
+   // Business Name
+const businessNameWrap = document.createElement('div');
+businessNameWrap.style.marginTop = '14px';
+
+const businessNameLabel = document.createElement('div');
+businessNameLabel.textContent = 'Business Name';
+businessNameLabel.style.fontSize = '.85rem';
+businessNameLabel.style.color = '#555';
+businessNameLabel.style.marginBottom = '6px';
+
+const businessNameInput = document.createElement('input');
+businessNameInput.id = 'ord_business_name';
+businessNameInput.className = 'kf-input';
+businessNameInput.placeholder = 'Enter your business name (optional)';
+businessNameInput.value = order.member.business_name || '';
+businessNameInput.style.width = '100%';
+businessNameInput.style.boxSizing = 'border-box';
+businessNameInput.style.padding = '10px';
+businessNameInput.style.border = '1px solid #e6e6e6';
+businessNameInput.style.borderRadius = '8px';
+
+businessNameWrap.appendChild(businessNameLabel);
+businessNameWrap.appendChild(businessNameInput);
+wrap.appendChild(businessNameWrap);
+
+// GST No.
+const gstWrap = document.createElement('div');
+gstWrap.style.marginTop = '12px';
+
+const gstLabel = document.createElement('div');
+gstLabel.textContent = 'GST No.';
+gstLabel.style.fontSize = '.85rem';
+gstLabel.style.color = '#555';
+gstLabel.style.marginBottom = '6px';
+
+const gstInput = document.createElement('input');
+gstInput.id = 'ord_gst_number';
+gstInput.className = 'kf-input';
+gstInput.placeholder = 'Enter GST number (optional)';
+gstInput.value = order.member.gst_number || '';
+gstInput.maxLength = 15;
+gstInput.style.width = '100%';
+gstInput.style.boxSizing = 'border-box';
+gstInput.style.padding = '10px';
+gstInput.style.border = '1px solid #e6e6e6';
+gstInput.style.borderRadius = '8px';
+gstInput.style.textTransform = 'uppercase';
+
+gstInput.addEventListener('input', () => {
+  gstInput.value = gstInput.value.toUpperCase();
+});
+
+gstWrap.appendChild(gstLabel);
+gstWrap.appendChild(gstInput);
+wrap.appendChild(gstWrap);
+
     // totals
     const totals = document.createElement('div');
     totals.style.marginTop = '14px';
