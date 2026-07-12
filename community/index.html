@@ -3749,6 +3749,10 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
         i.id = id;
         i.value = val || '';
         i.className = 'kf-input';
+
+       if (id === 'ord_business_category') {
+  i.placeholder = 'Enter your business category to reserve it in your city group.';
+}
         // basic inline fallback styling so class alone still looks ok
         i.style.padding = '10px';
         i.style.border = '1px solid #e6e6e6';
@@ -3776,7 +3780,7 @@ box.appendChild(mk('City', 'ord_city', order.member.city));
 
 // Reserved Business Category (full width)
 const businessCategoryField = mk(
-  'Reserved Business Category',
+  'Reserved Business Category (Optional)',
   'ord_business_category',
   order.member.business_category || ''
 );
