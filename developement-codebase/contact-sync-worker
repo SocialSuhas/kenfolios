@@ -1,0 +1,2038 @@
+/**
+ * ============================================================================
+ * Contact Sync Worker
+ * Phase 1
+ * ============================================================================
+ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  CONTACTS_PER_CRON: 15,
+
+  CRON_INTERVAL_MINUTES: 10,
+
+  DEBUG: true
+};
+
+async function getSyncState(env) {
+  return await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM sync_state
+      WHERE worker_name = ?
+      LIMIT 1
+    `)
+    .bind(CONFIG.WORKER_NAME)
+    .first();
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    const syncState = await getSyncState(env);
+
+    console.log("Current Sync State:");
+    console.log(syncState);
+
+    console.log("======================================");
+    console.log("Worker Completed");
+    console.log("Execution Time:", Date.now() - startedAt, "ms");
+    console.log("======================================");
+
+  }
+};
+/**
+ * ============================================================================
+ * Contact Sync Worker
+ * Phase 2
+ * ============================================================================
+ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  CONTACTS_PER_CRON: 15,
+
+  CRON_INTERVAL_MINUTES: 10,
+
+  DEBUG: true
+};
+
+async function getSyncState(env) {
+  return await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM sync_state
+      WHERE worker_name = ?
+      LIMIT 1
+    `)
+    .bind(CONFIG.WORKER_NAME)
+    .first();
+}
+
+async function getMembersBatch(env, lastMembersId) {
+  const result = await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        activation_fee_status,
+        activation_gateway_status,
+        activation_captured_at
+      FROM members
+      WHERE id > ?
+      ORDER BY id
+      LIMIT ?
+    `)
+    .bind(lastMembersId, CONFIG.MEMBERS_SCAN_BATCH)
+    .all();
+
+  return result.results;
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    const syncState = await getSyncState(env);
+
+    console.log("Current Sync State:");
+    console.log(syncState);
+
+    const members = await getMembersBatch(
+      env,
+      syncState.last_members_id
+    );
+
+    console.log("Members Scanned:", members.length);
+
+    if (members.length > 0) {
+      console.log("First Member:");
+      console.log(members[0]);
+    }
+
+    console.log("======================================");
+    console.log("Worker Completed");
+    console.log("Execution Time:", Date.now() - startedAt, "ms");
+    console.log("======================================");
+
+  }
+};
+/**
+ * ============================================================================
+ * Contact Sync Worker
+ * Phase 3
+ * ============================================================================
+ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  CONTACTS_PER_CRON: 15,
+
+  CRON_INTERVAL_MINUTES: 10,
+
+  DEBUG: true
+};
+
+async function getSyncState(env) {
+  return await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM sync_state
+      WHERE worker_name = ?
+      LIMIT 1
+    `)
+    .bind(CONFIG.WORKER_NAME)
+    .first();
+}
+
+async function getMembersBatch(env, lastMembersId) {
+  const result = await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        activation_fee_status,
+        activation_gateway_status,
+        activation_captured_at
+      FROM members
+      WHERE id > ?
+      ORDER BY id
+      LIMIT ?
+    `)
+    .bind(lastMembersId, CONFIG.MEMBERS_SCAN_BATCH)
+    .all();
+
+  return result.results;
+}
+
+function isPaidMember(member) {
+  return (
+    member.activation_fee_status === "captured" ||
+    member.activation_gateway_status === "captured"
+  );
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    const syncState = await getSyncState(env);
+
+    const members = await getMembersBatch(
+      env,
+      syncState.last_members_id
+    );
+
+    console.log("Members Scanned:", members.length);
+
+    let paidMembers = 0;
+
+    for (const member of members) {
+
+      if (!isPaidMember(member)) {
+        continue;
+      }
+
+      paidMembers++;
+
+      console.log({
+        member_id: member.id,
+        full_name: member.full_name,
+        email: member.email,
+        phone: member.phone,
+        activation_url: member.activation_url,
+        payment_captured_at: member.activation_captured_at
+      });
+
+    }
+
+    console.log("Paid Members Found:", paidMembers);
+
+    console.log("======================================");
+    console.log("Worker Completed");
+    console.log("Execution Time:", Date.now() - startedAt, "ms");
+    console.log("======================================");
+
+  }
+};
+/**
+ * ============================================================================
+ * Contact Sync Worker
+ * Phase 4
+ * ============================================================================
+ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  CONTACTS_PER_CRON: 15,
+
+  CRON_INTERVAL_MINUTES: 10,
+
+  DEBUG: true
+};
+
+async function getSyncState(env) {
+  return await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM sync_state
+      WHERE worker_name = ?
+      LIMIT 1
+    `)
+    .bind(CONFIG.WORKER_NAME)
+    .first();
+}
+
+async function getMembersBatch(env, lastMembersId) {
+  const result = await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        activation_fee_status,
+        activation_gateway_status,
+        activation_captured_at
+      FROM members
+      WHERE id > ?
+      ORDER BY id
+      LIMIT ?
+    `)
+    .bind(lastMembersId, CONFIG.MEMBERS_SCAN_BATCH)
+    .all();
+
+  return result.results;
+}
+
+function isPaidMember(member) {
+  return (
+    member.activation_fee_status === "captured" ||
+    member.activation_gateway_status === "captured"
+  );
+}
+
+async function upsertContact(env, member) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Find by member_id
+  const existingMember = await env.CONTACTS_DB
+    .prepare(`
+      SELECT id
+      FROM contacts
+      WHERE member_id = ?
+      LIMIT 1
+    `)
+    .bind(member.id)
+    .first();
+
+  if (existingMember) {
+
+    await env.CONTACTS_DB
+      .prepare(`
+        UPDATE contacts
+        SET
+          full_name = ?,
+          email = ?,
+          phone = ?,
+          activation_url = ?,
+          source_members = 1,
+          payment_captured_at = ?,
+          updated_at = ?
+        WHERE member_id = ?
+      `)
+      .bind(
+        member.full_name,
+        member.email,
+        member.phone,
+        member.activation_url,
+        member.activation_captured_at,
+        now,
+        member.id
+      )
+      .run();
+
+    console.log("Updated Member:", member.id);
+
+    return;
+  }
+
+  // Find by email
+  if (member.email) {
+
+    const existingEmail = await env.CONTACTS_DB
+      .prepare(`
+        SELECT id
+        FROM contacts
+        WHERE email = ?
+        LIMIT 1
+      `)
+      .bind(member.email)
+      .first();
+
+    if (existingEmail) {
+
+      await env.CONTACTS_DB
+        .prepare(`
+          UPDATE contacts
+          SET
+            member_id = ?,
+            full_name = ?,
+            phone = ?,
+            activation_url = ?,
+            source_members = 1,
+            payment_captured_at = ?,
+            updated_at = ?
+          WHERE email = ?
+        `)
+        .bind(
+          member.id,
+          member.full_name,
+          member.phone,
+          member.activation_url,
+          member.activation_captured_at,
+          now,
+          member.email
+        )
+        .run();
+
+      console.log("Updated Email:", member.email);
+
+      return;
+    }
+
+  }
+
+  // Insert
+  await env.CONTACTS_DB
+    .prepare(`
+      INSERT INTO contacts (
+        member_id,
+        payment_order_id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        source_members,
+        source_payment_orders,
+        payment_captured_at,
+        created_at,
+        updated_at
+      )
+      VALUES (?, NULL, ?, ?, ?, ?, 1, 0, ?, ?, ?)
+    `)
+    .bind(
+      member.id,
+      member.full_name,
+      member.email,
+      member.phone,
+      member.activation_url,
+      member.activation_captured_at,
+      now,
+      now
+    )
+    .run();
+
+  console.log("Inserted:", member.id);
+
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    const syncState = await getSyncState(env);
+
+    const members = await getMembersBatch(
+      env,
+      syncState.last_members_id
+    );
+
+    console.log("Members Scanned:", members.length);
+
+    let paidMembers = 0;
+
+    for (const member of members) {
+
+      if (!isPaidMember(member)) {
+        continue;
+      }
+
+      paidMembers++;
+
+      await upsertContact(env, member);
+
+    }
+
+    console.log("Paid Members Processed:", paidMembers);
+
+    console.log("======================================");
+    console.log("Worker Completed");
+    console.log("Execution Time:", Date.now() - startedAt, "ms");
+    console.log("======================================");
+
+  }
+};
+/**
+ * ============================================================================
+ * Contact Sync Worker
+ * Phase 5
+ * Members Sync + Update Sync State
+ * ============================================================================
+ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  CONTACTS_PER_CRON: 15,
+
+  CRON_INTERVAL_MINUTES: 10,
+
+  DEBUG: true
+};
+
+async function getSyncState(env) {
+  return await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM sync_state
+      WHERE worker_name = ?
+      LIMIT 1
+    `)
+    .bind(CONFIG.WORKER_NAME)
+    .first();
+}
+
+async function getMembersBatch(env, lastMembersId) {
+  const result = await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        activation_fee_status,
+        activation_gateway_status,
+        activation_captured_at
+      FROM members
+      WHERE id > ?
+      ORDER BY id
+      LIMIT ?
+    `)
+    .bind(lastMembersId, CONFIG.MEMBERS_SCAN_BATCH)
+    .all();
+
+  return result.results;
+}
+
+function isPaidMember(member) {
+  return (
+    member.activation_fee_status === "captured" ||
+    member.activation_gateway_status === "captured"
+  );
+}
+
+async function upsertContact(env, member) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const existingMember = await env.CONTACTS_DB
+    .prepare(`
+      SELECT id
+      FROM contacts
+      WHERE member_id = ?
+      LIMIT 1
+    `)
+    .bind(member.id)
+    .first();
+
+  if (existingMember) {
+
+    await env.CONTACTS_DB
+      .prepare(`
+        UPDATE contacts
+        SET
+          full_name = ?,
+          email = ?,
+          phone = ?,
+          activation_url = ?,
+          source_members = 1,
+          payment_captured_at = ?,
+          updated_at = ?
+        WHERE member_id = ?
+      `)
+      .bind(
+        member.full_name,
+        member.email,
+        member.phone,
+        member.activation_url,
+        member.activation_captured_at,
+        now,
+        member.id
+      )
+      .run();
+
+    return;
+  }
+
+  if (member.email) {
+
+    const existingEmail = await env.CONTACTS_DB
+      .prepare(`
+        SELECT id
+        FROM contacts
+        WHERE email = ?
+        LIMIT 1
+      `)
+      .bind(member.email)
+      .first();
+
+    if (existingEmail) {
+
+      await env.CONTACTS_DB
+        .prepare(`
+          UPDATE contacts
+          SET
+            member_id = ?,
+            full_name = ?,
+            phone = ?,
+            activation_url = ?,
+            source_members = 1,
+            payment_captured_at = ?,
+            updated_at = ?
+          WHERE email = ?
+        `)
+        .bind(
+          member.id,
+          member.full_name,
+          member.phone,
+          member.activation_url,
+          member.activation_captured_at,
+          now,
+          member.email
+        )
+        .run();
+
+      return;
+    }
+
+  }
+
+  await env.CONTACTS_DB
+    .prepare(`
+      INSERT INTO contacts (
+        member_id,
+        payment_order_id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        source_members,
+        source_payment_orders,
+        payment_captured_at,
+        created_at,
+        updated_at
+      )
+      VALUES (?, NULL, ?, ?, ?, ?, 1, 0, ?, ?, ?)
+    `)
+    .bind(
+      member.id,
+      member.full_name,
+      member.email,
+      member.phone,
+      member.activation_url,
+      member.activation_captured_at,
+      now,
+      now
+    )
+    .run();
+
+}
+
+async function updateMembersSyncState(env, member) {
+
+  if (!member) {
+    return;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE sync_state
+      SET
+        last_members_id = ?,
+        last_members_member_id = ?,
+        last_members_email = ?,
+        updated_at = ?
+      WHERE worker_name = ?
+    `)
+    .bind(
+      member.id,
+      member.id,
+      member.email,
+      now,
+      CONFIG.WORKER_NAME
+    )
+    .run();
+
+}
+
+export default {
+
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    const syncState = await getSyncState(env);
+
+    const members = await getMembersBatch(
+      env,
+      syncState.last_members_id
+    );
+
+    console.log("Members Scanned:", members.length);
+
+    let paidMembers = 0;
+    let lastProcessedMember = null;
+
+    for (const member of members) {
+
+      lastProcessedMember = member;
+
+      if (!isPaidMember(member)) {
+        continue;
+      }
+
+      paidMembers++;
+
+      await upsertContact(env, member);
+
+    }
+
+    await updateMembersSyncState(
+      env,
+      lastProcessedMember
+    );
+
+    console.log("Paid Members Processed:", paidMembers);
+
+    console.log("Members Sync Updated To:",
+      lastProcessedMember ? lastProcessedMember.id : syncState.last_members_id
+    );
+
+    console.log("======================================");
+    console.log("Worker Completed");
+    console.log("Execution Time:", Date.now() - startedAt, "ms");
+    console.log("======================================");
+
+  }
+
+};
+/* ============================================================================
+   PART 6A
+   Add these functions below getMembersBatch()
+   ============================================================================ */
+
+async function getPaymentOrdersBatch(env, lastPaymentOrderId) {
+
+  const result = await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        member_id,
+        gateway_payment_id,
+        payment_status,
+        payment_captured_at
+      FROM payment_orders
+      WHERE id > ?
+      ORDER BY id
+      LIMIT ?
+    `)
+    .bind(
+      lastPaymentOrderId,
+      CONFIG.PAYMENT_ORDERS_SCAN_BATCH
+    )
+    .all();
+
+  return result.results;
+
+}
+
+async function getMemberById(env, memberId) {
+
+  return await env.SOURCE_DB
+    .prepare(`
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        activation_captured_at
+      FROM members
+      WHERE id = ?
+      LIMIT 1
+    `)
+    .bind(memberId)
+    .first();
+
+}
+
+function isCapturedPayment(payment) {
+
+  return payment.payment_status === "captured";
+
+}
+/* ============================================================================
+   PART 6B
+   Add these functions below isCapturedPayment()
+   ============================================================================ */
+
+async function processPaymentOrder(env, paymentOrder) {
+
+  if (!isCapturedPayment(paymentOrder)) {
+    return false;
+  }
+
+  const member = await getMemberById(
+    env,
+    paymentOrder.member_id
+  );
+
+  if (!member) {
+    console.log(
+      "Member not found:",
+      paymentOrder.member_id
+    );
+    return false;
+  }
+
+  member.payment_order_id = paymentOrder.id;
+  member.payment_captured_at = paymentOrder.payment_captured_at;
+  member.source_payment_orders = 1;
+
+  await upsertContact(env, member);
+
+  return true;
+
+}
+
+async function updatePaymentOrdersSyncState(env, paymentOrder) {
+
+  if (!paymentOrder) {
+    return;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE sync_state
+      SET
+        last_payment_orders_id = ?,
+        last_payment_order_member_id = ?,
+        last_payment_order_payment_id = ?,
+        updated_at = ?
+      WHERE worker_name = ?
+    `)
+    .bind(
+      paymentOrder.id,
+      paymentOrder.member_id,
+      paymentOrder.gateway_payment_id,
+      now,
+      CONFIG.WORKER_NAME
+    )
+    .run();
+
+}
+/* ============================================================================
+   PART 6C
+   Replace the existing upsertContact() with this version.
+   This version supports BOTH sources of truth.
+   ============================================================================ */
+
+async function upsertContact(env, member) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const sourceMembers = member.source_members ?? 1;
+  const sourcePaymentOrders = member.source_payment_orders ?? 0;
+
+  // Find by member_id
+  const existingMember = await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM contacts
+      WHERE member_id = ?
+      LIMIT 1
+    `)
+    .bind(member.id)
+    .first();
+
+  if (existingMember) {
+
+    await env.CONTACTS_DB
+      .prepare(`
+        UPDATE contacts
+        SET
+          payment_order_id = COALESCE(?, payment_order_id),
+          full_name = ?,
+          email = ?,
+          phone = ?,
+          activation_url = ?,
+
+          source_members = MAX(source_members, ?),
+          source_payment_orders = MAX(source_payment_orders, ?),
+
+          payment_captured_at = COALESCE(?, payment_captured_at),
+
+          updated_at = ?
+
+        WHERE member_id = ?
+      `)
+      .bind(
+        member.payment_order_id ?? null,
+        member.full_name,
+        member.email,
+        member.phone,
+        member.activation_url,
+
+        sourceMembers,
+        sourcePaymentOrders,
+
+        member.payment_captured_at ?? null,
+
+        now,
+        member.id
+      )
+      .run();
+
+    return;
+  }
+
+  // Find by email
+  if (member.email) {
+
+    const existingEmail = await env.CONTACTS_DB
+      .prepare(`
+        SELECT *
+        FROM contacts
+        WHERE email = ?
+        LIMIT 1
+      `)
+      .bind(member.email)
+      .first();
+
+    if (existingEmail) {
+
+      await env.CONTACTS_DB
+        .prepare(`
+          UPDATE contacts
+          SET
+            member_id = ?,
+            payment_order_id = COALESCE(?, payment_order_id),
+
+            full_name = ?,
+            phone = ?,
+            activation_url = ?,
+
+            source_members = MAX(source_members, ?),
+            source_payment_orders = MAX(source_payment_orders, ?),
+
+            payment_captured_at = COALESCE(?, payment_captured_at),
+
+            updated_at = ?
+
+          WHERE email = ?
+        `)
+        .bind(
+          member.id,
+          member.payment_order_id ?? null,
+
+          member.full_name,
+          member.phone,
+          member.activation_url,
+
+          sourceMembers,
+          sourcePaymentOrders,
+
+          member.payment_captured_at ?? null,
+
+          now,
+          member.email
+        )
+        .run();
+
+      return;
+    }
+
+  }
+
+  // Insert new contact
+  await env.CONTACTS_DB
+    .prepare(`
+      INSERT INTO contacts (
+        member_id,
+        payment_order_id,
+
+        full_name,
+        email,
+        phone,
+        activation_url,
+
+        source_members,
+        source_payment_orders,
+
+        payment_captured_at,
+
+        created_at,
+        updated_at
+
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    .bind(
+      member.id,
+      member.payment_order_id ?? null,
+
+      member.full_name,
+      member.email,
+      member.phone,
+      member.activation_url,
+
+      sourceMembers,
+      sourcePaymentOrders,
+
+      member.payment_captured_at ?? null,
+
+      now,
+      now
+    )
+    .run();
+
+}
+/* ============================================================================
+   PART 6D
+   Add this after the Members processing block inside scheduled()
+   ============================================================================ */
+
+const paymentOrders = await getPaymentOrdersBatch(
+  env,
+  syncState.last_payment_orders_id
+);
+
+console.log("Payment Orders Scanned:", paymentOrders.length);
+
+let capturedPayments = 0;
+let lastProcessedPaymentOrder = null;
+
+for (const paymentOrder of paymentOrders) {
+
+  lastProcessedPaymentOrder = paymentOrder;
+
+  const processed = await processPaymentOrder(
+    env,
+    paymentOrder
+  );
+
+  if (processed) {
+    capturedPayments++;
+  }
+
+}
+
+await updatePaymentOrdersSyncState(
+  env,
+  lastProcessedPaymentOrder
+);
+
+console.log(
+  "Captured Payments Processed:",
+  capturedPayments
+);
+
+console.log(
+  "Payment Orders Sync Updated To:",
+  lastProcessedPaymentOrder
+    ? lastProcessedPaymentOrder.id
+    : syncState.last_payment_orders_id
+);
+/* ============================================================================
+   PART 6E
+   Add a run summary at the end of scheduled()
+   Replace the existing completion logs with this block.
+   ============================================================================ */
+
+const completedAt = Date.now();
+
+console.log("======================================");
+console.log("CONTACT SYNC SUMMARY");
+console.log("======================================");
+
+console.log("Members Scanned:", members.length);
+console.log("Paid Members Processed:", paidMembers);
+
+console.log("Payment Orders Scanned:", paymentOrders.length);
+console.log("Captured Payments Processed:", capturedPayments);
+
+console.log(
+  "Last Members ID:",
+  lastProcessedMember
+    ? lastProcessedMember.id
+    : syncState.last_members_id
+);
+
+console.log(
+  "Last Payment Order ID:",
+  lastProcessedPaymentOrder
+    ? lastProcessedPaymentOrder.id
+    : syncState.last_payment_orders_id
+);
+
+console.log(
+  "Execution Time:",
+  completedAt - startedAt,
+  "ms"
+);
+
+console.log("======================================");
+console.log("Worker Completed");
+console.log("======================================");
+/* ============================================================================
+   PART 7
+   Error Handling + Statistics + Safe Execution
+   ============================================================================ */
+
+const stats = {
+  membersScanned: 0,
+  paidMembers: 0,
+  paymentOrdersScanned: 0,
+  capturedPayments: 0,
+  contactsInserted: 0,
+  contactsUpdated: 0,
+  errors: 0
+};
+
+function logError(error, section) {
+
+  stats.errors++;
+
+  console.error("======================================");
+  console.error("SECTION :", section);
+  console.error("ERROR   :", error.message);
+
+  if (error.stack) {
+    console.error(error.stack);
+  }
+
+  console.error("======================================");
+
+}
+
+async function runMembersSync(env, syncState) {
+
+  const members = await getMembersBatch(
+    env,
+    syncState.last_members_id
+  );
+
+  stats.membersScanned = members.length;
+
+  let lastProcessedMember = null;
+
+  for (const member of members) {
+
+    lastProcessedMember = member;
+
+    if (!isPaidMember(member)) {
+      continue;
+    }
+
+    stats.paidMembers++;
+
+    await upsertContact(
+      env,
+      member
+    );
+
+  }
+
+  await updateMembersSyncState(
+    env,
+    lastProcessedMember
+  );
+
+  return {
+    members,
+    lastProcessedMember
+  };
+
+}
+
+async function runPaymentOrdersSync(env, syncState) {
+
+  const paymentOrders = await getPaymentOrdersBatch(
+    env,
+    syncState.last_payment_orders_id
+  );
+
+  stats.paymentOrdersScanned = paymentOrders.length;
+
+  let lastProcessedPaymentOrder = null;
+
+  for (const paymentOrder of paymentOrders) {
+
+    lastProcessedPaymentOrder = paymentOrder;
+
+    const processed = await processPaymentOrder(
+      env,
+      paymentOrder
+    );
+
+    if (processed) {
+      stats.capturedPayments++;
+    }
+
+  }
+
+  await updatePaymentOrdersSyncState(
+    env,
+    lastProcessedPaymentOrder
+  );
+
+  return {
+    paymentOrders,
+    lastProcessedPaymentOrder
+  };
+
+}
+
+export default {
+
+  async scheduled(event, env, ctx) {
+
+    const startedAt = Date.now();
+
+    console.log("======================================");
+    console.log(CONFIG.WORKER_NAME);
+    console.log("Worker Started");
+    console.log("======================================");
+
+    try {
+
+      const syncState = await getSyncState(env);
+
+      let memberResult = {
+        members: [],
+        lastProcessedMember: null
+      };
+
+      let paymentResult = {
+        paymentOrders: [],
+        lastProcessedPaymentOrder: null
+      };
+
+      try {
+
+        memberResult = await runMembersSync(
+          env,
+          syncState
+        );
+
+      } catch (error) {
+
+        logError(
+          error,
+          "MEMBERS SYNC"
+        );
+
+      }
+
+      try {
+
+        paymentResult = await runPaymentOrdersSync(
+          env,
+          syncState
+        );
+
+      } catch (error) {
+
+        logError(
+          error,
+          "PAYMENT ORDERS SYNC"
+        );
+
+      }
+
+      console.log("======================================");
+      console.log("RUN SUMMARY");
+      console.log("======================================");
+
+      console.log(
+        "Members Scanned:",
+        stats.membersScanned
+      );
+
+      console.log(
+        "Paid Members:",
+        stats.paidMembers
+      );
+
+      console.log(
+        "Payment Orders Scanned:",
+        stats.paymentOrdersScanned
+      );
+
+      console.log(
+        "Captured Payments:",
+        stats.capturedPayments
+      );
+
+      console.log(
+        "Contacts Inserted:",
+        stats.contactsInserted
+      );
+
+      console.log(
+        "Contacts Updated:",
+        stats.contactsUpdated
+      );
+
+      console.log(
+        "Errors:",
+        stats.errors
+      );
+
+      console.log(
+        "Execution Time:",
+        Date.now() - startedAt,
+        "ms"
+      );
+
+      console.log("======================================");
+      console.log("Worker Completed");
+      console.log("======================================");
+
+    } catch (error) {
+
+      logError(
+        error,
+        "WORKER"
+      );
+
+    }
+
+  }
+
+};
+/* ============================================================================
+   PART 8
+   Email Queue Processor
+   ============================================================================ */
+
+async function getPendingEmailContacts(env) {
+
+  const result = await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM contacts
+      WHERE email_status = 'pending'
+        AND email IS NOT NULL
+        AND TRIM(email) <> ''
+      ORDER BY payment_captured_at ASC
+      LIMIT ?
+    `)
+    .bind(CONFIG.CONTACTS_PER_CRON)
+    .all();
+
+  return result.results;
+
+}
+
+async function markEmailProcessing(env, contactId) {
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        email_status = 'processing'
+      WHERE id = ?
+    `)
+    .bind(contactId)
+    .run();
+
+}
+
+async function markEmailSent(env, contactId) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        email_status = 'completed',
+        email_sent_at = ?,
+        email_last_error = NULL,
+        updated_at = ?
+      WHERE id = ?
+    `)
+    .bind(
+      now,
+      now,
+      contactId
+    )
+    .run();
+
+}
+
+async function markEmailFailed(env, contactId, error) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        email_status = 'failed',
+        email_last_error = ?,
+        updated_at = ?
+      WHERE id = ?
+    `)
+    .bind(
+      error.message || String(error),
+      now,
+      contactId
+    )
+    .run();
+
+}
+
+async function sendWelcomeEmail(contact, env) {
+
+  /*
+  ------------------------------------------------------------------
+  PLACE YOUR EMAIL PROVIDER CODE HERE
+
+  Example:
+  - Resend
+  - SendGrid
+  - MailChannels
+  - AWS SES
+
+  Throw an error if sending fails.
+  ------------------------------------------------------------------
+  */
+
+  console.log(
+    "Sending Email:",
+    contact.email
+  );
+
+}
+
+async function runEmailQueue(env) {
+
+  const contacts = await getPendingEmailContacts(
+    env
+  );
+
+  console.log(
+    "Pending Emails:",
+    contacts.length
+  );
+
+  for (const contact of contacts) {
+
+    try {
+
+      await markEmailProcessing(
+        env,
+        contact.id
+      );
+
+      await sendWelcomeEmail(
+        contact,
+        env
+      );
+
+      await markEmailSent(
+        env,
+        contact.id
+      );
+
+      console.log(
+        "Email Sent:",
+        contact.email
+      );
+
+    } catch (error) {
+
+      await markEmailFailed(
+        env,
+        contact.id,
+        error
+      );
+
+      logError(
+        error,
+        "EMAIL QUEUE"
+      );
+
+    }
+
+  }
+
+}
+/* ============================================================================
+   PART 9
+   Google Contacts Queue (Google People API)
+   ============================================================================ */
+
+async function getPendingGoogleContacts(env) {
+
+  const result = await env.CONTACTS_DB
+    .prepare(`
+      SELECT *
+      FROM contacts
+      WHERE google_contact_status = 'pending'
+        AND full_name IS NOT NULL
+        AND phone IS NOT NULL
+      ORDER BY payment_captured_at ASC
+      LIMIT ?
+    `)
+    .bind(CONFIG.CONTACTS_PER_CRON)
+    .all();
+
+  return result.results;
+
+}
+
+async function markGoogleProcessing(env, contactId) {
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        google_contact_status = 'processing'
+      WHERE id = ?
+    `)
+    .bind(contactId)
+    .run();
+
+}
+
+async function markGoogleSynced(env, contactId) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        google_contact_status = 'completed',
+        google_contact_synced_at = ?,
+        google_contact_last_error = NULL,
+        updated_at = ?
+      WHERE id = ?
+    `)
+    .bind(
+      now,
+      now,
+      contactId
+    )
+    .run();
+
+}
+
+async function markGoogleFailed(env, contactId, error) {
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.CONTACTS_DB
+    .prepare(`
+      UPDATE contacts
+      SET
+        google_contact_status = 'failed',
+        google_contact_last_error = ?,
+        updated_at = ?
+      WHERE id = ?
+    `)
+    .bind(
+      error.message || String(error),
+      now,
+      contactId
+    )
+    .run();
+
+}
+
+async function createGoogleContact(contact, env) {
+
+  /*
+  =======================================================
+  GOOGLE PEOPLE API IMPLEMENTATION GOES HERE
+
+  This function should:
+
+  1. Get OAuth Access Token
+
+  2. POST
+
+     https://people.googleapis.com/v1/people:createContact
+
+  3. Send
+
+     Name
+     Email
+     Phone
+
+  4. Throw Error if API fails
+
+  =======================================================
+  */
+
+  console.log(
+    "Creating Google Contact:",
+    contact.full_name
+  );
+
+}
+
+async function runGoogleContactsQueue(env) {
+
+  const contacts =
+    await getPendingGoogleContacts(env);
+
+  console.log(
+    "Pending Google Contacts:",
+    contacts.length
+  );
+
+  for (const contact of contacts) {
+
+    try {
+
+      await markGoogleProcessing(
+        env,
+        contact.id
+      );
+
+      await createGoogleContact(
+        contact,
+        env
+      );
+
+      await markGoogleSynced(
+        env,
+        contact.id
+      );
+
+      console.log(
+        "Google Contact Created:",
+        contact.full_name
+      );
+
+    } catch (error) {
+
+      await markGoogleFailed(
+        env,
+        contact.id,
+        error
+      );
+
+      logError(
+        error,
+        "GOOGLE CONTACTS"
+      );
+
+    }
+
+  }
+
+}
+/* ============================================================================
+   PART 10
+   Google OAuth + Google People API
+   ============================================================================ */
+
+async function getGoogleAccessToken(env) {
+
+  const tokenUrl = "https://oauth2.googleapis.com/token";
+
+  const body = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    client_secret: env.GOOGLE_CLIENT_SECRET,
+    refresh_token: env.GOOGLE_REFRESH_TOKEN,
+    grant_type: "refresh_token"
+  });
+
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type":
+        "application/x-www-form-urlencoded"
+    },
+    body
+  });
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Unable to obtain Google Access Token."
+    );
+
+  }
+
+  const token = await response.json();
+
+  return token.access_token;
+
+}
+
+async function createGoogleContact(contact, env) {
+
+  const accessToken =
+    await getGoogleAccessToken(env);
+
+  const response = await fetch(
+
+    "https://people.googleapis.com/v1/people:createContact",
+
+    {
+
+      method: "POST",
+
+      headers: {
+
+        Authorization:
+          `Bearer ${accessToken}`,
+
+        "Content-Type":
+          "application/json"
+
+      },
+
+      body: JSON.stringify({
+
+        names: [
+
+          {
+
+            givenName:
+              contact.full_name
+
+          }
+
+        ],
+
+        emailAddresses:
+
+          contact.email
+
+            ? [
+
+                {
+
+                  value:
+                    contact.email
+
+                }
+
+              ]
+
+            : [],
+
+        phoneNumbers:
+
+          contact.phone
+
+            ? [
+
+                {
+
+                  value:
+                    contact.phone
+
+                }
+
+              ]
+
+            : []
+
+      })
+
+    }
+
+  );
+
+  if (!response.ok) {
+
+    const errorText =
+      await response.text();
+
+    throw new Error(errorText);
+
+  }
+
+  return await response.json();
+
+}
+/* ============================================================================
+   PART 11
+   Final Scheduler Integration
+   Call Email Queue and Google Contacts Queue
+   ============================================================================ */
+
+/*
+----------------------------------------------------------------------------
+Replace the bottom half of scheduled() with the following block,
+immediately after runPaymentOrdersSync().
+----------------------------------------------------------------------------
+*/
+
+try {
+
+  await runEmailQueue(env);
+
+} catch (error) {
+
+  logError(
+    error,
+    "EMAIL QUEUE"
+  );
+
+}
+
+try {
+
+  await runGoogleContactsQueue(env);
+
+} catch (error) {
+
+  logError(
+    error,
+    "GOOGLE CONTACTS QUEUE"
+  );
+
+}
+
+console.log("======================================");
+console.log("FINAL RUN SUMMARY");
+console.log("======================================");
+
+console.log(
+  "Members Scanned:",
+  stats.membersScanned
+);
+
+console.log(
+  "Paid Members:",
+  stats.paidMembers
+);
+
+console.log(
+  "Payment Orders Scanned:",
+  stats.paymentOrdersScanned
+);
+
+console.log(
+  "Captured Payments:",
+  stats.capturedPayments
+);
+
+console.log(
+  "Contacts Inserted:",
+  stats.contactsInserted
+);
+
+console.log(
+  "Contacts Updated:",
+  stats.contactsUpdated
+);
+
+console.log(
+  "Errors:",
+  stats.errors
+);
+
+console.log(
+  "Execution Time:",
+  Date.now() - startedAt,
+  "ms"
+);
+
+console.log("======================================");
+console.log("Worker Finished Successfully");
+console.log("======================================");
+/* ============================================================================
+   PART 12
+   Production Improvements
+   ============================================================================ */
+
+const CONFIG = {
+  WORKER_NAME: "contacts_sync",
+
+  // Sync
+  MEMBERS_SCAN_BATCH: 500,
+  PAYMENT_ORDERS_SCAN_BATCH: 500,
+
+  // Outbound
+  CONTACTS_PER_CRON: 15,
+
+  // Retry Policy
+  MAX_EMAIL_RETRIES: 3,
+  MAX_GOOGLE_RETRIES: 3,
+
+  // Logging
+  DEBUG: true
+};
+
+function now() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function log(...args) {
+  if (CONFIG.DEBUG) {
+    console.log(...args);
+  }
+}
+
+function sanitizeEmail(email) {
+
+  if (!email) return null;
+
+  email = email.trim().toLowerCase();
+
+  if (email === "") return null;
+
+  return email;
+
+}
+
+function sanitizePhone(phone) {
+
+  if (!phone) return null;
+
+  phone = phone.replace(/\D/g, "");
+
+  if (phone.startsWith("91") && phone.length === 12) {
+    return "+" + phone;
+  }
+
+  if (phone.length === 10) {
+    return "+91" + phone;
+  }
+
+  return "+" + phone;
+
+}
+
+function normalizeMember(member) {
+
+  return {
+
+    id: member.id,
+
+    payment_order_id:
+      member.payment_order_id ?? null,
+
+    full_name:
+      member.full_name?.trim(),
+
+    email:
+      sanitizeEmail(member.email),
+
+    phone:
+      sanitizePhone(member.phone),
+
+    activation_url:
+      member.activation_url,
+
+    payment_captured_at:
+      member.payment_captured_at ??
+      member.activation_captured_at,
+
+    source_members:
+      member.source_members ?? 1,
+
+    source_payment_orders:
+      member.source_payment_orders ?? 0
+
+  };
+
+}
+
+/*
+===========================================================================
+Replace every
+
+await upsertContact(env, member)
+
+with
+
+await upsertContact(
+    env,
+    normalizeMember(member)
+);
+
+===========================================================================
+
+This ensures every insert/update entering contacts has
+
+✓ cleaned email
+
+✓ standardized phone
+
+✓ trimmed name
+
+✓ consistent payment timestamp
+
+before reaching the database.
+
+===========================================================================
+
+END OF PART 12
+===========================================================================
+
+The remaining work is no longer infrastructure.
+
+It is only provider-specific integrations such as
+
+• Email Provider (Resend / SendGrid / SES etc.)
+
+• Google OAuth credential setup
+
+• Google People API scopes
+
+• Cloudflare Secrets
+
+• Production testing
+
+• Performance tuning
+
+• Retry strategy
+
+• Monitoring
+
+The synchronization engine itself is now complete.
+*/
