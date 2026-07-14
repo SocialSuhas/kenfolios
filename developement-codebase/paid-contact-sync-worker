@@ -1,0 +1,1562 @@
+/*
+===============================================================================
+KenFolios Member Contact Sync Worker
+
+Functions:
+1. Incrementally scans newly created members rows.
+2. Copies members having activation_url into the target database.
+3. Incrementally scans payment_orders.
+4. Detects captured payments made against older member records.
+5. Fetches those specific older members without rescanning the entire table.
+6. Creates pending records in a specified Google Contacts account.
+7. Stores Google contact resource names, status, timestamps and errors.
+
+Cron scheduling is configured through Cloudflare Worker settings.
+===============================================================================
+*/
+
+export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runWorker(env));
+  },
+
+  // Allows manual testing by opening the Worker URL.
+  async fetch(request, env) {
+    try {
+      const result = await runWorker(env);
+
+      return Response.json({
+        success: true,
+        ...result,
+      });
+    } catch (error) {
+      console.error("Manual sync failed:", error);
+
+      return Response.json(
+        {
+          success: false,
+          error: getErrorMessage(error),
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+  },
+};
+
+async function runWorker(env) {
+  validateEnvironment(env);
+
+  const membersResult = await syncMembersTable(env);
+
+  console.log(
+    "Members sync completed:",
+    membersResult
+  );
+
+  const paymentOrdersResult =
+    await syncPaymentOrdersTable(env);
+
+  console.log(
+    "Payment orders sync completed:",
+    paymentOrdersResult
+  );
+
+  /*
+   * Google Contacts errors are isolated so a Google API issue
+   * does not roll back or prevent the D1 scanning stages.
+   */
+  let googleContactsResult;
+
+  try {
+    googleContactsResult =
+      await syncGoogleContacts(env);
+
+    console.log(
+      "Google Contacts sync completed:",
+      googleContactsResult
+    );
+  } catch (error) {
+    console.error(
+      "Google Contacts stage failed:",
+      error
+    );
+
+    googleContactsResult = {
+      success: false,
+      error: getErrorMessage(error),
+    };
+  }
+
+  return {
+    members_sync: membersResult,
+    payment_orders_sync:
+      paymentOrdersResult,
+    google_contacts_sync:
+      googleContactsResult,
+  };
+}
+
+/*
+===============================================================================
+PART 1: MEMBERS TABLE SYNC
+===============================================================================
+*/
+
+async function syncMembersTable(env) {
+  const scanLimit = getPositiveInteger(
+    env.MEMBERS_SCAN_LIMIT,
+    500
+  );
+
+  const syncState = await getSyncState(
+    env.CONTACTS_DB
+  );
+
+  const lastMemberId =
+    syncState.last_member_id || 0;
+
+  /*
+   * Every newly created row is scanned, including unpaid rows.
+   * The cursor represents the last source row inspected.
+   */
+  const sourceResult =
+    await env.SOURCE_DB.prepare(
+      `
+        SELECT
+          id,
+          full_name,
+          email,
+          phone,
+          activation_url
+        FROM members
+        WHERE id > ?
+        ORDER BY id ASC
+        LIMIT ?
+      `
+    )
+      .bind(
+        lastMemberId,
+        scanLimit
+      )
+      .all();
+
+  const scannedRows =
+    sourceResult.results || [];
+
+  if (scannedRows.length === 0) {
+    return {
+      previous_last_member_id:
+        lastMemberId,
+      current_last_member_id:
+        lastMemberId,
+      rows_scanned: 0,
+      rows_eligible: 0,
+      rows_inserted: 0,
+      rows_already_existing: 0,
+      message:
+        "No new members rows found.",
+    };
+  }
+
+  const eligibleRows =
+    scannedRows.filter((row) =>
+      hasValue(row.activation_url)
+    );
+
+  let insertedCount = 0;
+
+  for (const member of eligibleRows) {
+    const result =
+      await insertMemberIfMissing(
+        env.CONTACTS_DB,
+        member
+      );
+
+    if (result.inserted) {
+      insertedCount++;
+    }
+  }
+
+  const newestScannedMemberId =
+    scannedRows[
+      scannedRows.length - 1
+    ].id;
+
+  await updateMembersSyncState(
+    env.CONTACTS_DB,
+    {
+      lastMemberId:
+        newestScannedMemberId,
+      scannedCount:
+        scannedRows.length,
+    }
+  );
+
+  return {
+    previous_last_member_id:
+      lastMemberId,
+    current_last_member_id:
+      newestScannedMemberId,
+    rows_scanned:
+      scannedRows.length,
+    rows_eligible:
+      eligibleRows.length,
+    rows_inserted:
+      insertedCount,
+    rows_already_existing:
+      eligibleRows.length -
+      insertedCount,
+  };
+}
+
+async function insertMemberIfMissing(
+  database,
+  member
+) {
+  /*
+   * The unique member_id index protects against overlapping
+   * cron or manual executions.
+   */
+  const result =
+    await database.prepare(
+      `
+        INSERT OR IGNORE INTO member_contact_sync_records (
+          member_id,
+          full_name,
+          email,
+          phone,
+          activation_url,
+          source_members,
+          source_payment_orders,
+          google_contact_status,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          1,
+          0,
+          'pending',
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        )
+      `
+    )
+      .bind(
+        member.id,
+        member.full_name,
+        normalizeNullableText(
+          member.email
+        ),
+        normalizeNullableText(
+          member.phone
+        ),
+        member.activation_url.trim()
+      )
+      .run();
+
+  return {
+    inserted:
+      Number(
+        result.meta?.changes || 0
+      ) > 0,
+  };
+}
+
+async function updateMembersSyncState(
+  database,
+  {
+    lastMemberId,
+    scannedCount,
+  }
+) {
+  await database.prepare(
+    `
+      UPDATE sync_state
+      SET
+        last_member_id = ?,
+        total_members_scanned =
+          total_members_scanned + ?,
+        last_members_scan_at =
+          CURRENT_TIMESTAMP,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE id = 1
+    `
+  )
+    .bind(
+      lastMemberId,
+      scannedCount
+    )
+    .run();
+}
+
+/*
+===============================================================================
+PART 2: PAYMENT ORDERS TABLE SYNC
+===============================================================================
+*/
+
+async function syncPaymentOrdersTable(
+  env
+) {
+  const scanLimit =
+    getPositiveInteger(
+      env.PAYMENT_ORDER_SCAN_LIMIT,
+      500
+    );
+
+  const captureLagMinutes =
+    getNonNegativeInteger(
+      env.PAYMENT_CAPTURE_LAG_MINUTES,
+      15
+    );
+
+  const currentUnixTimestamp =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  const captureCutoff =
+    currentUnixTimestamp -
+    captureLagMinutes * 60;
+
+  const syncState =
+    await getSyncState(
+      env.CONTACTS_DB
+    );
+
+  const lastPaymentOrderId =
+    syncState.last_payment_order_id ||
+    0;
+
+  const sourceResult =
+    await env.SOURCE_DB.prepare(
+      `
+        SELECT
+          id,
+          member_id,
+          payment_status,
+          payment_captured_at
+        FROM payment_orders
+        WHERE id > ?
+        ORDER BY id ASC
+        LIMIT ?
+      `
+    )
+      .bind(
+        lastPaymentOrderId,
+        scanLimit
+      )
+      .all();
+
+  const paymentOrders =
+    sourceResult.results || [];
+
+  if (paymentOrders.length === 0) {
+    return {
+      previous_last_payment_order_id:
+        lastPaymentOrderId,
+      current_last_payment_order_id:
+        lastPaymentOrderId,
+      rows_loaded: 0,
+      rows_scanned: 0,
+      captured_orders_processed: 0,
+      non_captured_orders_skipped: 0,
+      members_inserted: 0,
+      members_updated: 0,
+      members_not_found: 0,
+      blocked_order: null,
+      message:
+        "No new payment order rows found.",
+    };
+  }
+
+  let newestSafelyScannedOrderId =
+    lastPaymentOrderId;
+
+  let scannedCount = 0;
+  let capturedOrdersProcessed = 0;
+  let membersInserted = 0;
+  let membersUpdated = 0;
+  let nonCapturedOrdersSkipped = 0;
+  let membersNotFound = 0;
+  let blockedOrder = null;
+
+  for (const order of paymentOrders) {
+    const paymentStatus =
+      normalizeStatus(
+        order.payment_status
+      );
+
+    /*
+     * Only captured payment orders trigger an older-member lookup.
+     */
+    if (
+      paymentStatus !== "captured"
+    ) {
+      newestSafelyScannedOrderId =
+        order.id;
+
+      scannedCount++;
+      nonCapturedOrdersSkipped++;
+      continue;
+    }
+
+    const paymentCapturedAt =
+      parseUnixTimestamp(
+        order.payment_captured_at
+      );
+
+    /*
+     * Do not move the cursor beyond a captured payment with
+     * an unusable capture timestamp.
+     */
+    if (paymentCapturedAt === null) {
+      blockedOrder = {
+        payment_order_id:
+          order.id,
+        member_id:
+          order.member_id,
+        reason:
+          "Captured payment has an invalid payment_captured_at value.",
+      };
+
+      break;
+    }
+
+    /*
+     * A captured payment still inside the configured lag is
+     * retained for processing on a later cron execution.
+     */
+    if (
+      paymentCapturedAt >
+      captureCutoff
+    ) {
+      blockedOrder = {
+        payment_order_id:
+          order.id,
+        member_id:
+          order.member_id,
+        payment_captured_at:
+          paymentCapturedAt,
+        reason:
+          "Captured payment is still inside the configured lag window.",
+      };
+
+      break;
+    }
+
+    const member =
+      await getMemberForPaymentOrder(
+        env.SOURCE_DB,
+        order.member_id
+      );
+
+    if (!member) {
+      membersNotFound++;
+
+      blockedOrder = {
+        payment_order_id:
+          order.id,
+        member_id:
+          order.member_id,
+        reason:
+          "Matching members table row was not found.",
+      };
+
+      break;
+    }
+
+    /*
+     * activation_url confirms that the main membership workflow
+     * has updated the source member record.
+     */
+    if (
+      !hasValue(
+        member.activation_url
+      )
+    ) {
+      blockedOrder = {
+        payment_order_id:
+          order.id,
+        member_id:
+          order.member_id,
+        reason:
+          "Matching member does not yet have activation_url.",
+      };
+
+      break;
+    }
+
+    const saveResult =
+      await saveMemberFromPaymentOrder(
+        env.CONTACTS_DB,
+        member,
+        order,
+        paymentCapturedAt
+      );
+
+    capturedOrdersProcessed++;
+
+    if (saveResult.inserted) {
+      membersInserted++;
+    } else {
+      membersUpdated++;
+    }
+
+    newestSafelyScannedOrderId =
+      order.id;
+
+    scannedCount++;
+  }
+
+  if (scannedCount > 0) {
+    await updatePaymentOrdersSyncState(
+      env.CONTACTS_DB,
+      {
+        lastPaymentOrderId:
+          newestSafelyScannedOrderId,
+        scannedCount,
+      }
+    );
+  }
+
+  return {
+    previous_last_payment_order_id:
+      lastPaymentOrderId,
+    current_last_payment_order_id:
+      newestSafelyScannedOrderId,
+    rows_loaded:
+      paymentOrders.length,
+    rows_scanned:
+      scannedCount,
+    captured_orders_processed:
+      capturedOrdersProcessed,
+    non_captured_orders_skipped:
+      nonCapturedOrdersSkipped,
+    members_inserted:
+      membersInserted,
+    members_updated:
+      membersUpdated,
+    members_not_found:
+      membersNotFound,
+    capture_lag_minutes:
+      captureLagMinutes,
+    capture_cutoff_unix:
+      captureCutoff,
+    blocked_order:
+      blockedOrder,
+  };
+}
+
+async function getMemberForPaymentOrder(
+  sourceDatabase,
+  memberId
+) {
+  if (
+    memberId === null ||
+    memberId === undefined ||
+    String(memberId).trim() === ""
+  ) {
+    return null;
+  }
+
+  return sourceDatabase.prepare(
+    `
+      SELECT
+        id,
+        full_name,
+        email,
+        phone,
+        activation_url
+      FROM members
+      WHERE id = ?
+      LIMIT 1
+    `
+  )
+    .bind(memberId)
+    .first();
+}
+
+async function saveMemberFromPaymentOrder(
+  database,
+  member,
+  order,
+  paymentCapturedAt
+) {
+  const existingRecord =
+    await database.prepare(
+      `
+        SELECT
+          id
+        FROM member_contact_sync_records
+        WHERE member_id = ?
+        LIMIT 1
+      `
+    )
+      .bind(member.id)
+      .first();
+
+  /*
+   * The ordinary members scan may already have inserted the
+   * record. In that case, add the payment-order information.
+   */
+  if (existingRecord) {
+    await database.prepare(
+      `
+        UPDATE member_contact_sync_records
+        SET
+          full_name = ?,
+          email = ?,
+          phone = ?,
+          activation_url = ?,
+          payment_order_id = ?,
+          payment_captured_at = ?,
+          source_payment_orders = 1,
+          updated_at =
+            CURRENT_TIMESTAMP,
+          last_error = NULL
+        WHERE member_id = ?
+      `
+    )
+      .bind(
+        member.full_name,
+        normalizeNullableText(
+          member.email
+        ),
+        normalizeNullableText(
+          member.phone
+        ),
+        member.activation_url.trim(),
+        order.id,
+        paymentCapturedAt,
+        member.id
+      )
+      .run();
+
+    return {
+      inserted: false,
+      updated: true,
+    };
+  }
+
+  /*
+   * This will usually be an older member who was unpaid when
+   * the first members-table scan passed their row.
+   */
+  await database.prepare(
+    `
+      INSERT INTO member_contact_sync_records (
+        member_id,
+        full_name,
+        email,
+        phone,
+        activation_url,
+        payment_order_id,
+        payment_captured_at,
+        source_members,
+        source_payment_orders,
+        google_contact_status,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        0,
+        1,
+        'pending',
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      )
+    `
+  )
+    .bind(
+      member.id,
+      member.full_name,
+      normalizeNullableText(
+        member.email
+      ),
+      normalizeNullableText(
+        member.phone
+      ),
+      member.activation_url.trim(),
+      order.id,
+      paymentCapturedAt
+    )
+    .run();
+
+  return {
+    inserted: true,
+    updated: false,
+  };
+}
+
+async function updatePaymentOrdersSyncState(
+  database,
+  {
+    lastPaymentOrderId,
+    scannedCount,
+  }
+) {
+  await database.prepare(
+    `
+      UPDATE sync_state
+      SET
+        last_payment_order_id = ?,
+        total_payment_orders_scanned =
+          total_payment_orders_scanned + ?,
+        last_payment_orders_scan_at =
+          CURRENT_TIMESTAMP,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE id = 1
+    `
+  )
+    .bind(
+      lastPaymentOrderId,
+      scannedCount
+    )
+    .run();
+}
+
+/*
+===============================================================================
+PART 3: GOOGLE CONTACTS SYNC
+===============================================================================
+*/
+
+async function syncGoogleContacts(env) {
+  validateGoogleEnvironment(env);
+
+  const syncLimit =
+    getPositiveInteger(
+      env.GOOGLE_CONTACT_SYNC_LIMIT,
+      25
+    );
+
+  /*
+   * Records marked syncing are excluded. This protects against
+   * duplicate contacts if Google created a contact but the D1
+   * success update failed afterward.
+   */
+  const pendingResult =
+    await env.CONTACTS_DB.prepare(
+      `
+        SELECT
+          id,
+          member_id,
+          full_name,
+          email,
+          phone,
+          activation_url
+        FROM member_contact_sync_records
+        WHERE google_contact_status = 'pending'
+        ORDER BY id ASC
+        LIMIT ?
+      `
+    )
+      .bind(syncLimit)
+      .all();
+
+  const pendingContacts =
+    pendingResult.results || [];
+
+  if (
+    pendingContacts.length === 0
+  ) {
+    return {
+      success: true,
+      rows_loaded: 0,
+      contacts_created: 0,
+      contacts_failed: 0,
+      contacts_left_syncing: 0,
+      message:
+        "No pending Google Contacts records found.",
+    };
+  }
+
+  /*
+   * One access token is obtained and reused for this batch.
+   */
+  const accessToken =
+    await getGoogleAccessToken(env);
+
+  let contactsCreated = 0;
+  let contactsFailed = 0;
+  let contactsLeftSyncing = 0;
+
+  const results = [];
+
+  /*
+   * Contacts are deliberately created sequentially rather than
+   * using Promise.all().
+   */
+  for (
+    const contact of pendingContacts
+  ) {
+    await markGoogleContactSyncing(
+      env.CONTACTS_DB,
+      contact.id
+    );
+
+    let googleContact;
+
+    try {
+      googleContact =
+        await createGoogleContact(
+          accessToken,
+          contact
+        );
+    } catch (error) {
+      const errorMessage =
+        getErrorMessage(error);
+
+      await markGoogleContactFailed(
+        env.CONTACTS_DB,
+        contact.id,
+        errorMessage
+      );
+
+      contactsFailed++;
+
+      results.push({
+        record_id:
+          contact.id,
+        member_id:
+          contact.member_id,
+        status:
+          "failed",
+        error:
+          errorMessage,
+      });
+
+      continue;
+    }
+
+    /*
+     * Google has created the contact at this point. If the D1
+     * update fails, leave the record as syncing rather than
+     * automatically creating a possible duplicate later.
+     */
+    try {
+      await markGoogleContactSynced(
+        env.CONTACTS_DB,
+        contact.id,
+        googleContact,
+        contact.full_name
+      );
+
+      contactsCreated++;
+
+      results.push({
+        record_id:
+          contact.id,
+        member_id:
+          contact.member_id,
+        status:
+          "synced",
+        google_contact_id:
+          googleContact.resourceName,
+      });
+    } catch (error) {
+      const errorMessage =
+        getErrorMessage(error);
+
+      console.error(
+        "Google contact created, but D1 success update failed:",
+        {
+          record_id:
+            contact.id,
+          member_id:
+            contact.member_id,
+          google_contact_id:
+            googleContact.resourceName,
+          error:
+            errorMessage,
+        }
+      );
+
+      contactsLeftSyncing++;
+
+      results.push({
+        record_id:
+          contact.id,
+        member_id:
+          contact.member_id,
+        status:
+          "created_but_database_update_failed",
+        google_contact_id:
+          googleContact.resourceName,
+        error:
+          errorMessage,
+      });
+    }
+  }
+
+  return {
+    success:
+      contactsFailed === 0 &&
+      contactsLeftSyncing === 0,
+    rows_loaded:
+      pendingContacts.length,
+    contacts_created:
+      contactsCreated,
+    contacts_failed:
+      contactsFailed,
+    contacts_left_syncing:
+      contactsLeftSyncing,
+    results,
+  };
+}
+
+async function getGoogleAccessToken(env) {
+  const requestBody =
+    new URLSearchParams();
+
+  requestBody.set(
+    "client_id",
+    env.GOOGLE_CLIENT_ID
+  );
+
+  requestBody.set(
+    "client_secret",
+    env.GOOGLE_CLIENT_SECRET
+  );
+
+  requestBody.set(
+    "refresh_token",
+    env.GOOGLE_REFRESH_TOKEN
+  );
+
+  requestBody.set(
+    "grant_type",
+    "refresh_token"
+  );
+
+  const response = await fetch(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+      },
+      body:
+        requestBody.toString(),
+    }
+  );
+
+  const responseText =
+    await response.text();
+
+  const responseData =
+    safelyParseJson(responseText);
+
+  if (
+    !response.ok ||
+    !responseData?.access_token
+  ) {
+    throw new Error(
+      formatGoogleApiError(
+        response.status,
+        responseData,
+        responseText,
+        "Unable to obtain Google OAuth access token"
+      )
+    );
+  }
+
+  return responseData.access_token;
+}
+
+async function createGoogleContact(
+  accessToken,
+  contact
+) {
+  const person =
+    buildGooglePerson(contact);
+
+  const personFields = [
+    "names",
+    "emailAddresses",
+    "phoneNumbers",
+    "urls",
+    "userDefined",
+  ].join(",");
+
+  const endpoint =
+    "https://people.googleapis.com/v1/people:createContact" +
+    `?personFields=${encodeURIComponent(
+      personFields
+    )}`;
+
+  const response = await fetch(
+    endpoint,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bearer ${accessToken}`,
+        "Content-Type":
+          "application/json",
+      },
+      body:
+        JSON.stringify(person),
+    }
+  );
+
+  const responseText =
+    await response.text();
+
+  const responseData =
+    safelyParseJson(responseText);
+
+  if (
+    !response.ok ||
+    !responseData?.resourceName
+  ) {
+    throw new Error(
+      formatGoogleApiError(
+        response.status,
+        responseData,
+        responseText,
+        "Google People API contact creation failed"
+      )
+    );
+  }
+
+  return responseData;
+}
+
+function buildGooglePerson(contact) {
+  const fullName =
+    normalizeRequiredText(
+      contact.full_name,
+      `Member ${contact.member_id}`
+    );
+
+  const nameParts =
+    splitContactName(fullName);
+
+  const person = {
+    names: [
+      {
+        givenName:
+          nameParts.givenName,
+        familyName:
+          nameParts.familyName,
+      },
+    ],
+
+    userDefined: [
+      {
+        key:
+          "KenFolios Member ID",
+        value:
+          String(contact.member_id),
+      },
+      {
+        key:
+          "KenFolios Sync Record ID",
+        value:
+          String(contact.id),
+      },
+    ],
+  };
+
+  const email =
+    normalizeNullableText(
+      contact.email
+    );
+
+  if (email) {
+    person.emailAddresses = [
+      {
+        value:
+          email,
+        type:
+          "work",
+      },
+    ];
+  }
+
+  const phone =
+    normalizeNullableText(
+      contact.phone
+    );
+
+  if (phone) {
+    person.phoneNumbers = [
+      {
+        value:
+          phone,
+        type:
+          "mobile",
+      },
+    ];
+  }
+
+  const activationUrl =
+    normalizeNullableText(
+      contact.activation_url
+    );
+
+  if (activationUrl) {
+    person.urls = [
+      {
+        value:
+          activationUrl,
+        type:
+          "profile",
+      },
+    ];
+  }
+
+  return person;
+}
+
+function splitContactName(fullName) {
+  const parts =
+    String(fullName)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (parts.length === 0) {
+    return {
+      givenName:
+        "Member",
+      familyName:
+        "",
+    };
+  }
+
+  if (parts.length === 1) {
+    return {
+      givenName:
+        parts[0],
+      familyName:
+        "",
+    };
+  }
+
+  return {
+    givenName:
+      parts.slice(0, -1).join(" "),
+    familyName:
+      parts[parts.length - 1],
+  };
+}
+
+async function markGoogleContactSyncing(
+  database,
+  recordId
+) {
+  await database.prepare(
+    `
+      UPDATE member_contact_sync_records
+      SET
+        google_contact_status =
+          'syncing',
+        google_contact_last_error =
+          NULL,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE id = ?
+        AND google_contact_status =
+          'pending'
+    `
+  )
+    .bind(recordId)
+    .run();
+}
+
+async function markGoogleContactSynced(
+  database,
+  recordId,
+  googleContact,
+  fallbackName
+) {
+  const googleContactName =
+    extractGoogleContactName(
+      googleContact,
+      fallbackName
+    );
+
+  await database.prepare(
+    `
+      UPDATE member_contact_sync_records
+      SET
+        google_contact_id = ?,
+        google_contact_name = ?,
+        google_contact_status =
+          'synced',
+        google_contact_synced_at = ?,
+        google_contact_last_error =
+          NULL,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+  )
+    .bind(
+      googleContact.resourceName,
+      googleContactName,
+      Math.floor(Date.now() / 1000),
+      recordId
+    )
+    .run();
+}
+
+async function markGoogleContactFailed(
+  database,
+  recordId,
+  errorMessage
+) {
+  await database.prepare(
+    `
+      UPDATE member_contact_sync_records
+      SET
+        google_contact_status =
+          'failed',
+        google_contact_last_error = ?,
+        updated_at =
+          CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+  )
+    .bind(
+      truncateText(
+        errorMessage,
+        2000
+      ),
+      recordId
+    )
+    .run();
+}
+
+function extractGoogleContactName(
+  googleContact,
+  fallbackName
+) {
+  const names =
+    Array.isArray(
+      googleContact?.names
+    )
+      ? googleContact.names
+      : [];
+
+  for (const name of names) {
+    if (
+      hasValue(
+        name?.displayName
+      )
+    ) {
+      return name.displayName.trim();
+    }
+  }
+
+  return normalizeRequiredText(
+    fallbackName,
+    null
+  );
+}
+
+/*
+===============================================================================
+SHARED SYNC STATE
+===============================================================================
+*/
+
+async function getSyncState(database) {
+  let state =
+    await database.prepare(
+      `
+        SELECT
+          id,
+          last_member_id,
+          last_payment_order_id,
+          total_members_scanned,
+          total_payment_orders_scanned
+        FROM sync_state
+        WHERE id = 1
+      `
+    )
+      .first();
+
+  if (!state) {
+    await database.prepare(
+      `
+        INSERT INTO sync_state (
+          id,
+          last_member_id,
+          last_payment_order_id,
+          total_members_scanned,
+          total_payment_orders_scanned
+        )
+        VALUES (
+          1,
+          0,
+          0,
+          0,
+          0
+        )
+      `
+    )
+      .run();
+
+    state = {
+      id: 1,
+      last_member_id: 0,
+      last_payment_order_id: 0,
+      total_members_scanned: 0,
+      total_payment_orders_scanned: 0,
+    };
+  }
+
+  return state;
+}
+
+/*
+===============================================================================
+ENVIRONMENT VALIDATION
+===============================================================================
+*/
+
+function validateEnvironment(env) {
+  if (!env.SOURCE_DB) {
+    throw new Error(
+      "Missing SOURCE_DB D1 binding for the source database."
+    );
+  }
+
+  if (!env.CONTACTS_DB) {
+    throw new Error(
+      "Missing CONTACTS_DB D1 binding for the contact sync database."
+    );
+  }
+}
+
+function validateGoogleEnvironment(env) {
+  const missingVariables = [];
+
+  if (
+    !hasValue(
+      env.GOOGLE_CLIENT_ID
+    )
+  ) {
+    missingVariables.push(
+      "GOOGLE_CLIENT_ID"
+    );
+  }
+
+  if (
+    !hasValue(
+      env.GOOGLE_CLIENT_SECRET
+    )
+  ) {
+    missingVariables.push(
+      "GOOGLE_CLIENT_SECRET"
+    );
+  }
+
+  if (
+    !hasValue(
+      env.GOOGLE_REFRESH_TOKEN
+    )
+  ) {
+    missingVariables.push(
+      "GOOGLE_REFRESH_TOKEN"
+    );
+  }
+
+  if (
+    missingVariables.length > 0
+  ) {
+    throw new Error(
+      "Missing Google OAuth variables: " +
+      missingVariables.join(", ")
+    );
+  }
+}
+
+/*
+===============================================================================
+GENERAL HELPERS
+===============================================================================
+*/
+
+function getPositiveInteger(
+  value,
+  fallback
+) {
+  const parsed =
+    Number.parseInt(
+      String(value ?? ""),
+      10
+    );
+
+  if (
+    !Number.isInteger(parsed) ||
+    parsed <= 0
+  ) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function getNonNegativeInteger(
+  value,
+  fallback
+) {
+  const parsed =
+    Number.parseInt(
+      String(value ?? ""),
+      10
+    );
+
+  if (
+    !Number.isInteger(parsed) ||
+    parsed < 0
+  ) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function parseUnixTimestamp(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const parsed =
+    Number(value);
+
+  if (
+    !Number.isFinite(parsed) ||
+    parsed <= 0
+  ) {
+    return null;
+  }
+
+  return Math.floor(parsed);
+}
+
+function normalizeStatus(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function hasValue(value) {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0
+  );
+}
+
+function normalizeNullableText(value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return null;
+  }
+
+  const normalized =
+    String(value).trim();
+
+  return normalized || null;
+}
+
+function normalizeRequiredText(
+  value,
+  fallback
+) {
+  const normalized =
+    normalizeNullableText(value);
+
+  if (normalized) {
+    return normalized;
+  }
+
+  return fallback;
+}
+
+function safelyParseJson(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function formatGoogleApiError(
+  status,
+  responseData,
+  responseText,
+  prefix
+) {
+  const apiMessage =
+    responseData?.error?.message ||
+    responseData?.error_description ||
+    responseData?.error ||
+    responseText ||
+    "Unknown Google API error";
+
+  return (
+    `${prefix}. HTTP ${status}: ` +
+    truncateText(
+      String(apiMessage),
+      1500
+    )
+  );
+}
+
+function truncateText(
+  value,
+  maximumLength
+) {
+  const text =
+    String(value ?? "");
+
+  if (
+    text.length <= maximumLength
+  ) {
+    return text;
+  }
+
+  return (
+    text.slice(
+      0,
+      maximumLength
+    ) + "..."
+  );
+}
+
+function getErrorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
