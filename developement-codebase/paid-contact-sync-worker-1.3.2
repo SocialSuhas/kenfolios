@@ -781,7 +781,9 @@ async function syncPaymentOrdersTable(
                     "Matching member not found."
             };
 
-            break;
+            newestProcessedOrderId = payment.id;
+scannedRows++;
+continue;
         }
 
         /*
