@@ -1,0 +1,3072 @@
+/*
+===============================================================================
+KenFolios Paid Member Contact Sync Worker
+Version: 1.5
+-------------------------------------------------------------------------------
+
+Purpose
+
+1. Incrementally scan the source members table.
+2. Copy paid members (activation_url present) into the contact sync database.
+3. Incrementally scan payment_orders for newly captured payments.
+4. Recover older member rows that become paid later.
+5. Synchronize members with Google Contacts.
+6. Maintain independent cursors for every stage.
+7. Prevent duplicate contact creation.
+8. Serve as the production foundation for future modules.
+9. Accept Razorpay payment.captured webhooks as pending record producers.
+
+Future Modules
+
+- Google Groups
+- Email Synchronization
+- WhatsApp Synchronization
+- Telegram Synchronization
+- Drive Export
+- CRM Integration
+
+Cron scheduling is handled entirely through Cloudflare Worker settings.
+
+===============================================================================
+*/
+
+const WORKER_VERSION = "1.5";
+
+const GOOGLE_API_TIMEOUT_MS = 30000;
+const GOOGLE_CONTACT_DELAY_MS = 150;
+const RAZORPAY_WEBHOOK_PATH = "/webhook/razorpay";
+
+export default {
+    async scheduled(controller, env, ctx) {
+        ctx.waitUntil(runWorker(env));
+    },
+
+    async fetch(request, env) {
+        try {
+            const url =
+                new URL(
+                    request.url
+                );
+
+            if (
+                request.method ===
+                    "POST" &&
+                url.pathname ===
+                    RAZORPAY_WEBHOOK_PATH
+            ) {
+                return await handleRazorpayWebhook(
+                    request,
+                    env
+                );
+            }
+
+            const result = await runWorker(env);
+
+            return Response.json({
+                success: true,
+                version: WORKER_VERSION,
+                ...result
+            });
+        } catch (error) {
+            console.error(
+                "Worker execution failed.",
+                error
+            );
+
+            return Response.json(
+                {
+                    success: false,
+                    version: WORKER_VERSION,
+                    error: getErrorMessage(error)
+                },
+                {
+                    status: 500
+                }
+            );
+        }
+    }
+};
+
+/*
+===============================================================================
+MAIN WORKER
+===============================================================================
+*/
+
+async function runWorker(env) {
+    validateEnvironment(env);
+
+    const workerStartedAt = Date.now();
+
+    console.log("");
+    console.log(
+        "===================================================="
+    );
+    console.log(
+        "KenFolios Paid Contact Sync Worker"
+    );
+    console.log(
+        "Version:",
+        WORKER_VERSION
+    );
+    console.log(
+        "Started:",
+        new Date(workerStartedAt).toISOString()
+    );
+    console.log(
+        "===================================================="
+    );
+
+    const summary = {
+        version: WORKER_VERSION,
+
+        started_at:
+            new Date(
+                workerStartedAt
+            ).toISOString(),
+
+        members_sync: null,
+
+        payment_orders_sync: null,
+
+        google_contacts_sync: null,
+
+        duration_ms: 0
+    };
+
+    /*
+    ===============================================================
+    STAGE 1
+    MEMBERS TABLE
+    ===============================================================
+    */
+
+    try {
+        console.log("");
+        console.log(
+            "Starting members scan..."
+        );
+
+        summary.members_sync =
+            await syncMembersTable(env);
+
+        console.log(
+            "Members scan completed."
+        );
+    } catch (error) {
+        console.error(
+            "Members scan failed.",
+            error
+        );
+
+        summary.members_sync = {
+            success: false,
+
+            error:
+                getErrorMessage(error)
+        };
+    }
+
+    /*
+    ===============================================================
+    STAGE 2
+    PAYMENT ORDERS
+    ===============================================================
+    */
+
+    try {
+        console.log("");
+        console.log(
+            "Starting payment order scan..."
+        );
+
+        summary.payment_orders_sync =
+            await syncPaymentOrdersTable(env);
+
+        console.log(
+            "Payment order scan completed."
+        );
+    } catch (error) {
+        console.error(
+            "Payment order scan failed.",
+            error
+        );
+
+        summary.payment_orders_sync = {
+            success: false,
+
+            error:
+                getErrorMessage(error)
+        };
+    }
+
+    /*
+    ===============================================================
+    STAGE 3
+    GOOGLE CONTACTS
+    ===============================================================
+    */
+
+    try {
+        console.log("");
+        console.log(
+            "Starting Google Contacts sync..."
+        );
+
+        summary.google_contacts_sync =
+            await syncGoogleContacts(env);
+
+        console.log(
+            "Google Contacts sync completed."
+        );
+    } catch (error) {
+        console.error(
+            "Google Contacts sync failed.",
+            error
+        );
+
+        summary.google_contacts_sync = {
+            success: false,
+
+            error:
+                getErrorMessage(error)
+        };
+    }
+
+    summary.duration_ms =
+        Date.now() -
+        workerStartedAt;
+
+    console.log("");
+    console.log(
+        "===================================================="
+    );
+    console.log(
+        "Worker completed."
+    );
+    console.log(
+        "Duration:",
+        summary.duration_ms,
+        "ms"
+    );
+    console.log(
+        "===================================================="
+    );
+
+    return summary;
+}
+
+/*
+===============================================================================
+COMMON CONFIGURATION
+===============================================================================
+*/
+
+function getWorkerConfiguration(env) {
+    return {
+        membersScanLimit:
+            getPositiveInteger(
+                env.MEMBERS_SCAN_LIMIT,
+                500
+            ),
+
+        paymentOrderScanLimit:
+            getPositiveInteger(
+                env.PAYMENT_ORDER_SCAN_LIMIT,
+                500
+            ),
+
+        paymentCaptureLagMinutes:
+            getNonNegativeInteger(
+                env.PAYMENT_CAPTURE_LAG_MINUTES,
+                15
+            ),
+
+        googleContactSyncLimit:
+            getPositiveInteger(
+                env.GOOGLE_CONTACT_SYNC_LIMIT,
+                25
+            ),
+
+        googleApiTimeout:
+            GOOGLE_API_TIMEOUT_MS,
+
+        googleContactDelay:
+            GOOGLE_CONTACT_DELAY_MS
+    };
+}
+
+/*
+===============================================================================
+ENVIRONMENT VALIDATION
+===============================================================================
+*/
+
+function validateEnvironment(env) {
+    if (!env.SOURCE_DB) {
+        throw new Error(
+            "Missing SOURCE_DB binding."
+        );
+    }
+
+    if (!env.CONTACTS_DB) {
+        throw new Error(
+            "Missing CONTACTS_DB binding."
+        );
+    }
+
+}
+
+/*
+===============================================================================
+RAZORPAY WEBHOOK
+===============================================================================
+*/
+
+async function handleRazorpayWebhook(
+    request,
+    env
+) {
+    if (!env.SOURCE_DB) {
+        throw new Error(
+            "Missing SOURCE_DB binding."
+        );
+    }
+
+    if (!env.CONTACTS_DB) {
+        throw new Error(
+            "Missing CONTACTS_DB binding."
+        );
+    }
+
+    if (
+        !hasValue(
+            env.RAZORPAY_WEBHOOK_SECRET
+        )
+    ) {
+        throw new Error(
+            "Missing RAZORPAY_WEBHOOK_SECRET."
+        );
+    }
+
+    const rawBody =
+        await request.text();
+
+    const signature =
+        request.headers.get(
+            "x-razorpay-signature"
+        );
+
+    const signatureValid =
+        await verifyRazorpayWebhookSignature(
+            rawBody,
+            signature,
+            env.RAZORPAY_WEBHOOK_SECRET
+        );
+
+    if (!signatureValid) {
+        console.error(
+            "Razorpay webhook signature verification failed."
+        );
+
+        return Response.json(
+            {
+                success: false,
+                version: WORKER_VERSION,
+                error:
+                    "Invalid Razorpay webhook signature."
+            },
+            {
+                status: 401
+            }
+        );
+    }
+
+    const payload =
+        safelyParseJson(
+            rawBody
+        );
+
+    if (!payload) {
+        console.error(
+            "Razorpay webhook JSON parsing failed."
+        );
+
+        return Response.json(
+            {
+                success: false,
+                version: WORKER_VERSION,
+                error:
+                    "Invalid Razorpay webhook JSON."
+            },
+            {
+                status: 400
+            }
+        );
+    }
+
+    const event =
+        normalizeNullableText(
+            payload.event
+        );
+
+    if (
+        event !==
+        "payment.captured"
+    ) {
+        console.log(
+            "Razorpay webhook ignored.",
+            {
+                event
+            }
+        );
+
+        return Response.json({
+            success: true,
+            version: WORKER_VERSION,
+            ignored: true,
+            event
+        });
+    }
+
+    const orderId =
+        normalizeNullableText(
+            payload
+                ?.payload
+                ?.payment
+                ?.entity
+                ?.order_id
+        );
+
+    if (!orderId) {
+        console.error(
+            "Razorpay payment.captured webhook missing order_id."
+        );
+
+        return Response.json(
+            {
+                success: false,
+                version: WORKER_VERSION,
+                webhook: "razorpay",
+                event,
+                error:
+                    "Missing Razorpay order_id."
+            },
+            {
+                status: 400
+            }
+        );
+    }
+
+    const member =
+        await getMemberForRazorpayOrder(
+            env.SOURCE_DB,
+            orderId
+        );
+
+    if (!member) {
+        console.log(
+            "Razorpay webhook member not found.",
+            {
+                order_id: orderId
+            }
+        );
+
+        return Response.json({
+            success: true,
+            version: WORKER_VERSION,
+            webhook: "razorpay",
+            event,
+            order_id: orderId,
+            member_found: false
+        });
+    }
+
+    const payment =
+        await getPaymentOrderForRazorpayOrder(
+            env.SOURCE_DB,
+            orderId,
+            member.id
+        );
+
+    if (!payment) {
+        console.error(
+            "Razorpay webhook payment order not found.",
+            {
+                order_id: orderId,
+                member_id:
+                    member.id
+            }
+        );
+
+        return Response.json(
+            {
+                success: false,
+                version: WORKER_VERSION,
+                webhook: "razorpay",
+                event,
+                order_id: orderId,
+                member_found: true,
+                error:
+                    "Matching payment order not found."
+            },
+            {
+                status: 400
+            }
+        );
+    }
+
+    const paymentCapturedAt =
+        resolveRazorpayPaymentCapturedAt(
+            payment,
+            payload
+        );
+
+    if (
+        paymentCapturedAt ===
+        null
+    ) {
+        console.error(
+            "Razorpay webhook payment capture timestamp invalid.",
+            {
+                order_id: orderId,
+                member_id:
+                    member.id,
+                payment_order_id:
+                    payment.id
+            }
+        );
+
+        return Response.json(
+            {
+                success: false,
+                version: WORKER_VERSION,
+                webhook: "razorpay",
+                event,
+                order_id: orderId,
+                member_found: true,
+                error:
+                    "Invalid payment capture timestamp."
+            },
+            {
+                status: 400
+            }
+        );
+    }
+
+    let saveResult;
+
+    try {
+        saveResult =
+            await saveMemberFromPaymentOrder(
+                env.CONTACTS_DB,
+                member,
+                payment,
+                paymentCapturedAt
+            );
+    } catch (error) {
+        if (
+            isDuplicateMemberError(
+                error
+            )
+        ) {
+            console.log(
+                "Razorpay webhook duplicate member ignored.",
+                {
+                    order_id: orderId,
+                    payment_order_id:
+                        payment.id,
+                    member_id:
+                        member.id
+                }
+            );
+
+            return Response.json({
+                success: true,
+                version: WORKER_VERSION,
+                webhook: "razorpay",
+                event,
+                order_id: orderId,
+                payment_order_id:
+                    payment.id,
+                member_found: true,
+                duplicate_member: true,
+                google_contact_created: false
+            });
+        }
+
+        throw error;
+    }
+
+    console.log(
+        "Razorpay webhook saved member into contact sync database.",
+        {
+            order_id: orderId,
+            payment_order_id:
+                payment.id,
+            member_id:
+                member.id,
+            inserted:
+                saveResult.inserted,
+            updated:
+                saveResult.updated
+        }
+    );
+/*
+---------------------------------------------------------
+Immediately process pending Google contacts.
+Cron still remains the fallback if Google fails.
+---------------------------------------------------------
+*/
+
+let googleSyncResult = null;
+
+try {
+    googleSyncResult =
+        await syncGoogleContacts(env);
+} catch (error) {
+    console.error(
+        "Webhook Google Contacts sync failed.",
+        error
+    );
+}
+    return Response.json({
+    success: true,
+    version: WORKER_VERSION,
+    webhook: "razorpay",
+    event,
+    order_id: orderId,
+    payment_order_id: payment.id,
+    member_found: true,
+    contact_sync_record_inserted: saveResult.inserted,
+    contact_sync_record_updated: saveResult.updated,
+    google_contacts_sync: googleSyncResult
+});
+}
+
+async function getMemberForRazorpayOrder(
+    database,
+    orderId
+) {
+    if (!hasValue(orderId)) {
+        return null;
+    }
+
+    return database.prepare(
+        `
+        SELECT
+            id,
+            full_name,
+            email,
+            phone,
+            activation_url
+        FROM members
+        WHERE activation_gateway_order_id = ?
+        LIMIT 1
+        `
+    )
+        .bind(
+            orderId
+        )
+        .first();
+}
+
+async function getPaymentOrderForRazorpayOrder(
+    database,
+    orderId,
+    memberId
+) {
+    if (!hasValue(orderId)) {
+        return null;
+    }
+
+    return database.prepare(
+        `
+        SELECT
+            id,
+            member_id,
+            payment_status,
+            payment_captured_at
+        FROM payment_orders
+        WHERE gateway = 'razorpay'
+          AND gateway_order_id = ?
+          AND member_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+        `
+    )
+        .bind(
+            orderId,
+            memberId
+        )
+        .first();
+}
+
+function resolveRazorpayPaymentCapturedAt(
+    payment,
+    payload
+) {
+    const paymentCapturedAt =
+        parseUnixTimestamp(
+            payment
+                ?.payment_captured_at
+        );
+
+    if (
+        paymentCapturedAt !==
+        null
+    ) {
+        return paymentCapturedAt;
+    }
+
+    return parseUnixTimestamp(
+        payload
+            ?.payload
+            ?.payment
+            ?.entity
+            ?.created_at
+    );
+}
+
+function isDuplicateMemberError(
+    error
+) {
+    const message =
+        getErrorMessage(
+            error
+        )
+            .toLowerCase();
+
+    return (
+        message.includes(
+            "unique"
+        ) &&
+        message.includes(
+            "member"
+        )
+    );
+}
+
+async function verifyRazorpayWebhookSignature(
+    rawBody,
+    signature,
+    secret
+) {
+    if (
+        !hasValue(signature) ||
+        !hasValue(secret)
+    ) {
+        return false;
+    }
+
+    const encoder =
+        new TextEncoder();
+
+    const key =
+        await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(secret),
+            {
+                name: "HMAC",
+                hash: "SHA-256"
+            },
+            false,
+            [
+                "sign"
+            ]
+        );
+
+    const digest =
+        await crypto.subtle.sign(
+            "HMAC",
+            key,
+            encoder.encode(
+                rawBody
+            )
+        );
+
+    return constantTimeStringEqual(
+        signature.trim().toLowerCase(),
+        arrayBufferToHex(digest)
+    );
+}
+
+/*
+===============================================================================
+PART 2
+MEMBERS TABLE INCREMENTAL SCANNER
+===============================================================================
+*/
+
+async function syncMembersTable(env) {
+    const config =
+        getWorkerConfiguration(env);
+
+    const syncState =
+        await getSyncState(
+            env.CONTACTS_DB
+        );
+
+    const lastMemberId =
+        syncState.last_member_id ||
+        0;
+
+    console.log(
+        "Members cursor:",
+        lastMemberId
+    );
+
+    /*
+    -----------------------------------------------------------------------
+    Scan every new row.
+
+    Even unpaid rows are scanned because the cursor represents the last
+    inspected source row rather than the last copied paid member.
+    -----------------------------------------------------------------------
+    */
+
+    const sourceResult =
+        await env.SOURCE_DB.prepare(
+            `
+            SELECT
+                id,
+                full_name,
+                email,
+                phone,
+                activation_url
+            FROM members
+            WHERE id > ?
+            ORDER BY id ASC
+            LIMIT ?
+            `
+        )
+            .bind(
+                lastMemberId,
+                config.membersScanLimit
+            )
+            .all();
+
+    const scannedRows =
+        sourceResult.results ||
+        [];
+
+    if (
+        scannedRows.length ===
+        0
+    ) {
+        return {
+            success: true,
+
+            previous_last_member_id:
+                lastMemberId,
+
+            current_last_member_id:
+                lastMemberId,
+
+            rows_scanned: 0,
+
+            eligible_rows: 0,
+
+            inserted_rows: 0,
+
+            existing_rows: 0,
+
+            message:
+                "No new members found."
+        };
+    }
+
+    /*
+    -----------------------------------------------------------------------
+    Only paid members proceed.
+    -----------------------------------------------------------------------
+    */
+
+    const eligibleRows =
+        scannedRows.filter(
+            member =>
+                hasValue(
+                    member.activation_url
+                )
+        );
+
+    let insertedRows = 0;
+    let existingRows = 0;
+
+    for (
+        const member
+        of eligibleRows
+    ) {
+        const insertResult =
+            await insertMemberIfMissing(
+                env.CONTACTS_DB,
+                member
+            );
+
+        if (
+            insertResult.inserted
+        ) {
+            insertedRows++;
+        } else {
+            existingRows++;
+        }
+    }
+
+    const newestScannedId =
+        scannedRows[
+            scannedRows.length -
+            1
+        ].id;
+
+    await updateMembersSyncState(
+        env.CONTACTS_DB,
+        newestScannedId,
+        scannedRows.length
+    );
+
+    return {
+        success: true,
+
+        previous_last_member_id:
+            lastMemberId,
+
+        current_last_member_id:
+            newestScannedId,
+
+        rows_scanned:
+            scannedRows.length,
+
+        eligible_rows:
+            eligibleRows.length,
+
+        inserted_rows:
+            insertedRows,
+
+        existing_rows:
+            existingRows
+    };
+}
+
+/*
+===============================================================================
+INSERT MEMBER
+===============================================================================
+*/
+
+async function insertMemberIfMissing(
+    database,
+    member
+) {
+    /*
+    INSERT OR IGNORE relies on the unique member_id index.
+    */
+
+    const result =
+        await database.prepare(
+            `
+            INSERT OR IGNORE INTO
+            member_contact_sync_records (
+                member_id,
+                full_name,
+                email,
+                phone,
+                activation_url,
+                source_members,
+                source_payment_orders,
+                google_contact_status,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                1,
+                0,
+                'pending',
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            )
+            `
+        )
+            .bind(
+                member.id,
+
+                normalizeRequiredText(
+                    member.full_name,
+                    "Unknown Member"
+                ),
+
+                normalizeNullableText(
+                    member.email
+                ),
+
+                normalizeNullableText(
+                    member.phone
+                ),
+
+                member.activation_url.trim()
+            )
+            .run();
+
+    return {
+        inserted:
+            Number(
+                result.meta
+                    ?.changes ||
+                0
+            ) > 0
+    };
+}
+
+/*
+===============================================================================
+UPDATE MEMBERS CURSOR
+===============================================================================
+*/
+
+async function updateMembersSyncState(
+    database,
+    lastMemberId,
+    scannedRows
+) {
+    await database.prepare(
+        `
+        UPDATE sync_state
+        SET
+            last_member_id = ?,
+
+            total_members_scanned =
+                total_members_scanned + ?,
+
+            last_members_scan_at =
+                CURRENT_TIMESTAMP,
+
+            updated_at =
+                CURRENT_TIMESTAMP
+
+        WHERE id = 1
+        `
+    )
+        .bind(
+            lastMemberId,
+            scannedRows
+        )
+        .run();
+}
+
+/*
+===============================================================================
+PART 3
+PAYMENT ORDERS INCREMENTAL SCANNER
+===============================================================================
+*/
+
+async function syncPaymentOrdersTable(
+    env
+) {
+    const config =
+        getWorkerConfiguration(env);
+
+    const syncState =
+        await getSyncState(
+            env.CONTACTS_DB
+        );
+
+    const lastPaymentOrderId =
+        syncState
+            .last_payment_order_id ||
+        0;
+
+    const currentUnixTime =
+        Math.floor(
+            Date.now() /
+            1000
+        );
+
+    const captureCutoffTime =
+        currentUnixTime -
+        (
+            config
+                .paymentCaptureLagMinutes *
+            60
+        );
+
+    console.log(
+        "Payment cursor:",
+        lastPaymentOrderId
+    );
+
+    console.log(
+        "Capture cutoff:",
+        captureCutoffTime
+    );
+
+    const paymentResult =
+        await env.SOURCE_DB.prepare(
+            `
+            SELECT
+                id,
+                member_id,
+                payment_status,
+                payment_captured_at
+            FROM payment_orders
+            WHERE id > ?
+            ORDER BY id ASC
+            LIMIT ?
+            `
+        )
+            .bind(
+                lastPaymentOrderId,
+                config
+                    .paymentOrderScanLimit
+            )
+            .all();
+
+    const paymentOrders =
+        paymentResult.results ||
+        [];
+
+    if (
+        paymentOrders.length ===
+        0
+    ) {
+        return {
+            success: true,
+
+            previous_last_payment_order_id:
+                lastPaymentOrderId,
+
+            current_last_payment_order_id:
+                lastPaymentOrderId,
+
+            rows_loaded: 0,
+
+            rows_scanned: 0,
+
+            captured_orders: 0,
+
+            inserted_members: 0,
+
+            updated_members: 0,
+
+            message:
+                "No new payment orders."
+        };
+    }
+
+    let scannedRows = 0;
+    let capturedOrders = 0;
+    let insertedMembers = 0;
+    let updatedMembers = 0;
+    let skippedNonCaptured = 0;
+    let blockedOrder = null;
+
+    let newestProcessedOrderId =
+        lastPaymentOrderId;
+
+    for (
+        const payment
+        of paymentOrders
+    ) {
+        const paymentStatus =
+            normalizeStatus(
+                payment
+                    .payment_status
+            );
+
+        /*
+        ---------------------------------------------------------
+        Ignore non captured orders.
+        ---------------------------------------------------------
+        */
+
+        if (
+            paymentStatus !==
+            "captured"
+        ) {
+            skippedNonCaptured++;
+            scannedRows++;
+
+            newestProcessedOrderId =
+                payment.id;
+
+            continue;
+        }
+
+        const capturedAt =
+            parseUnixTimestamp(
+                payment
+                    .payment_captured_at
+            );
+
+        /*
+        ---------------------------------------------------------
+        Invalid timestamp.
+        ---------------------------------------------------------
+        */
+
+        if (
+            capturedAt ===
+            null
+        ) {
+            blockedOrder = {
+                payment_order_id:
+                    payment.id,
+
+                reason:
+                    "Invalid capture timestamp."
+            };
+
+            break;
+        }
+
+        /*
+        ---------------------------------------------------------
+        Wait for configurable lag.
+        ---------------------------------------------------------
+        */
+
+        if (
+            capturedAt >
+            captureCutoffTime
+        ) {
+            blockedOrder = {
+                payment_order_id:
+                    payment.id,
+
+                member_id:
+                    payment.member_id,
+
+                payment_captured_at:
+                    capturedAt,
+
+                reason:
+                    "Capture lag not completed."
+            };
+
+            break;
+        }
+
+        /*
+        ---------------------------------------------------------
+        Fetch corresponding member.
+        ---------------------------------------------------------
+        */
+
+        const member =
+            await getMemberForPaymentOrder(
+                env.SOURCE_DB,
+                payment.member_id
+            );
+
+        if (!member) {
+            blockedOrder = {
+                payment_order_id:
+                    payment.id,
+
+                member_id:
+                    payment.member_id,
+
+                reason:
+                    "Matching member not found."
+            };
+
+            break;
+        }
+
+        /*
+        ---------------------------------------------------------
+        Membership not updated yet.
+        ---------------------------------------------------------
+        */
+
+        if (
+            !hasValue(
+                member
+                    .activation_url
+            )
+        ) {
+            blockedOrder = {
+                payment_order_id:
+                    payment.id,
+
+                member_id:
+                    payment.member_id,
+
+                reason:
+                    "activation_url missing."
+            };
+
+            break;
+        }
+
+        /*
+        ---------------------------------------------------------
+        Save into target database.
+        ---------------------------------------------------------
+        */
+
+        const saveResult =
+            await saveMemberFromPaymentOrder(
+                env.CONTACTS_DB,
+                member,
+                payment,
+                capturedAt
+            );
+
+        if (
+            saveResult.inserted
+        ) {
+            insertedMembers++;
+        } else {
+            updatedMembers++;
+        }
+
+        capturedOrders++;
+        scannedRows++;
+
+        newestProcessedOrderId =
+            payment.id;
+    }
+
+    if (
+        scannedRows >
+        0
+    ) {
+        await updatePaymentOrdersSyncState(
+            env.CONTACTS_DB,
+            newestProcessedOrderId,
+            scannedRows
+        );
+    }
+
+    return {
+        success: true,
+
+        previous_last_payment_order_id:
+            lastPaymentOrderId,
+
+        current_last_payment_order_id:
+            newestProcessedOrderId,
+
+        rows_loaded:
+            paymentOrders.length,
+
+        rows_scanned:
+            scannedRows,
+
+        captured_orders:
+            capturedOrders,
+
+        inserted_members:
+            insertedMembers,
+
+        updated_members:
+            updatedMembers,
+
+        skipped_non_captured:
+            skippedNonCaptured,
+
+        blocked_order:
+            blockedOrder
+    };
+}
+
+/*
+===============================================================================
+FETCH MEMBER
+===============================================================================
+*/
+
+async function getMemberForPaymentOrder(
+    database,
+    memberId
+) {
+    if (
+        memberId === null ||
+        memberId === undefined ||
+        String(
+            memberId
+        ).trim() === ""
+    ) {
+        return null;
+    }
+
+    return database.prepare(
+        `
+        SELECT
+            id,
+            full_name,
+            email,
+            phone,
+            activation_url
+        FROM members
+        WHERE id = ?
+        LIMIT 1
+        `
+    )
+        .bind(memberId)
+        .first();
+}
+
+/*
+===============================================================================
+INSERT OR UPDATE MEMBER FROM PAYMENT ORDER
+===============================================================================
+*/
+
+async function saveMemberFromPaymentOrder(
+    database,
+    member,
+    payment,
+    paymentCapturedAt
+) {
+    const existing =
+        await database.prepare(
+            `
+            SELECT id
+            FROM member_contact_sync_records
+            WHERE member_id = ?
+            LIMIT 1
+            `
+        )
+            .bind(
+                member.id
+            )
+            .first();
+
+    /*
+    ---------------------------------------------------------
+    Existing record.
+    ---------------------------------------------------------
+    */
+
+    if (existing) {
+        await database.prepare(
+            `
+            UPDATE member_contact_sync_records
+            SET
+                full_name = ?,
+                email = ?,
+                phone = ?,
+                activation_url = ?,
+                payment_order_id = ?,
+                payment_captured_at = ?,
+                source_payment_orders = 1,
+                updated_at = CURRENT_TIMESTAMP,
+                last_error = NULL
+            WHERE member_id = ?
+            `
+        )
+            .bind(
+                normalizeRequiredText(
+                    member.full_name,
+                    "Unknown Member"
+                ),
+
+                normalizeNullableText(
+                    member.email
+                ),
+
+                normalizeNullableText(
+                    member.phone
+                ),
+
+                member
+                    .activation_url
+                    .trim(),
+
+                payment.id,
+
+                paymentCapturedAt,
+
+                member.id
+            )
+            .run();
+
+        return {
+            inserted: false,
+            updated: true
+        };
+    }
+
+    /*
+    ---------------------------------------------------------
+    Older member newly becoming paid.
+    ---------------------------------------------------------
+    */
+
+    await database.prepare(
+        `
+        INSERT INTO member_contact_sync_records (
+            member_id,
+            full_name,
+            email,
+            phone,
+            activation_url,
+            payment_order_id,
+            payment_captured_at,
+            source_members,
+            source_payment_orders,
+            google_contact_status,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            0,
+            1,
+            'pending',
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+        )
+        `
+    )
+        .bind(
+            member.id,
+
+            normalizeRequiredText(
+                member.full_name,
+                "Unknown Member"
+            ),
+
+            normalizeNullableText(
+                member.email
+            ),
+
+            normalizeNullableText(
+                member.phone
+            ),
+
+            member
+                .activation_url
+                .trim(),
+
+            payment.id,
+
+            paymentCapturedAt
+        )
+        .run();
+
+    return {
+        inserted: true,
+        updated: false
+    };
+}
+
+/*
+===============================================================================
+UPDATE PAYMENT CURSOR
+===============================================================================
+*/
+
+async function updatePaymentOrdersSyncState(
+    database,
+    lastPaymentOrderId,
+    scannedRows
+) {
+    await database.prepare(
+        `
+        UPDATE sync_state
+        SET
+            last_payment_order_id = ?,
+
+            total_payment_orders_scanned =
+                total_payment_orders_scanned + ?,
+
+            last_payment_orders_scan_at =
+                CURRENT_TIMESTAMP,
+
+            updated_at =
+                CURRENT_TIMESTAMP
+
+        WHERE id = 1
+        `
+    )
+        .bind(
+            lastPaymentOrderId,
+            scannedRows
+        )
+        .run();
+}
+
+/*
+===============================================================================
+PART 4
+GOOGLE CONTACTS SYNCHRONIZATION
+===============================================================================
+*/
+
+async function syncGoogleContacts(
+    env
+) {
+    validateGoogleEnvironment(env);
+
+    const config =
+        getWorkerConfiguration(env);
+
+    const pendingResult =
+        await env.CONTACTS_DB.prepare(
+            `
+            SELECT
+                id,
+                member_id,
+                full_name,
+                email,
+                phone,
+                activation_url
+            FROM member_contact_sync_records
+            WHERE google_contact_status = 'pending'
+            ORDER BY id ASC
+            LIMIT ?
+            `
+        )
+            .bind(
+                config
+                    .googleContactSyncLimit
+            )
+            .all();
+
+    const pendingContacts =
+        pendingResult.results ||
+        [];
+
+    if (
+        pendingContacts.length ===
+        0
+    ) {
+        return {
+            success: true,
+
+            rows_loaded: 0,
+
+            contacts_created: 0,
+
+            contacts_failed: 0,
+
+            contacts_left_syncing: 0,
+
+            message:
+                "No pending contacts."
+        };
+    }
+
+    console.log(
+        "Google pending:",
+        pendingContacts.length
+    );
+
+    const accessToken =
+        await getGoogleAccessToken(
+            env
+        );
+
+    let contactsCreated = 0;
+    let contactsFailed = 0;
+    let contactsLeftSyncing = 0;
+
+    const results = [];
+
+    for (
+        const contact
+        of pendingContacts
+    ) {
+        /*
+        ---------------------------------------------------------------
+        Protect against duplicate creation.
+        ---------------------------------------------------------------
+        */
+
+        const claimed =
+            await markGoogleContactSyncing(
+                env.CONTACTS_DB,
+                contact.id
+            );
+
+        if (!claimed) {
+            results.push({
+                member_id:
+                    contact.member_id,
+
+                status:
+                    "skipped_not_pending"
+            });
+
+            continue;
+        }
+
+        let googleContact;
+
+        try {
+            googleContact =
+                await createGoogleContact(
+                    accessToken,
+                    contact,
+                    config
+                        .googleApiTimeout
+                );
+        } catch (error) {
+            contactsFailed++;
+
+            const errorMessage =
+                getErrorMessage(
+                    error
+                );
+
+            await markGoogleContactFailed(
+                env.CONTACTS_DB,
+                contact.id,
+                errorMessage
+            );
+
+            results.push({
+                member_id:
+                    contact.member_id,
+
+                status:
+                    "failed",
+
+                error:
+                    errorMessage
+            });
+
+            await sleep(
+                config
+                    .googleContactDelay
+            );
+
+            continue;
+        }
+
+        try {
+            await markGoogleContactSynced(
+                env.CONTACTS_DB,
+                contact.id,
+                googleContact,
+                contact.full_name
+            );
+
+            contactsCreated++;
+
+            results.push({
+                member_id:
+                    contact.member_id,
+
+                status:
+                    "synced",
+
+                google_contact_id:
+                    googleContact
+                        .resourceName
+            });
+        } catch (error) {
+            contactsLeftSyncing++;
+
+            const errorMessage =
+                getErrorMessage(
+                    error
+                );
+
+            console.error(
+                "Google contact was created but D1 synced update failed. Leaving record as syncing.",
+                {
+                    member_id:
+                        contact.member_id,
+
+                    record_id:
+                        contact.id,
+
+                    google_contact_id:
+                        googleContact
+                            .resourceName,
+
+                    error:
+                        errorMessage
+                }
+            );
+
+            results.push({
+                member_id:
+                    contact.member_id,
+
+                status:
+                    "syncing",
+
+                google_contact_id:
+                    googleContact
+                        .resourceName,
+
+                error:
+                    errorMessage
+            });
+        }
+
+        /*
+        ---------------------------------------------------------------
+        Sequential API requests.
+        ---------------------------------------------------------------
+        */
+
+        await sleep(
+            config
+                .googleContactDelay
+        );
+    }
+
+    return {
+        success:
+            contactsFailed ===
+            0 &&
+            contactsLeftSyncing ===
+            0,
+
+        rows_loaded:
+            pendingContacts.length,
+
+        contacts_created:
+            contactsCreated,
+
+        contacts_failed:
+            contactsFailed,
+
+        contacts_left_syncing:
+            contactsLeftSyncing,
+
+        results
+    };
+}
+
+/*
+===============================================================================
+GOOGLE CONTACT RECORD STATE
+===============================================================================
+*/
+
+async function markGoogleContactSyncing(
+    database,
+    recordId
+) {
+    const result =
+        await database.prepare(
+            `
+        UPDATE member_contact_sync_records
+        SET
+            google_contact_status = 'syncing',
+            google_contact_last_error = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        AND google_contact_status = 'pending'
+        `
+    )
+        .bind(recordId)
+        .run();
+
+    return Number(
+        result.meta
+            ?.changes ||
+        0
+    ) === 1;
+}
+
+async function markGoogleContactSynced(
+    database,
+    recordId,
+    googleContact,
+    fallbackName
+) {
+    await database.prepare(
+        `
+        UPDATE member_contact_sync_records
+        SET
+            google_contact_id = ?,
+            google_contact_name = ?,
+            google_contact_status = 'synced',
+            google_contact_synced_at = ?,
+            google_contact_last_error = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        `
+    )
+        .bind(
+            googleContact
+                .resourceName,
+
+            extractGoogleContactName(
+                googleContact,
+                fallbackName
+            ),
+
+            Math.floor(
+                Date.now() /
+                1000
+            ),
+
+            recordId
+        )
+        .run();
+}
+
+async function markGoogleContactFailed(
+    database,
+    recordId,
+    error
+) {
+    await database.prepare(
+        `
+        UPDATE member_contact_sync_records
+        SET
+            google_contact_status = 'failed',
+            google_contact_last_error = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        `
+    )
+        .bind(
+            truncateText(
+                error,
+                2000
+            ),
+
+            recordId
+        )
+        .run();
+}
+
+/*
+===============================================================================
+GOOGLE PERSON BUILDER
+===============================================================================
+*/
+
+function buildGooglePerson(
+    contact
+) {
+    const nameParts =
+        splitContactName(
+            normalizeRequiredText(
+                contact.full_name,
+                "Member"
+            )
+        );
+
+    const person = {
+        names: [
+            {
+                givenName:
+                    nameParts
+                        .givenName,
+
+                familyName:
+                    nameParts
+                        .familyName
+            }
+        ],
+
+        userDefined: [
+            {
+                key:
+                    "KenFolios Member ID",
+
+                value:
+                    String(
+                        contact.member_id
+                    )
+            },
+
+            {
+                key:
+                    "KenFolios Sync Record ID",
+
+                value:
+                    String(
+                        contact.id
+                    )
+            }
+        ]
+    };
+
+    /*
+    ---------------------------------------------------------------
+    Email validation.
+    ---------------------------------------------------------------
+    */
+
+    const email =
+        normalizeNullableText(
+            contact.email
+        );
+
+    if (
+        email &&
+        email.includes("@")
+    ) {
+        person.emailAddresses = [
+            {
+                value: email,
+                type: "work"
+            }
+        ];
+    }
+
+    /*
+    ---------------------------------------------------------------
+    Phone validation.
+    ---------------------------------------------------------------
+    */
+
+    const phone =
+        normalizeNullableText(
+            contact.phone
+        );
+
+    if (
+        phone &&
+        phone.length >=
+        8
+    ) {
+        person.phoneNumbers = [
+            {
+                value: phone,
+                type: "mobile"
+            }
+        ];
+    }
+
+    const activationUrl =
+        normalizeNullableText(
+            contact
+                .activation_url
+        );
+
+    if (activationUrl) {
+        person.urls = [
+            {
+                value:
+                    activationUrl,
+
+                type:
+                    "profile"
+            }
+        ];
+    }
+
+    return person;
+}
+
+/*
+===============================================================================
+PART 5
+GOOGLE OAUTH + GOOGLE PEOPLE API
+===============================================================================
+*/
+
+async function getGoogleAccessToken(
+    env
+) {
+    const body =
+        new URLSearchParams();
+
+    body.set(
+        "client_id",
+        env.GOOGLE_CLIENT_ID
+    );
+
+    body.set(
+        "client_secret",
+        env.GOOGLE_CLIENT_SECRET
+    );
+
+    body.set(
+        "refresh_token",
+        env.GOOGLE_REFRESH_TOKEN
+    );
+
+    body.set(
+        "grant_type",
+        "refresh_token"
+    );
+
+    const controller =
+        new AbortController();
+
+    const timeout =
+        setTimeout(
+            () =>
+                controller.abort(),
+
+            GOOGLE_API_TIMEOUT_MS
+        );
+
+    let response;
+
+    try {
+        response =
+            await fetch(
+                "https://oauth2.googleapis.com/token",
+
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/x-www-form-urlencoded"
+                    },
+
+                    body:
+                        body.toString(),
+
+                    signal:
+                        controller.signal
+                }
+            );
+    } finally {
+        clearTimeout(
+            timeout
+        );
+    }
+
+    const responseText =
+        await response.text();
+
+    const json =
+        safelyParseJson(
+            responseText
+        );
+
+    if (
+        !response.ok ||
+        !json ||
+        !json.access_token
+    ) {
+        throw new Error(
+            formatGoogleApiError(
+                response.status,
+                json,
+                responseText,
+                "Unable to obtain Google OAuth access token"
+            )
+        );
+    }
+
+    return json.access_token;
+}
+
+/*
+===============================================================================
+CREATE GOOGLE CONTACT
+===============================================================================
+*/
+
+async function createGoogleContact(
+    accessToken,
+    contact,
+    timeoutMs
+) {
+    const person =
+        buildGooglePerson(
+            contact
+        );
+
+    const personFields = [
+        "names",
+        "emailAddresses",
+        "phoneNumbers",
+        "urls",
+        "userDefined"
+    ].join(",");
+
+    const controller =
+        new AbortController();
+
+    const timeout =
+        setTimeout(
+            () =>
+                controller.abort(),
+
+            timeoutMs
+        );
+
+    let response;
+
+    try {
+        response =
+            await fetch(
+                "https://people.googleapis.com/v1/people:createContact" +
+                "?personFields=" +
+                encodeURIComponent(
+                    personFields
+                ),
+
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            "Bearer " +
+                            accessToken,
+
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            person
+                        ),
+
+                    signal:
+                        controller.signal
+                }
+            );
+    } finally {
+        clearTimeout(
+            timeout
+        );
+    }
+
+    const responseText =
+        await response.text();
+
+    const json =
+        safelyParseJson(
+            responseText
+        );
+
+    if (
+        !response.ok ||
+        !json ||
+        !json.resourceName
+    ) {
+        throw new Error(
+            formatGoogleApiError(
+                response.status,
+                json,
+                responseText,
+                "Google contact creation failed"
+            )
+        );
+    }
+
+    return json;
+}
+
+/*
+===============================================================================
+GOOGLE CONTACT NAME
+===============================================================================
+*/
+
+function extractGoogleContactName(
+    googleContact,
+    fallbackName
+) {
+    if (
+        googleContact &&
+        Array.isArray(
+            googleContact.names
+        )
+    ) {
+        for (
+            const name
+            of googleContact.names
+        ) {
+            if (
+                hasValue(
+                    name.displayName
+                )
+            ) {
+                return name
+                    .displayName
+                    .trim();
+            }
+        }
+    }
+
+    return normalizeRequiredText(
+        fallbackName,
+        "Unknown"
+    );
+}
+
+/*
+===============================================================================
+SPLIT NAME
+===============================================================================
+*/
+
+function splitContactName(
+    fullName
+) {
+    const parts =
+        String(fullName)
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean);
+
+    if (
+        parts.length ===
+        0
+    ) {
+        return {
+            givenName:
+                "Member",
+
+            familyName:
+                ""
+        };
+    }
+
+    if (
+        parts.length ===
+        1
+    ) {
+        return {
+            givenName:
+                parts[0],
+
+            familyName:
+                ""
+        };
+    }
+
+    return {
+        givenName:
+            parts
+                .slice(
+                    0,
+                    -1
+                )
+                .join(" "),
+
+        familyName:
+            parts[
+                parts.length -
+                1
+            ]
+    };
+}
+
+/*
+===============================================================================
+GOOGLE ENVIRONMENT VALIDATION
+===============================================================================
+*/
+
+function validateGoogleEnvironment(
+    env
+) {
+    const missing = [];
+
+    if (
+        !hasValue(
+            env.GOOGLE_CLIENT_ID
+        )
+    ) {
+        missing.push(
+            "GOOGLE_CLIENT_ID"
+        );
+    }
+
+    if (
+        !hasValue(
+            env.GOOGLE_CLIENT_SECRET
+        )
+    ) {
+        missing.push(
+            "GOOGLE_CLIENT_SECRET"
+        );
+    }
+
+    if (
+        !hasValue(
+            env.GOOGLE_REFRESH_TOKEN
+        )
+    ) {
+        missing.push(
+            "GOOGLE_REFRESH_TOKEN"
+        );
+    }
+
+    if (
+        missing.length
+    ) {
+        throw new Error(
+            "Missing Google variables: " +
+            missing.join(", ")
+        );
+    }
+}
+
+/*
+===============================================================================
+PART 6
+SYNC STATE + COMMON HELPERS
+===============================================================================
+*/
+
+async function getSyncState(
+    database
+) {
+    let state =
+        await database.prepare(
+            `
+            SELECT
+                id,
+                last_member_id,
+                last_payment_order_id,
+                total_members_scanned,
+                total_payment_orders_scanned,
+                last_members_scan_at,
+                last_payment_orders_scan_at
+            FROM sync_state
+            WHERE id = 1
+            `
+        ).first();
+
+    /*
+    ---------------------------------------------------------------------------
+    Automatically create the singleton state row if missing.
+    ---------------------------------------------------------------------------
+    */
+
+    if (!state) {
+        await database.prepare(
+            `
+            INSERT INTO sync_state (
+                id,
+                last_member_id,
+                last_payment_order_id,
+                total_members_scanned,
+                total_payment_orders_scanned,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                1,
+                0,
+                0,
+                0,
+                0,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            )
+            `
+        ).run();
+
+        state = {
+            id: 1,
+
+            last_member_id: 0,
+
+            last_payment_order_id:
+                0,
+
+            total_members_scanned:
+                0,
+
+            total_payment_orders_scanned:
+                0,
+
+            last_members_scan_at:
+                null,
+
+            last_payment_orders_scan_at:
+                null
+        };
+    }
+
+    return state;
+}
+
+/*
+===============================================================================
+COMMON HELPERS
+===============================================================================
+*/
+
+function getPositiveInteger(
+    value,
+    fallback
+) {
+    const parsed =
+        Number.parseInt(
+            String(
+                value ??
+                ""
+            ),
+            10
+        );
+
+    if (
+        !Number.isInteger(
+            parsed
+        ) ||
+        parsed <= 0
+    ) {
+        return fallback;
+    }
+
+    return parsed;
+}
+
+function getNonNegativeInteger(
+    value,
+    fallback
+) {
+    const parsed =
+        Number.parseInt(
+            String(
+                value ??
+                ""
+            ),
+            10
+        );
+
+    if (
+        !Number.isInteger(
+            parsed
+        ) ||
+        parsed < 0
+    ) {
+        return fallback;
+    }
+
+    return parsed;
+}
+
+function parseUnixTimestamp(
+    value
+) {
+    if (
+        value === null ||
+        value === undefined ||
+        String(
+            value
+        ).trim() === ""
+    ) {
+        return null;
+    }
+
+    const parsed =
+        Number(value);
+
+    if (
+        !Number.isFinite(
+            parsed
+        ) ||
+        parsed <= 0
+    ) {
+        return null;
+    }
+
+    return Math.floor(
+        parsed
+    );
+}
+
+function normalizeStatus(
+    value
+) {
+    return String(
+        value ??
+        ""
+    )
+        .trim()
+        .toLowerCase();
+}
+
+function hasValue(
+    value
+) {
+    return (
+        typeof value ===
+            "string" &&
+
+        value
+            .trim()
+            .length > 0
+    );
+}
+
+function normalizeNullableText(
+    value
+) {
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return null;
+    }
+
+    const text =
+        String(
+            value
+        ).trim();
+
+    return text ||
+        null;
+}
+
+function normalizeRequiredText(
+    value,
+    fallback
+) {
+    const text =
+        normalizeNullableText(
+            value
+        );
+
+    if (text) {
+        return text;
+    }
+
+    return fallback;
+}
+
+function safelyParseJson(
+    text
+) {
+    try {
+        return JSON.parse(
+            text
+        );
+    } catch {
+        return null;
+    }
+}
+
+function truncateText(
+    text,
+    maxLength
+) {
+    const value =
+        String(
+            text ??
+            ""
+        );
+
+    if (
+        value.length <=
+        maxLength
+    ) {
+        return value;
+    }
+
+    return (
+        value.substring(
+            0,
+            maxLength
+        ) +
+        "..."
+    );
+}
+
+function formatGoogleApiError(
+    status,
+    json,
+    responseText,
+    prefix
+) {
+    const message =
+        json?.error
+            ?.message ||
+
+        json?.error ||
+
+        json
+            ?.error_description ||
+
+        responseText ||
+
+        "Unknown Google API error";
+
+    return (
+        prefix +
+        " (HTTP " +
+        status +
+        "): " +
+        truncateText(
+            String(
+                message
+            ),
+            1500
+        )
+    );
+}
+
+function getErrorMessage(
+    error
+) {
+    if (
+        error instanceof
+        Error
+    ) {
+        return error.message;
+    }
+
+    return String(
+        error
+    );
+}
+
+function arrayBufferToHex(
+    buffer
+) {
+    return Array.from(
+        new Uint8Array(
+            buffer
+        )
+    )
+        .map(
+            byte =>
+                byte
+                    .toString(16)
+                    .padStart(
+                        2,
+                        "0"
+                    )
+        )
+        .join("");
+}
+
+function constantTimeStringEqual(
+    left,
+    right
+) {
+    const leftText =
+        String(
+            left ??
+            ""
+        );
+
+    const rightText =
+        String(
+            right ??
+            ""
+        );
+
+    let difference =
+        leftText.length ===
+        rightText.length
+            ? 0
+            : 1;
+
+    const length =
+        Math.max(
+            leftText.length,
+            rightText.length
+        );
+
+    for (
+        let index = 0;
+        index < length;
+        index++
+    ) {
+        difference |=
+            (
+                leftText.charCodeAt(
+                    index
+                ) ||
+                0
+            ) ^
+            (
+                rightText.charCodeAt(
+                    index
+                ) ||
+                0
+            );
+    }
+
+    return difference ===
+        0;
+}
+
+/*
+===============================================================================
+SLEEP
+===============================================================================
+*/
+
+function sleep(
+    milliseconds
+) {
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+}
+
+/*
+===============================================================================
+PART 7
+FINAL UTILITIES
+===============================================================================
+*/
+
+/*
+----------------------------------------------------------------------------
+Safe JSON stringify for logging.
+----------------------------------------------------------------------------
+*/
+
+function safeJson(
+    value
+) {
+    try {
+        return JSON.stringify(
+            value
+        );
+    } catch {
+        return String(
+            value
+        );
+    }
+}
+
+/*
+----------------------------------------------------------------------------
+ISO Timestamp
+----------------------------------------------------------------------------
+*/
+
+function nowIso() {
+    return new Date()
+        .toISOString();
+}
+
+/*
+----------------------------------------------------------------------------
+Current Unix Timestamp
+----------------------------------------------------------------------------
+*/
+
+function nowUnix() {
+    return Math.floor(
+        Date.now() /
+        1000
+    );
+}
+
+/*
+----------------------------------------------------------------------------
+Log Helper
+----------------------------------------------------------------------------
+*/
+
+function logStage(
+    title,
+    payload = null
+) {
+    console.log("");
+
+    console.log(
+        "----------------------------------------------------"
+    );
+
+    console.log(
+        title
+    );
+
+    if (
+        payload !==
+        null
+    ) {
+        console.log(
+            safeJson(
+                payload
+            )
+        );
+    }
+
+    console.log(
+        "----------------------------------------------------"
+    );
+}
+
+/*
+----------------------------------------------------------------------------
+Log Error
+----------------------------------------------------------------------------
+*/
+
+function logError(
+    title,
+    error
+) {
+    console.error("");
+
+    console.error(
+        "----------------------------------------------------"
+    );
+
+    console.error(
+        title
+    );
+
+    console.error(
+        getErrorMessage(
+            error
+        )
+    );
+
+    console.error(
+        "----------------------------------------------------"
+    );
+}
+
+/*
+----------------------------------------------------------------------------
+Simple Email Validator
+----------------------------------------------------------------------------
+*/
+
+function isValidEmail(
+    email
+) {
+    if (
+        !hasValue(
+            email
+        )
+    ) {
+        return false;
+    }
+
+    const value =
+        email.trim();
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        value
+    );
+}
+
+/*
+----------------------------------------------------------------------------
+Simple Phone Validator
+----------------------------------------------------------------------------
+*/
+
+function isValidPhone(
+    phone
+) {
+    if (
+        !hasValue(
+            phone
+        )
+    ) {
+        return false;
+    }
+
+    const digits =
+        phone.replace(
+            /\D/g,
+            ""
+        );
+
+    return (
+        digits.length >=
+        8
+    );
+}
+
+/*
+----------------------------------------------------------------------------
+Normalize Phone
+----------------------------------------------------------------------------
+*/
+
+function normalizePhone(
+    phone
+) {
+    if (
+        !hasValue(
+            phone
+        )
+    ) {
+        return null;
+    }
+
+    return phone.trim();
+}
+
+/*
+----------------------------------------------------------------------------
+Normalize Email
+----------------------------------------------------------------------------
+*/
+
+function normalizeEmail(
+    email
+) {
+    if (
+        !hasValue(
+            email
+        )
+    ) {
+        return null;
+    }
+
+    return email
+        .trim()
+        .toLowerCase();
+}
+
+/*
+----------------------------------------------------------------------------
+Version Information
+----------------------------------------------------------------------------
+*/
+
+function getWorkerVersion() {
+    return {
+        version:
+            WORKER_VERSION,
+
+        google_api_timeout_ms:
+            GOOGLE_API_TIMEOUT_MS,
+
+        google_contact_delay_ms:
+            GOOGLE_CONTACT_DELAY_MS
+    };
+}
+
+/*
+===============================================================================
+END OF FILE
+
+KenFolios Paid Member Contact Sync Worker
+Version 1.5
+
+Modules
+
+✓ Members incremental sync
+
+✓ Payment Orders incremental sync
+
+✓ Google Contacts synchronization
+
+✓ Google OAuth refresh flow
+
+✓ Cursor-based processing
+
+✓ Duplicate protection
+
+✓ Independent stage execution
+
+✓ Production logging
+
+✓ Future-ready architecture
+
+===============================================================================
+*/
