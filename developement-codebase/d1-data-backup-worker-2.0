@@ -1,0 +1,918 @@
+/*
+ * D1 to Google Sheets Backup Worker v2.0
+ *
+ * Purpose:
+ * Continuously back up Cloudflare D1 tables into Google Sheets.
+ *
+ * Authentication:
+ * Uses Google Service Account JWT authentication only.
+ */
+
+const DEFAULT_CONFIG = {
+  WORKER_NAME: "D1 Data Backup Worker",
+  VERSION: "2.0",
+  TEST_MODE: true,
+  BATCH_SIZE: 100,
+  GOOGLE_SPREADSHEET_ID: "",
+  SHEET_NAME_MEMBERS: "members",
+  SHEET_NAME_PAYMENT_ORDERS: "payment_orders",
+};
+
+const TABLE_CONFIGS = [
+  {
+    table: "members",
+    sheetEnvKey: "SHEET_NAME_MEMBERS",
+    defaultSheetName: DEFAULT_CONFIG.SHEET_NAME_MEMBERS,
+    primaryKey: "id",
+    testRows: [
+      {
+        id: 1,
+        full_name: "John Doe",
+        email: "john@example.com",
+        phone: "9999999999",
+        city: "Mumbai",
+      },
+      {
+        id: 2,
+        full_name: "Jane Doe",
+        email: "jane@example.com",
+        phone: "8888888888",
+        city: "Delhi",
+      },
+    ],
+  },
+  {
+    table: "payment_orders",
+    sheetEnvKey: "SHEET_NAME_PAYMENT_ORDERS",
+    defaultSheetName: DEFAULT_CONFIG.SHEET_NAME_PAYMENT_ORDERS,
+    primaryKey: "id",
+    testRows: [
+      {
+        id: 1001,
+        member_id: 1,
+        gateway_payment_id: "pay_xxxxxx",
+        amount_final: 199900,
+        payment_status: "captured",
+      },
+      {
+        id: 1002,
+        member_id: 2,
+        gateway_payment_id: "pay_yyyyyy",
+        amount_final: 99900,
+        payment_status: "captured",
+      },
+    ],
+  },
+];
+
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_SHEETS_API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
+const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+const JWT_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+const JWT_LIFETIME_SECONDS = 3600;
+const MAX_GOOGLE_ATTEMPTS = 4;
+const INITIAL_RETRY_DELAY_MS = 500;
+const EMPTY_LAST_SYNCED_ID = 0;
+
+const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      return await handleFetch(request, env);
+    } catch (error) {
+      logError("fetch_failed", { error: formatError(error) });
+      return jsonResponse(
+        {
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        },
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  },
+
+  async scheduled(event, env, ctx) {
+    console.log("Cron Trigger Received");
+    await runBackup(env, {
+      trigger: "scheduled",
+      scheduledTime: event?.scheduledTime || null,
+    });
+  },
+};
+
+async function handleFetch(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Method Not Allowed",
+      },
+      HTTP_STATUS.METHOD_NOT_ALLOWED
+    );
+  }
+
+  const url = new URL(request.url);
+
+  if (url.pathname === "/") {
+    const config = getRuntimeConfig(env);
+
+    return jsonResponse({
+      worker_name: config.WORKER_NAME,
+      version: config.VERSION,
+      mode: config.TEST_MODE ? "test" : "production",
+      batch_size: config.BATCH_SIZE,
+      spreadsheet_id_configured: Boolean(config.GOOGLE_SPREADSHEET_ID),
+      sheets: {
+        members: config.SHEET_NAME_MEMBERS,
+        payment_orders: config.SHEET_NAME_PAYMENT_ORDERS,
+      },
+      status: "ready",
+    });
+  }
+
+  if (url.pathname === "/health") {
+    return jsonResponse({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  if (url.pathname === "/sync") {
+    return jsonResponse(await runBackup(env, { trigger: "http" }));
+  }
+
+  return jsonResponse(
+    {
+      success: false,
+      error: "Not Found",
+    },
+    HTTP_STATUS.NOT_FOUND
+  );
+}
+
+async function runBackup(env, context = {}) {
+  const startedAt = Date.now();
+  const config = getRuntimeConfig(env);
+  const summary = {
+    success: true,
+    worker: config.WORKER_NAME,
+    version: config.VERSION,
+    mode: config.TEST_MODE ? "test" : "production",
+    trigger: context.trigger || "manual",
+    scheduled_time: context.scheduledTime || null,
+    batch_size: config.BATCH_SIZE,
+    tables: [],
+    started_at: new Date(startedAt).toISOString(),
+    finished_at: null,
+    duration_ms: null,
+  };
+
+  logInfo("backup_started", {
+    mode: summary.mode,
+    trigger: summary.trigger,
+    batch_size: config.BATCH_SIZE,
+  });
+
+  try {
+    validateTableConfigs(TABLE_CONFIGS);
+
+    let auth = null;
+    let spreadsheet = null;
+
+    if (!config.TEST_MODE) {
+      validateProductionEnvironment(env, config);
+      await ensureBackupSyncStateTable(env.DB);
+      auth = createGoogleServiceAccountAuth(env);
+      spreadsheet = await getSpreadsheet(config.GOOGLE_SPREADSHEET_ID, auth);
+    }
+
+    for (const tableConfig of TABLE_CONFIGS) {
+      const tableResult = await backupTable({
+        env,
+        config,
+        auth,
+        spreadsheet,
+        tableConfig,
+      });
+
+      summary.tables.push(tableResult);
+
+      if (!tableResult.success) {
+        summary.success = false;
+      }
+    }
+  } catch (error) {
+    summary.success = false;
+    summary.error = formatError(error);
+    logError("backup_failed", {
+      duration_ms: Date.now() - startedAt,
+      error: summary.error,
+    });
+  }
+
+  summary.finished_at = new Date().toISOString();
+  summary.duration_ms = Date.now() - startedAt;
+
+  logInfo("backup_completed", {
+    success: summary.success,
+    duration_ms: summary.duration_ms,
+    tables: summary.tables.map((table) => ({
+      table_name: table.table_name,
+      rows_read: table.rows_read,
+      rows_uploaded: table.rows_uploaded,
+      first_id: table.first_id,
+      last_id: table.last_id,
+      success: table.success,
+    })),
+  });
+
+  return summary;
+}
+
+async function backupTable({ env, config, auth, spreadsheet, tableConfig }) {
+  const startedAt = Date.now();
+  const sheetName = config[tableConfig.sheetEnvKey] || tableConfig.defaultSheetName;
+  const result = {
+    table_name: tableConfig.table,
+    sheet_name: sheetName,
+    success: false,
+    rows_read: 0,
+    rows_uploaded: 0,
+    first_id: null,
+    last_id: null,
+    last_synced_id_before: EMPTY_LAST_SYNCED_ID,
+    last_synced_id_after: EMPTY_LAST_SYNCED_ID,
+    header_created: false,
+    sheet_created: false,
+    duration_ms: null,
+  };
+
+  logInfo("table_backup_started", {
+    table_name: tableConfig.table,
+    sheet_name: sheetName,
+  });
+
+  try {
+    if (config.TEST_MODE) {
+      return await backupTestTable({ config, tableConfig, sheetName, result, startedAt });
+    }
+
+    const schema = await discoverTableSchema(env.DB, tableConfig);
+    const state = await loadBackupSyncState(env.DB, tableConfig.table);
+    result.last_synced_id_before = state.last_synced_id;
+    result.last_synced_id_after = state.last_synced_id;
+
+    const sheetResult = await ensureSheetAndHeader({
+      spreadsheetId: config.GOOGLE_SPREADSHEET_ID,
+      auth,
+      spreadsheet,
+      sheetName,
+      columns: schema.columns,
+    });
+
+    result.sheet_created = sheetResult.sheet_created;
+    result.header_created = sheetResult.header_created;
+
+    const rows = await readD1Batch(env.DB, tableConfig, state.last_synced_id, config.BATCH_SIZE);
+    result.rows_read = rows.length;
+
+    if (rows.length === 0) {
+      result.success = true;
+      result.duration_ms = Date.now() - startedAt;
+      logTableCompleted(result);
+      return result;
+    }
+
+    result.first_id = rows[0][tableConfig.primaryKey];
+    result.last_id = rows[rows.length - 1][tableConfig.primaryKey];
+
+    const values = rows.map((row) => schema.columns.map((column) => normalizeSheetValue(row[column])));
+    const appendResult = await appendRows(config.GOOGLE_SPREADSHEET_ID, auth, sheetName, values);
+    const updatedRows = Number(appendResult?.updates?.updatedRows || 0);
+
+    if (updatedRows !== rows.length) {
+      throw new Error(`Google Sheets confirmed ${updatedRows} uploaded rows, expected ${rows.length}`);
+    }
+
+    result.rows_uploaded = updatedRows;
+
+    await saveBackupSyncState(env.DB, tableConfig.table, Number(result.last_id));
+
+    result.last_synced_id_after = Number(result.last_id);
+    result.success = true;
+    result.duration_ms = Date.now() - startedAt;
+    logTableCompleted(result);
+    return result;
+  } catch (error) {
+    result.success = false;
+    result.error = formatError(error);
+    result.duration_ms = Date.now() - startedAt;
+    logError("table_backup_failed", result);
+    return result;
+  }
+}
+
+async function backupTestTable({ config, tableConfig, sheetName, result, startedAt }) {
+  const schema = discoverTestSchema(tableConfig);
+  const rows = tableConfig.testRows.slice(0, config.BATCH_SIZE);
+
+  result.header_created = true;
+  result.rows_read = rows.length;
+
+  logInfo("test_header_generated", {
+    table_name: tableConfig.table,
+    sheet_name: sheetName,
+    columns: schema.columns,
+  });
+
+  if (rows.length > 0) {
+    result.first_id = rows[0][tableConfig.primaryKey];
+    result.last_id = rows[rows.length - 1][tableConfig.primaryKey];
+    result.rows_uploaded = rows.length;
+    result.last_synced_id_after = Number(result.last_id);
+  }
+
+  logInfo("test_append_simulated", {
+    table_name: tableConfig.table,
+    sheet_name: sheetName,
+    rows: rows.length,
+    first_id: result.first_id,
+    last_id: result.last_id,
+  });
+
+  result.success = true;
+  result.duration_ms = Date.now() - startedAt;
+  logTableCompleted(result);
+  return result;
+}
+
+function getRuntimeConfig(env = {}) {
+  return {
+    ...DEFAULT_CONFIG,
+    TEST_MODE: parseBoolean(env.TEST_MODE, DEFAULT_CONFIG.TEST_MODE),
+    BATCH_SIZE: parsePositiveInteger(env.BATCH_SIZE, DEFAULT_CONFIG.BATCH_SIZE, "BATCH_SIZE"),
+    GOOGLE_SPREADSHEET_ID: env.GOOGLE_SPREADSHEET_ID || DEFAULT_CONFIG.GOOGLE_SPREADSHEET_ID,
+    SHEET_NAME_MEMBERS: env.SHEET_NAME_MEMBERS || DEFAULT_CONFIG.SHEET_NAME_MEMBERS,
+    SHEET_NAME_PAYMENT_ORDERS:
+      env.SHEET_NAME_PAYMENT_ORDERS || DEFAULT_CONFIG.SHEET_NAME_PAYMENT_ORDERS,
+  };
+}
+
+function validateProductionEnvironment(env, config) {
+  const missing = [];
+
+  if (!env.DB) {
+    missing.push("DB");
+  }
+
+  if (!config.GOOGLE_SPREADSHEET_ID) {
+    missing.push("GOOGLE_SPREADSHEET_ID");
+  }
+
+  if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    missing.push("GOOGLE_SERVICE_ACCOUNT_JSON");
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required production bindings or variables: ${missing.join(", ")}`);
+  }
+}
+
+function validateTableConfigs(tableConfigs) {
+  for (const tableConfig of tableConfigs) {
+    assertSafeIdentifier(tableConfig.table);
+    assertSafeIdentifier(tableConfig.primaryKey);
+  }
+}
+
+async function ensureBackupSyncStateTable(db) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS backup_sync_state (
+        table_name TEXT PRIMARY KEY,
+        last_synced_id INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL
+      )`
+    )
+    .run();
+}
+
+async function loadBackupSyncState(db, tableName) {
+  const state = await db
+    .prepare("SELECT last_synced_id FROM backup_sync_state WHERE table_name = ?")
+    .bind(tableName)
+    .first();
+
+  if (state) {
+    return {
+      table_name: tableName,
+      last_synced_id: Number(state.last_synced_id || EMPTY_LAST_SYNCED_ID),
+    };
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO backup_sync_state (table_name, last_synced_id, updated_at)
+       VALUES (?, ?, ?)`
+    )
+    .bind(tableName, EMPTY_LAST_SYNCED_ID, new Date().toISOString())
+    .run();
+
+  return {
+    table_name: tableName,
+    last_synced_id: EMPTY_LAST_SYNCED_ID,
+  };
+}
+
+async function saveBackupSyncState(db, tableName, lastSyncedId) {
+  await db
+    .prepare(
+      `INSERT INTO backup_sync_state (table_name, last_synced_id, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(table_name) DO UPDATE SET
+         last_synced_id = excluded.last_synced_id,
+         updated_at = excluded.updated_at`
+    )
+    .bind(tableName, lastSyncedId, new Date().toISOString())
+    .run();
+}
+
+async function discoverTableSchema(db, tableConfig) {
+  const table = quoteIdentifier(tableConfig.table);
+  const result = await db.prepare(`PRAGMA table_info(${table})`).all();
+  const schemaRows = result.results || [];
+
+  if (schemaRows.length === 0) {
+    throw new Error(`No columns discovered for D1 table: ${tableConfig.table}`);
+  }
+
+  const columns = schemaRows
+    .slice()
+    .sort((left, right) => Number(left.cid) - Number(right.cid))
+    .map((column) => column.name);
+
+  for (const column of columns) {
+    assertSafeIdentifier(column);
+  }
+
+  if (!columns.includes(tableConfig.primaryKey)) {
+    throw new Error(`Primary key ${tableConfig.primaryKey} was not found in ${tableConfig.table}`);
+  }
+
+  logInfo("d1_schema_discovered", {
+    table_name: tableConfig.table,
+    columns,
+  });
+
+  return { columns };
+}
+
+function discoverTestSchema(tableConfig) {
+  const firstRow = tableConfig.testRows[0] || {};
+  const columns = Object.keys(firstRow);
+
+  if (!columns.includes(tableConfig.primaryKey)) {
+    throw new Error(`Test data is missing primary key: ${tableConfig.primaryKey}`);
+  }
+
+  return { columns };
+}
+
+async function readD1Batch(db, tableConfig, lastSyncedId, batchSize) {
+  const table = quoteIdentifier(tableConfig.table);
+  const primaryKey = quoteIdentifier(tableConfig.primaryKey);
+
+  const result = await db
+    .prepare(
+      `SELECT *
+       FROM ${table}
+       WHERE ${primaryKey} > ?
+       ORDER BY ${primaryKey} ASC
+       LIMIT ?`
+    )
+    .bind(lastSyncedId, batchSize)
+    .all();
+
+  return result.results || [];
+}
+
+function createGoogleServiceAccountAuth(env) {
+  const serviceAccount = parseServiceAccount(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  let cachedToken = null;
+  let cachedTokenExpiresAt = EMPTY_LAST_SYNCED_ID;
+
+  return {
+    async getAccessToken(forceRefresh = false) {
+      const now = Math.floor(Date.now() / 1000);
+
+      if (!forceRefresh && cachedToken && cachedTokenExpiresAt - 60 > now) {
+        return cachedToken;
+      }
+
+      const token = await requestServiceAccountAccessToken(serviceAccount);
+      cachedToken = token.access_token;
+      cachedTokenExpiresAt = now + Number(token.expires_in || JWT_LIFETIME_SECONDS);
+      return cachedToken;
+    },
+  };
+}
+
+function parseServiceAccount(rawJson) {
+  let serviceAccount;
+
+  try {
+    serviceAccount = JSON.parse(rawJson);
+  } catch (error) {
+    throw new Error(`GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON: ${error.message}`);
+  }
+
+  const required = ["client_email", "private_key"];
+  const missing = required.filter((key) => !serviceAccount[key]);
+
+  if (missing.length > 0) {
+    throw new Error(`GOOGLE_SERVICE_ACCOUNT_JSON is missing: ${missing.join(", ")}`);
+  }
+
+  return {
+    client_email: serviceAccount.client_email,
+    private_key: serviceAccount.private_key,
+    token_uri: serviceAccount.token_uri || GOOGLE_TOKEN_URL,
+  };
+}
+
+async function requestServiceAccountAccessToken(serviceAccount) {
+  const assertion = await createSignedJwt(serviceAccount);
+  const response = await fetchWithRetry(serviceAccount.token_uri, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: JWT_GRANT_TYPE,
+      assertion,
+    }),
+  });
+  const token = await response.json();
+
+  if (!token.access_token) {
+    throw new Error(`Google token response did not include access_token: ${JSON.stringify(token)}`);
+  }
+
+  return token;
+}
+
+async function createSignedJwt(serviceAccount) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+  };
+  const claims = {
+    iss: serviceAccount.client_email,
+    scope: GOOGLE_SHEETS_SCOPE,
+    aud: serviceAccount.token_uri,
+    exp: now + JWT_LIFETIME_SECONDS,
+    iat: now,
+  };
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedClaims = base64UrlEncode(JSON.stringify(claims));
+  const signingInput = `${encodedHeader}.${encodedClaims}`;
+  const key = await importPrivateKey(serviceAccount.private_key);
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(signingInput)
+  );
+
+  return `${signingInput}.${arrayBufferToBase64Url(signature)}`;
+}
+
+async function importPrivateKey(privateKeyPem) {
+  const pkcs8 = pemToArrayBuffer(privateKeyPem);
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    pkcs8,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+}
+
+async function getSpreadsheet(spreadsheetId, auth) {
+  return await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`,
+    auth
+  );
+}
+
+async function ensureSheetAndHeader({ spreadsheetId, auth, spreadsheet, sheetName, columns }) {
+  const result = {
+    sheet_created: false,
+    header_created: false,
+  };
+
+  if (!findSheet(spreadsheet, sheetName)) {
+    await createSheet(spreadsheetId, auth, sheetName);
+    spreadsheet.sheets = spreadsheet.sheets || [];
+    spreadsheet.sheets.push({ properties: { title: sheetName } });
+    result.sheet_created = true;
+  }
+
+  const header = await readHeaderRow(spreadsheetId, auth, sheetName);
+
+  if (header.length === 0) {
+    await writeHeaderRow(spreadsheetId, auth, sheetName, columns);
+    result.header_created = true;
+  }
+
+  return result;
+}
+
+function findSheet(spreadsheet, sheetName) {
+  return (spreadsheet.sheets || []).find((sheet) => sheet.properties?.title === sheetName);
+}
+
+async function createSheet(spreadsheetId, auth, sheetName) {
+  await googleRequest(`${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, auth, {
+    method: "POST",
+    body: JSON.stringify({
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: sheetName,
+            },
+          },
+        },
+      ],
+    }),
+  });
+
+  logInfo("sheet_created", { sheet_name: sheetName });
+}
+
+async function readHeaderRow(spreadsheetId, auth, sheetName) {
+  const range = `${quoteSheetName(sheetName)}!1:1`;
+  const response = await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(
+      range
+    )}?majorDimension=ROWS`,
+    auth
+  );
+
+  return response.values?.[0] || [];
+}
+
+async function writeHeaderRow(spreadsheetId, auth, sheetName, columns) {
+  const endColumn = columnNumberToName(columns.length);
+  const range = `${quoteSheetName(sheetName)}!A1:${endColumn}1`;
+
+  await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(
+      range
+    )}?valueInputOption=RAW`,
+    auth,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        majorDimension: "ROWS",
+        values: [columns],
+      }),
+    }
+  );
+
+  logInfo("header_created", {
+    sheet_name: sheetName,
+    columns,
+  });
+}
+
+async function appendRows(spreadsheetId, auth, sheetName, values) {
+  const range = `${quoteSheetName(sheetName)}!A1`;
+
+  return await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(
+      range
+    )}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    auth,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        majorDimension: "ROWS",
+        values,
+      }),
+    }
+  );
+}
+
+async function googleRequest(url, auth, options = {}) {
+  const buildOptions = async (forceRefresh = false) => ({
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${await auth.getAccessToken(forceRefresh)}`,
+      ...(options.headers || {}),
+    },
+    body: options.body,
+  });
+
+  const response = await fetchWithRetry(url, await buildOptions(false), [401]);
+
+  if (response.status === 401) {
+    const refreshedResponse = await fetchWithRetry(url, await buildOptions(true));
+    return await parseGoogleResponse(refreshedResponse);
+  }
+
+  return await parseGoogleResponse(response);
+}
+
+async function parseGoogleResponse(response) {
+  if (response.status === 204) {
+    return null;
+  }
+
+  return await response.json();
+}
+
+async function fetchWithRetry(url, options = {}, returnOnStatuses = []) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_GOOGLE_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok || returnOnStatuses.includes(response.status)) {
+        return response;
+      }
+
+      const responseText = await response.text();
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (!retryable || attempt === MAX_GOOGLE_ATTEMPTS) {
+        throw new Error(`Google API request failed with ${response.status}: ${responseText}`);
+      }
+
+      lastError = new Error(`Retryable Google API error ${response.status}: ${responseText}`);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === MAX_GOOGLE_ATTEMPTS) {
+        throw error;
+      }
+    }
+
+    const delayMs = INITIAL_RETRY_DELAY_MS * 2 ** (attempt - 1);
+    logInfo("google_api_retry", {
+      attempt,
+      next_attempt: attempt + 1,
+      delay_ms: delayMs,
+      error: formatError(lastError),
+    });
+    await sleep(delayMs);
+  }
+
+  throw lastError;
+}
+
+function normalizeSheetValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return value;
+}
+
+function parseBoolean(value, fallback) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return String(value).trim().toLowerCase() === "true";
+}
+
+function parsePositiveInteger(value, fallback, name) {
+  const rawValue = value === undefined || value === null || value === "" ? fallback : value;
+  const parsed = Number(rawValue);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+
+  return parsed;
+}
+
+function assertSafeIdentifier(identifier) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`Unsafe SQL identifier: ${identifier}`);
+  }
+}
+
+function quoteIdentifier(identifier) {
+  assertSafeIdentifier(identifier);
+  return `"${identifier}"`;
+}
+
+function quoteSheetName(sheetName) {
+  return `'${String(sheetName).replace(/'/g, "''")}'`;
+}
+
+function columnNumberToName(columnNumber) {
+  let name = "";
+  let number = columnNumber;
+
+  while (number > 0) {
+    const remainder = (number - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    number = Math.floor((number - 1) / 26);
+  }
+
+  return name;
+}
+
+function pemToArrayBuffer(pem) {
+  const base64 = pem
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function base64UrlEncode(value) {
+  return arrayBufferToBase64Url(new TextEncoder().encode(value));
+}
+
+function arrayBufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function jsonResponse(body, status = HTTP_STATUS.OK) {
+  return new Response(JSON.stringify(body, null, 2), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+    },
+  });
+}
+
+function logTableCompleted(result) {
+  logInfo("table_backup_completed", {
+    table_name: result.table_name,
+    sheet_name: result.sheet_name,
+    rows_read: result.rows_read,
+    rows_uploaded: result.rows_uploaded,
+    first_id: result.first_id,
+    last_id: result.last_id,
+    time_taken_ms: result.duration_ms,
+    success: result.success,
+  });
+}
+
+function logInfo(event, details = {}) {
+  console.log(JSON.stringify({ level: "info", event, ...details }));
+}
+
+function logError(event, details = {}) {
+  console.error(JSON.stringify({ level: "error", event, ...details }));
+}
+
+function formatError(error) {
+  return {
+    name: error?.name || "Error",
+    message: error?.message || String(error),
+    stack: error?.stack || null,
+  };
+}
