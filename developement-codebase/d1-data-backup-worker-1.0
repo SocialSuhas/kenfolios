@@ -1,0 +1,601 @@
+// Table backup configuration.
+//
+// To add another table, add one object with the D1 table name, the target worksheet name,
+// and the incremental primary key. Column lists are intentionally not configured here:
+// every run discovers the current D1 schema automatically with PRAGMA table_info().
+const TABLE_CONFIGS = [
+  {
+    table: "members",
+    worksheet: "members",
+    primaryKey: "id",
+  },
+  {
+    table: "payment_orders",
+    worksheet: "payment_orders",
+    primaryKey: "id",
+  },
+];
+
+// Google API and retry settings.
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_SHEETS_API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
+const MAX_GOOGLE_ATTEMPTS = 4;
+const INITIAL_RETRY_DELAY_MS = 500;
+
+// Cloudflare Worker scheduled entrypoint.
+export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBackup(env, event));
+  },
+};
+
+// Main scheduled execution: validate configuration, prepare state, and process each table independently.
+async function runBackup(env, event) {
+  const startedAt = Date.now();
+  const summary = {
+    trigger: "scheduled",
+    scheduledTime: event?.scheduledTime || null,
+    tables: [],
+  };
+
+  try {
+    validateEnvironment(env);
+    validateTableConfigs(TABLE_CONFIGS);
+    await ensureBackupStateTable(env.DB);
+
+    const auth = createGoogleAuth(env);
+    const spreadsheet = await getSpreadsheet(env.GOOGLE_SHEET_ID, auth);
+
+    for (const config of TABLE_CONFIGS) {
+      const tableResult = await backupTable(env, auth, spreadsheet, config);
+      summary.tables.push(tableResult);
+    }
+
+    logInfo("backup_completed", {
+      duration_ms: Date.now() - startedAt,
+      tables: summary.tables,
+    });
+  } catch (error) {
+    logError("backup_execution_failed", {
+      duration_ms: Date.now() - startedAt,
+      error: formatError(error),
+    });
+  }
+}
+
+// Back up one configured table. Errors are contained so the remaining tables can still run.
+async function backupTable(env, auth, spreadsheet, config) {
+  const startedAt = Date.now();
+  const result = {
+    table_name: config.table,
+    worksheet_name: config.worksheet,
+    rows_exported: 0,
+    last_exported_id: null,
+    schema_column_count: 0,
+    worksheet_created: false,
+    header_initialized: false,
+    status: "started",
+  };
+
+  try {
+    const schema = await discoverTableSchema(env.DB, config);
+    result.schema_column_count = schema.columns.length;
+
+    const state = await getBackupState(env.DB, config.table);
+    const worksheetResult = await ensureWorksheetStructure(
+      env.GOOGLE_SHEET_ID,
+      auth,
+      spreadsheet,
+      config,
+      schema
+    );
+
+    result.worksheet_created = worksheetResult.worksheetCreated;
+    result.header_initialized = worksheetResult.headerInitialized;
+
+    const rows = await fetchRows(env.DB, config, state.last_id, getBatchSize(env));
+
+    if (rows.length === 0) {
+      result.status = "completed";
+      logInfo("table_backup_completed", {
+        ...result,
+        duration_ms: Date.now() - startedAt,
+      });
+      return result;
+    }
+
+    const values = rows.map((row) => schema.columns.map((column) => normalizeSheetValue(row[column])));
+    const appendResult = await appendRows(env.GOOGLE_SHEET_ID, auth, config.worksheet, values);
+    const updatedRows = appendResult?.updates?.updatedRows || 0;
+
+    if (updatedRows !== rows.length) {
+      throw new Error(
+        `Google Sheets confirmed ${updatedRows} appended rows, expected ${rows.length}`
+      );
+    }
+
+    const lastExportedId = rows[rows.length - 1][config.primaryKey];
+    await updateBackupState(env.DB, config.table, lastExportedId);
+
+    result.rows_exported = rows.length;
+    result.last_exported_id = lastExportedId;
+    result.status = "completed";
+
+    logInfo("table_backup_completed", {
+      ...result,
+      duration_ms: Date.now() - startedAt,
+    });
+  } catch (error) {
+    result.status = "failed";
+    logError("table_backup_failed", {
+      ...result,
+      duration_ms: Date.now() - startedAt,
+      error: formatError(error),
+    });
+  }
+
+  return result;
+}
+
+// Environment validation runs before any external API or database work.
+function validateEnvironment(env) {
+  const required = [
+    "DB",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_REFRESH_TOKEN",
+    "GOOGLE_SHEET_ID",
+    "BACKUP_BATCH_SIZE",
+  ];
+
+  const missing = required.filter((key) => !env[key]);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment bindings or variables: ${missing.join(", ")}`);
+  }
+
+  getBatchSize(env);
+}
+
+// Validate the table configuration. Columns are not accepted here because D1 is the source of truth.
+function validateTableConfigs(configs) {
+  const seenTables = new Set();
+  const seenWorksheets = new Set();
+
+  for (const config of configs) {
+    if (!config.table || !config.worksheet || !config.primaryKey) {
+      throw new Error("Every table config must define table, worksheet, and primaryKey");
+    }
+
+    if (seenTables.has(config.table)) {
+      throw new Error(`Duplicate table configuration: ${config.table}`);
+    }
+
+    if (seenWorksheets.has(config.worksheet)) {
+      throw new Error(`Duplicate worksheet configuration: ${config.worksheet}`);
+    }
+
+    for (const identifier of [config.table, config.primaryKey]) {
+      assertSafeIdentifier(identifier);
+    }
+
+    seenTables.add(config.table);
+    seenWorksheets.add(config.worksheet);
+  }
+}
+
+function getBatchSize(env) {
+  const batchSize = Number(env.BACKUP_BATCH_SIZE);
+
+  if (!Number.isInteger(batchSize) || batchSize < 1) {
+    throw new Error("BACKUP_BATCH_SIZE must be a positive integer");
+  }
+
+  return batchSize;
+}
+
+// Discover the live D1 schema for a table before each export.
+//
+// PRAGMA table_info(table_name) is used because SQLite/D1 returns columns in physical table order
+// with stable metadata, including each column name and its cid position. That order becomes the
+// authoritative Google Sheets header and the value order for appended rows. If D1 gains a new
+// column later, the next scheduled run sees it automatically and updates the worksheet header
+// before exporting more rows.
+async function discoverTableSchema(db, config) {
+  const table = quoteIdentifier(config.table);
+  const result = await db.prepare(`PRAGMA table_info(${table})`).all();
+  const schemaRows = result.results || [];
+
+  if (schemaRows.length === 0) {
+    throw new Error(`D1 table does not exist or has no discoverable columns: ${config.table}`);
+  }
+
+  const columns = schemaRows
+    .slice()
+    .sort((left, right) => Number(left.cid) - Number(right.cid))
+    .map((column) => column.name);
+
+  for (const column of columns) {
+    assertSafeIdentifier(column);
+  }
+
+  if (!columns.includes(config.primaryKey)) {
+    throw new Error(`Primary key ${config.primaryKey} was not found in discovered schema for ${config.table}`);
+  }
+
+  logInfo("table_schema_discovered", {
+    table_name: config.table,
+    worksheet_name: config.worksheet,
+    primary_key: config.primaryKey,
+    columns: columns.length,
+  });
+
+  return { columns };
+}
+
+// Backup progress is persisted per table and created automatically if absent.
+//
+// The last_id value is advanced only after Google Sheets confirms the append. If a run stops
+// halfway through a table, the next scheduled run resumes from the stored last_id and retries
+// the unconfirmed rows.
+async function ensureBackupStateTable(db) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS backup_state (
+        table_name TEXT PRIMARY KEY,
+        last_id INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`
+    )
+    .run();
+}
+
+// Read the last successfully exported primary key for one table.
+async function getBackupState(db, tableName) {
+  const state = await db
+    .prepare("SELECT last_id FROM backup_state WHERE table_name = ?")
+    .bind(tableName)
+    .first();
+
+  return {
+    table_name: tableName,
+    last_id: Number(state?.last_id || 0),
+  };
+}
+
+// Advance progress only after Google Sheets confirms the appended rows.
+async function updateBackupState(db, tableName, lastId) {
+  await db
+    .prepare(
+      `INSERT INTO backup_state (table_name, last_id, updated_at)
+       VALUES (?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(table_name) DO UPDATE SET
+         last_id = excluded.last_id,
+         updated_at = CURRENT_TIMESTAMP`
+    )
+    .bind(tableName, lastId)
+    .run();
+}
+
+// Fetch a batch using SELECT * as requested. Values are later written by the discovered schema order,
+// so every appended row matches the PRAGMA table_info() header exactly.
+async function fetchRows(db, config, lastId, batchSize) {
+  const table = quoteIdentifier(config.table);
+  const primaryKey = quoteIdentifier(config.primaryKey);
+
+  return await db
+    .prepare(
+      `SELECT *
+       FROM ${table}
+       WHERE ${primaryKey} > ?
+       ORDER BY ${primaryKey} ASC
+       LIMIT ?`
+    )
+    .bind(lastId, batchSize)
+    .all()
+    .then((result) => result.results || []);
+}
+
+// OAuth refresh-token flow. A fresh access token is fetched at startup and again on 401.
+function createGoogleAuth(env) {
+  let accessToken = null;
+
+  return {
+    async getAccessToken(forceRefresh = false) {
+      if (forceRefresh || !accessToken) {
+        accessToken = await getGoogleAccessToken(env);
+      }
+
+      return accessToken;
+    },
+  };
+}
+
+async function getGoogleAccessToken(env) {
+  const response = await fetchWithRetry(GOOGLE_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      refresh_token: env.GOOGLE_REFRESH_TOKEN,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const token = await response.json();
+
+  if (!token.access_token) {
+    throw new Error(`Google token response did not include access_token: ${JSON.stringify(token)}`);
+  }
+
+  return token.access_token;
+}
+
+// Spreadsheet metadata is used to avoid duplicate worksheet creation.
+async function getSpreadsheet(spreadsheetId, auth) {
+  return await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`,
+    auth
+  );
+}
+
+// Ensure the worksheet exists and row 1 matches the current D1 schema.
+//
+// New worksheets are created automatically. Empty worksheets receive the discovered header row.
+// Existing worksheets keep all backup data intact; only row 1 is updated when the latest D1 schema
+// differs from the current header. This is how new D1 columns are detected and reflected in Sheets
+// without code changes.
+async function ensureWorksheetStructure(spreadsheetId, auth, spreadsheet, config, schema) {
+  const worksheetResult = {
+    worksheetCreated: false,
+    headerInitialized: false,
+  };
+
+  let sheet = findSheet(spreadsheet, config.worksheet);
+
+  if (!sheet) {
+    await createWorksheet(spreadsheetId, auth, config.worksheet);
+    spreadsheet.sheets = spreadsheet.sheets || [];
+    spreadsheet.sheets.push({ properties: { title: config.worksheet } });
+    worksheetResult.worksheetCreated = true;
+    sheet = findSheet(spreadsheet, config.worksheet);
+    logInfo("worksheet_created", {
+      table_name: config.table,
+      worksheet_name: config.worksheet,
+    });
+  }
+
+  const currentHeader = await getHeaderRow(spreadsheetId, auth, config.worksheet);
+
+  if (!headersMatch(currentHeader, schema.columns)) {
+    await writeHeaderRow(spreadsheetId, auth, config.worksheet, schema.columns);
+    worksheetResult.headerInitialized = true;
+    logInfo("worksheet_header_initialized", {
+      table_name: config.table,
+      worksheet_name: config.worksheet,
+      columns: schema.columns.length,
+    });
+  }
+
+  return worksheetResult;
+}
+
+function findSheet(spreadsheet, worksheetName) {
+  return (spreadsheet.sheets || []).find((sheet) => sheet.properties?.title === worksheetName);
+}
+
+async function createWorksheet(spreadsheetId, auth, worksheetName) {
+  await googleRequest(`${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, auth, {
+    method: "POST",
+    body: JSON.stringify({
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: worksheetName,
+            },
+          },
+        },
+      ],
+    }),
+  });
+}
+
+async function getHeaderRow(spreadsheetId, auth, worksheetName) {
+  const range = `${quoteSheetName(worksheetName)}!1:1`;
+  const response = await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?majorDimension=ROWS`,
+    auth
+  );
+
+  return response.values?.[0] || [];
+}
+
+async function writeHeaderRow(spreadsheetId, auth, worksheetName, columns) {
+  const endColumn = columnNumberToName(columns.length);
+  const range = `${quoteSheetName(worksheetName)}!A1:${endColumn}1`;
+
+  await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
+    auth,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        majorDimension: "ROWS",
+        values: [columns],
+      }),
+    }
+  );
+}
+
+// Google Sheets append finds the next empty row and inserts without overwriting existing backup data.
+//
+// Values are sent with RAW input so D1 numbers remain numbers, text remains text, timestamps and JSON
+// strings are not transformed, and NULL values are represented only as empty strings.
+async function appendRows(spreadsheetId, auth, worksheetName, values) {
+  const range = `${quoteSheetName(worksheetName)}!A1`;
+
+  return await googleRequest(
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(
+      range
+    )}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    auth,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        majorDimension: "ROWS",
+        values,
+      }),
+    }
+  );
+}
+
+// Authenticated Google request with retry and one forced token refresh on unauthorized responses.
+async function googleRequest(url, auth, options = {}) {
+  const requestOptions = async (forceRefresh = false) => ({
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${await auth.getAccessToken(forceRefresh)}`,
+      ...(options.headers || {}),
+    },
+    body: options.body,
+  });
+
+  const response = await fetchWithRetry(url, {
+    ...(await requestOptions()),
+  }, [401]);
+
+  if (response.status === 401) {
+    logInfo("google_access_token_refresh", { reason: "unauthorized" });
+    const refreshedResponse = await fetchWithRetry(url, {
+      ...(await requestOptions(true)),
+    });
+
+    return await parseGoogleResponse(refreshedResponse);
+  }
+
+  return await parseGoogleResponse(response);
+}
+
+async function parseGoogleResponse(response) {
+  if (response.status === 204) {
+    return null;
+  }
+
+  return await response.json();
+}
+
+// Retry temporary Google failures with exponential backoff.
+async function fetchWithRetry(url, options = {}, returnOnStatuses = []) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_GOOGLE_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok || returnOnStatuses.includes(response.status)) {
+        return response;
+      }
+
+      const responseText = await response.text();
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (!retryable || attempt === MAX_GOOGLE_ATTEMPTS) {
+        throw new Error(`Google API request failed with ${response.status}: ${responseText}`);
+      }
+
+      lastError = new Error(`Retryable Google API error ${response.status}: ${responseText}`);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === MAX_GOOGLE_ATTEMPTS) {
+        throw error;
+      }
+    }
+
+    const delayMs = INITIAL_RETRY_DELAY_MS * 2 ** (attempt - 1);
+    logInfo("google_api_retry", {
+      attempt,
+      next_attempt: attempt + 1,
+      delay_ms: delayMs,
+      error: formatError(lastError),
+    });
+    await sleep(delayMs);
+  }
+
+  throw lastError;
+}
+
+// Preserve D1 values exactly except for Sheets-compatible empty strings for NULL.
+function normalizeSheetValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return value;
+}
+
+// Header comparison is strict because the discovered D1 schema is authoritative.
+function headersMatch(actual, expected) {
+  if (actual.length !== expected.length) {
+    return false;
+  }
+
+  return expected.every((column, index) => actual[index] === column);
+}
+
+// SQL identifiers come only from configuration and D1 schema metadata, then are validated before use.
+function assertSafeIdentifier(identifier) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`Unsafe SQL identifier: ${identifier}`);
+  }
+}
+
+function quoteIdentifier(identifier) {
+  assertSafeIdentifier(identifier);
+  return `"${identifier}"`;
+}
+
+// Google Sheets ranges require single-quoted sheet names when names contain special characters.
+function quoteSheetName(name) {
+  return `'${String(name).replace(/'/g, "''")}'`;
+}
+
+// Convert a 1-based column count into A1 notation.
+function columnNumberToName(columnNumber) {
+  let name = "";
+  let number = columnNumber;
+
+  while (number > 0) {
+    const remainder = (number - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    number = Math.floor((number - 1) / 26);
+  }
+
+  return name;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Structured logs make scheduled execution visible in Cloudflare logs.
+function logInfo(event, details) {
+  console.log(JSON.stringify({ level: "info", event, ...details }));
+}
+
+function logError(event, details) {
+  console.error(JSON.stringify({ level: "error", event, ...details }));
+}
+
+function formatError(error) {
+  return {
+    name: error?.name || "Error",
+    message: error?.message || String(error),
+    stack: error?.stack || null,
+  };
+}
