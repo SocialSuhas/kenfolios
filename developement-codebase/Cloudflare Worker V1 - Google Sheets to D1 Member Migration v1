@@ -1,1 +1,1822 @@
-aaa
+/******************************************************************
+ CONFIGURATION
+******************************************************************/
+
+const WORKER_VERSION = "1.0.0";
+const DEFAULT_BATCH_SIZE = 500;
+const DEFAULT_TEST_MODE = true;
+const DEFAULT_TEST_SHEET_ROW = 2;
+const DEFAULT_WORKSHEET_NAME = "members";
+const DEFAULT_MAX_RETRIES = 4;
+const DEFAULT_INITIAL_RETRY_DELAY_MS = 500;
+const DEFAULT_PRODUCTION_D1_BINDING_NAME = "PRODUCTION_DB";
+const DEFAULT_INTERMEDIATE_D1_BINDING_NAME = "MIGRATION_DB";
+const DEFAULT_ACTIVATION_BASE_URL = "https://kenfolios.com/activate";
+const DEFAULT_ORDER_BASE_URL = "https://kenfolios.com/order";
+const DEFAULT_ACTIVATION_CURRENCY = "INR";
+
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_SHEETS_API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
+const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const JWT_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+const JWT_LIFETIME_SECONDS = 3600;
+
+const ACTIONS = Object.freeze({
+  CREATE_PAID: "CREATE_PAID",
+  CREATE_UNPAID: "CREATE_UNPAID",
+  UPGRADE_TO_PAID: "UPGRADE_TO_PAID",
+  SKIP_ALREADY_PAID: "SKIP_ALREADY_PAID",
+  SKIP_ALREADY_UNPAID: "SKIP_ALREADY_UNPAID",
+  ERROR: "ERROR",
+});
+
+const MIGRATION_STATUS = Object.freeze({
+  PENDING: "PENDING",
+  SUCCESS: "SUCCESS",
+  FAILED: "FAILED",
+  NOT_WRITTEN: "NOT_WRITTEN",
+  RETRYING: "RETRYING",
+});
+
+const HTTP_STATUS = Object.freeze({
+  OK: 200,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  INTERNAL_SERVER_ERROR: 500,
+});
+
+function getRuntimeConfig() {
+  const config = {
+    workerVersion: getTextVar("WORKER_VERSION", WORKER_VERSION),
+    batchSize: getIntegerVar("BATCH_SIZE", DEFAULT_BATCH_SIZE),
+    testMode: getBooleanVar("TEST_MODE", DEFAULT_TEST_MODE),
+    testSheetRow: getIntegerVar("TEST_SHEET_ROW", DEFAULT_TEST_SHEET_ROW),
+    googleSheetId: getRequiredTextVar("GOOGLE_SHEET_ID"),
+    worksheetName: getTextVar("WORKSHEET_NAME", DEFAULT_WORKSHEET_NAME),
+    maxRetries: getIntegerVar("MAX_RETRIES", DEFAULT_MAX_RETRIES),
+    initialRetryDelayMs: getIntegerVar(
+      "INITIAL_RETRY_DELAY_MS",
+      DEFAULT_INITIAL_RETRY_DELAY_MS
+    ),
+    productionBindingName: getTextVar(
+      "PRODUCTION_D1_BINDING_NAME",
+      DEFAULT_PRODUCTION_D1_BINDING_NAME
+    ),
+    intermediateBindingName: getTextVar(
+      "INTERMEDIATE_D1_BINDING_NAME",
+      DEFAULT_INTERMEDIATE_D1_BINDING_NAME
+    ),
+    activationBaseUrl: getTextVar("ACTIVATION_BASE_URL", DEFAULT_ACTIVATION_BASE_URL),
+    orderBaseUrl: getTextVar("ORDER_BASE_URL", DEFAULT_ORDER_BASE_URL),
+    defaultCurrency: getTextVar(
+      "DEFAULT_ACTIVATION_CURRENCY",
+      DEFAULT_ACTIVATION_CURRENCY
+    ),
+    defaultActivationAmount: getNullableIntegerVar("DEFAULT_ACTIVATION_AMOUNT"),
+    defaultActivationDiscountAmount:
+      getNullableIntegerVar("DEFAULT_ACTIVATION_DISCOUNT_AMOUNT") || 0,
+  };
+
+  if (config.batchSize <= 0) {
+    throw new Error("BATCH_SIZE must be greater than zero.");
+  }
+
+  if (config.testMode && config.testSheetRow < 2) {
+    throw new Error("TEST_SHEET_ROW must be a Google Sheet data row number, starting at 2.");
+  }
+
+  return config;
+}
+
+function getDatabases(config) {
+  const productionDb = globalThis[config.productionBindingName];
+  const intermediateDb = globalThis[config.intermediateBindingName];
+
+  if (!productionDb) {
+    throw new Error(`Missing production D1 binding: ${config.productionBindingName}`);
+  }
+
+  if (!intermediateDb) {
+    throw new Error(`Missing intermediate D1 binding: ${config.intermediateBindingName}`);
+  }
+
+  return { productionDb, intermediateDb };
+}
+
+function getTextVar(name, fallback) {
+  const value = globalThis[name];
+
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return fallback;
+  }
+
+  return String(value).trim();
+}
+
+function getRequiredTextVar(name) {
+  const value = getTextVar(name, null);
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+function getBooleanVar(name, fallback) {
+  const value = globalThis[name];
+
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return fallback;
+  }
+
+  return String(value).trim().toLowerCase() === "true";
+}
+
+function getIntegerVar(name, fallback) {
+  const value = globalThis[name];
+
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(String(value), 10);
+
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function getNullableIntegerVar(name) {
+  const value = globalThis[name];
+
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return null;
+  }
+
+  const parsed = Number.parseInt(String(value), 10);
+
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+/******************************************************************
+ GENERAL UTILITIES
+******************************************************************/
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function jsonResponse(payload, status) {
+  return new Response(JSON.stringify(payload, null, 2), {
+    status: status || HTTP_STATUS.OK,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+function formatError(error) {
+  return {
+    name: error && error.name ? error.name : "Error",
+    message: error && error.message ? error.message : String(error),
+    stack: error && error.stack ? error.stack : null,
+  };
+}
+
+function safeJson(value) {
+  return JSON.stringify(value === undefined ? null : value);
+}
+
+function parseJson(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function logEvent(event, details) {
+  console.log(JSON.stringify({
+    event,
+    ...(details || {}),
+    logged_at: nowIso(),
+  }));
+}
+
+/******************************************************************
+ GOOGLE SHEETS
+******************************************************************/
+
+async function readHeaderRow(config) {
+  const range = `${escapeSheetName(config.worksheetName)}!1:1`;
+  const values = await readSheetValues(config, range);
+
+  return (values[0] || []).map((name) => String(name || "").trim());
+}
+
+async function readSheetRows(config, startRowNumber, rowCount, header) {
+  const lastColumn = columnLetter(Math.max(header.length - 1, 0));
+  const endRowNumber = startRowNumber + rowCount - 1;
+  const range =
+    `${escapeSheetName(config.worksheetName)}!A${startRowNumber}:${lastColumn}${endRowNumber}`;
+  const values = await readSheetValues(config, range);
+
+  return values.map((row, index) => ({
+    sourceRowNumber: startRowNumber + index,
+    rawValues: row,
+    rawObject: rowToObject(header, row),
+  }));
+}
+
+async function readSheetValues(config, range) {
+  const accessToken = await getGoogleAccessToken(config);
+  const endpoint =
+    `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(config.googleSheetId)}` +
+    `/values/${encodeURIComponent(range)}` +
+    "?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING";
+
+  return retry(config, async () => {
+    const response = await fetch(endpoint, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google Sheets read failed: ${response.status} ${await response.text()}`);
+    }
+
+    const payload = await response.json();
+
+    return payload.values || [];
+  });
+}
+
+async function getGoogleAccessToken(config) {
+  const serviceAccountEmail =
+    getTextVar("GOOGLE_SERVICE_ACCOUNT_EMAIL", null) ||
+    getTextVar("GOOGLE_CLIENT_EMAIL", null);
+  const privateKey = normalizePrivateKey(getTextVar("GOOGLE_PRIVATE_KEY", null));
+
+  if (!serviceAccountEmail) {
+    throw new Error("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_CLIENT_EMAIL.");
+  }
+
+  if (!privateKey) {
+    throw new Error("Missing GOOGLE_PRIVATE_KEY.");
+  }
+
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const claimSet = {
+    iss: serviceAccountEmail,
+    scope: GOOGLE_SHEETS_SCOPE,
+    aud: GOOGLE_TOKEN_URL,
+    exp: issuedAt + JWT_LIFETIME_SECONDS,
+    iat: issuedAt,
+  };
+  const assertion = await signGoogleJwt(claimSet, privateKey);
+  const body = new URLSearchParams();
+  body.set("grant_type", JWT_GRANT_TYPE);
+  body.set("assertion", assertion);
+
+  return retry(config, async () => {
+    const response = await fetch(GOOGLE_TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google OAuth failed: ${response.status} ${await response.text()}`);
+    }
+
+    const payload = await response.json();
+
+    if (!payload.access_token) {
+      throw new Error("Google OAuth response did not include an access_token.");
+    }
+
+    return payload.access_token;
+  });
+}
+
+async function signGoogleJwt(claimSet, privateKeyPem) {
+  const encodedHeader = base64UrlEncode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const encodedClaimSet = base64UrlEncode(JSON.stringify(claimSet));
+  const unsignedToken = `${encodedHeader}.${encodedClaimSet}`;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(privateKeyPem),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  return `${unsignedToken}.${base64UrlEncode(signature)}`;
+}
+
+function rowToObject(header, row) {
+  const output = {};
+
+  header.forEach((name, index) => {
+    if (name) {
+      output[name] = row[index] === undefined ? "" : row[index];
+    }
+  });
+
+  return output;
+}
+
+function escapeSheetName(sheetName) {
+  return `'${String(sheetName).replace(/'/g, "''")}'`;
+}
+
+function columnLetter(index) {
+  let letter = "";
+  let value = index + 1;
+
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    letter = String.fromCharCode(65 + remainder) + letter;
+    value = Math.floor((value - 1) / 26);
+  }
+
+  return letter;
+}
+
+function normalizePrivateKey(value) {
+  return value ? String(value).replace(/\\n/g, "\n").trim() : null;
+}
+
+function pemToArrayBuffer(pem) {
+  const base64 = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\s+/g, "");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function base64UrlEncode(value) {
+  const bytes =
+    typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value);
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function retry(config, operation) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= config.maxRetries; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === config.maxRetries) {
+        break;
+      }
+
+      await sleep(config.initialRetryDelayMs * 2 ** (attempt - 1));
+    }
+  }
+
+  throw lastError;
+}
+
+/******************************************************************
+ DATA CLEANING
+******************************************************************/
+
+function normalizeString(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+
+  return normalized === "" ? null : normalized;
+}
+
+function normalizeEmail(value) {
+  const normalized = normalizeString(value);
+
+  return normalized ? normalized.toLowerCase() : null;
+}
+
+function normalizePhone(value) {
+  const normalized = normalizeString(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.replace(/^p\s*:\s*/i, "").trim() || null;
+}
+
+function normalizePincode(value) {
+  const normalized = normalizeString(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.replace(/^z\s*:\s*/i, "").trim() || null;
+}
+
+function isValidEmail(email) {
+  return Boolean(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+}
+
+function parseAmount(value) {
+  const normalized = normalizeString(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const numeric = Number(String(normalized).replace(/,/g, ""));
+
+  return Number.isFinite(numeric) ? Math.round(numeric) : null;
+}
+
+/******************************************************************
+ COLUMN MAPPING
+******************************************************************/
+
+const FIELD_ALIASES = {
+  fullName: ["full_name", "Full Name", "Name", "name", "Member Name"],
+  email: ["email", "Email", "Email Address", "email_address"],
+  phone: ["phone", "Phone", "Mobile", "mobile", "Phone Number"],
+  dob: ["dob", "DOB", "Date of Birth", "date_of_birth"],
+  gender: ["gender", "Gender"],
+  city: ["city", "City"],
+  country: ["country", "Country"],
+  pincode: ["pincode", "Pincode", "Pin Code", "Zip", "ZIP"],
+  expectations: ["expectations", "Expectations"],
+  businessCategory: ["business_category", "Business Category"],
+  businessName: ["business_name", "Business Name"],
+  gstNumber: ["gst_number", "GST Number", "GSTIN"],
+  paymentStatus: [
+    "payment_status",
+    "Payment Status",
+    "activation_fee_status",
+    "Activation Fee Status",
+    "Status",
+  ],
+  gatewayOrderId: [
+    "gateway_order_id",
+    "razorpay_order_id",
+    "Razorpay Order ID",
+    "Order ID",
+    "activation_gateway_order_id",
+  ],
+  gatewayPaymentId: [
+    "gateway_payment_id",
+    "razorpay_payment_id",
+    "Razorpay Payment ID",
+    "Payment ID",
+    "activation_gateway_payment_id",
+  ],
+  gatewaySignature: [
+    "gateway_signature",
+    "razorpay_signature",
+    "Razorpay Signature",
+    "activation_gateway_signature",
+  ],
+  amountOriginal: ["amount_original", "Amount Original", "Original Amount"],
+  discountAmount: ["discount_amount", "Discount Amount"],
+  amountFinal: ["amount_final", "Amount Final", "Final Amount", "Amount"],
+  couponCode: ["coupon_code", "Coupon Code", "activation_coupon_code"],
+  paidAt: [
+    "payment_captured_at",
+    "Payment Captured At",
+    "Paid At",
+    "activation_captured_at",
+    "activation_fee_paid_at",
+  ],
+  receipt: ["receipt", "Receipt", "activation_receipt"],
+};
+
+function mapSourceRow(sheetRow) {
+  const raw = sheetRow.rawObject;
+  const paymentStatus = normalizePaymentStatus(pickColumn(raw, FIELD_ALIASES.paymentStatus));
+
+  return removeUndefinedProperties({
+    source_row_number: sheetRow.sourceRowNumber,
+    full_name: normalizeString(pickColumn(raw, FIELD_ALIASES.fullName)) || "Unknown Member",
+    email: normalizeEmail(pickColumn(raw, FIELD_ALIASES.email)),
+    phone: normalizePhone(pickColumn(raw, FIELD_ALIASES.phone)),
+    dob: normalizeString(pickColumn(raw, FIELD_ALIASES.dob)),
+    gender: normalizeString(pickColumn(raw, FIELD_ALIASES.gender)),
+    city: normalizeString(pickColumn(raw, FIELD_ALIASES.city)),
+    country: normalizeString(pickColumn(raw, FIELD_ALIASES.country)) || "India",
+    pincode: normalizePincode(pickColumn(raw, FIELD_ALIASES.pincode)),
+    expectations: normalizeString(pickColumn(raw, FIELD_ALIASES.expectations)),
+    business_category: normalizeString(pickColumn(raw, FIELD_ALIASES.businessCategory)),
+    business_name: normalizeString(pickColumn(raw, FIELD_ALIASES.businessName)),
+    gst_number: normalizeString(pickColumn(raw, FIELD_ALIASES.gstNumber)),
+    source_payment_status: paymentStatus.sourceValue,
+    source_is_paid: paymentStatus.isPaid,
+    target_payment_status: paymentStatus.targetFeeStatus,
+    target_gateway_status: paymentStatus.targetGatewayStatus,
+    legacy_gateway_order_id: normalizeString(pickColumn(raw, FIELD_ALIASES.gatewayOrderId)),
+    legacy_gateway_payment_id: normalizeString(pickColumn(raw, FIELD_ALIASES.gatewayPaymentId)),
+    legacy_gateway_signature: normalizeString(pickColumn(raw, FIELD_ALIASES.gatewaySignature)),
+    legacy_amount_original: parseAmount(pickColumn(raw, FIELD_ALIASES.amountOriginal)),
+    legacy_discount_amount: parseAmount(pickColumn(raw, FIELD_ALIASES.discountAmount)),
+    legacy_amount_final: parseAmount(pickColumn(raw, FIELD_ALIASES.amountFinal)),
+    legacy_coupon_code: normalizeString(pickColumn(raw, FIELD_ALIASES.couponCode)),
+    legacy_paid_at: normalizeString(pickColumn(raw, FIELD_ALIASES.paidAt)),
+    legacy_receipt: normalizeString(pickColumn(raw, FIELD_ALIASES.receipt)),
+  });
+}
+
+function normalizePaymentStatus(value) {
+  const normalized = normalizeString(value);
+  const lowered = normalized ? normalized.toLowerCase() : null;
+  const isPaid = lowered === "captured" || lowered === "paid";
+
+  return {
+    sourceValue: normalized,
+    isPaid,
+    targetFeeStatus: isPaid ? "paid" : "pending",
+    targetGatewayStatus: isPaid ? "captured" : "pending",
+  };
+}
+
+function pickColumn(row, aliases) {
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(row, alias)) {
+      return row[alias];
+    }
+  }
+
+  const loweredAliases = new Set(aliases.map((alias) => alias.toLowerCase()));
+
+  for (const [key, value] of Object.entries(row)) {
+    if (loweredAliases.has(String(key).trim().toLowerCase())) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function removeUndefinedProperties(value) {
+  const output = {};
+
+  for (const [key, rawValue] of Object.entries(value)) {
+    if (rawValue !== undefined) {
+      output[key] = rawValue;
+    }
+  }
+
+  return output;
+}
+
+/******************************************************************
+ ELIGIBILITY ENGINE
+******************************************************************/
+
+async function determineEligibility(options) {
+  const mappedMember = options.mappedMember;
+  const productionDb = options.productionDb;
+  const intermediateDb = options.intermediateDb;
+  const batchSeenEmails = options.batchSeenEmails;
+
+  if (!mappedMember || !mappedMember.email) {
+    return errorDecision("Blank email.");
+  }
+
+  if (!isValidEmail(mappedMember.email)) {
+    return errorDecision("Invalid email.");
+  }
+
+  if (batchSeenEmails.has(mappedMember.email)) {
+    return errorDecision("Duplicate source email.");
+  }
+
+  const priorSourceDuplicate = await intermediateDb.prepare(
+    `
+    SELECT id
+    FROM migration_rows
+    WHERE email = ?
+      AND source_row_number < ?
+    LIMIT 1
+    `
+  )
+    .bind(mappedMember.email, mappedMember.source_row_number)
+    .first();
+
+  if (priorSourceDuplicate) {
+    return errorDecision("Duplicate source email.");
+  }
+
+  const targetMatches = await productionDb.prepare(
+    `
+    SELECT
+      id,
+      activation_fee_status,
+      activation_gateway_status,
+      activation_url
+    FROM members
+    WHERE LOWER(TRIM(email)) = ?
+    LIMIT 2
+    `
+  )
+    .bind(mappedMember.email)
+    .all();
+  const matches = targetMatches.results || [];
+
+  if (matches.length > 1) {
+    return errorDecision("Duplicate target email.");
+  }
+
+  if (matches.length === 0) {
+    return {
+      action: mappedMember.source_is_paid ? ACTIONS.CREATE_PAID : ACTIONS.CREATE_UNPAID,
+      reason: mappedMember.source_is_paid
+        ? "Email not found in production. Source member is paid."
+        : "Email not found in production. Source member is unpaid.",
+      targetMember: null,
+    };
+  }
+
+  const targetMember = matches[0];
+  const targetIsPaid = isTargetPaid(targetMember);
+
+  if (!targetIsPaid && mappedMember.source_is_paid) {
+    return {
+      action: ACTIONS.UPGRADE_TO_PAID,
+      reason: "Existing member unpaid. Source member is paid.",
+      targetMember,
+    };
+  }
+
+  if (targetIsPaid && mappedMember.source_is_paid) {
+    return {
+      action: ACTIONS.SKIP_ALREADY_PAID,
+      reason: "Existing member already paid.",
+      targetMember,
+    };
+  }
+
+  return {
+    action: ACTIONS.SKIP_ALREADY_UNPAID,
+    reason: "Existing member already unpaid.",
+    targetMember,
+  };
+}
+
+function isProductionAction(action) {
+  return (
+    action === ACTIONS.CREATE_PAID ||
+    action === ACTIONS.CREATE_UNPAID ||
+    action === ACTIONS.UPGRADE_TO_PAID
+  );
+}
+
+function errorDecision(reason) {
+  return {
+    action: ACTIONS.ERROR,
+    reason,
+    targetMember: null,
+  };
+}
+
+function isTargetPaid(member) {
+  return (
+    String(member.activation_fee_status || "").toLowerCase() === "paid" ||
+    String(member.activation_gateway_status || "").toLowerCase() === "captured" ||
+    Boolean(member.activation_url)
+  );
+}
+
+/******************************************************************
+ TOKEN & URL GENERATORS
+******************************************************************/
+
+async function buildMemberValues(config, mappedMember, action) {
+  const createdAt = nowIso();
+  const values = {
+    full_name: mappedMember.full_name,
+    dob: mappedMember.dob,
+    gender: mappedMember.gender,
+    city: mappedMember.city,
+    email: mappedMember.email,
+    phone: mappedMember.phone,
+    expectations: mappedMember.expectations,
+    accepted_terms: 1,
+    created_at: createdAt,
+    phone_opt_in_at: null,
+    email_opt_in_at: null,
+    account_status: "active",
+    email_opt_in: 0,
+    ref_id: await generateReferenceId(),
+    ref_by: null,
+    country: mappedMember.country,
+    phone_opt_in: 0,
+    payment_gateway: mappedMember.source_is_paid ? "razorpay" : null,
+    payment_gateway_payment_id: mappedMember.source_is_paid
+      ? mappedMember.legacy_gateway_payment_id
+      : null,
+    activation_fee_status: mappedMember.target_payment_status,
+    activation_gateway_status: mappedMember.target_gateway_status,
+    welcome_email_sent: 0,
+    remail_stage: null,
+    business_category: mappedMember.business_category,
+    gst_number: mappedMember.gst_number,
+    business_name: mappedMember.business_name,
+  };
+
+  if (!mappedMember.source_is_paid) {
+    return values;
+  }
+
+  const activation = await generateActivationValues(config, mappedMember);
+
+  return {
+    ...values,
+    ...activation,
+    activation_fee_paid_at: mappedMember.legacy_paid_at || createdAt,
+    activation_fee_currency: config.defaultCurrency,
+    activation_fee_amount: mappedMember.legacy_amount_original ?? config.defaultActivationAmount,
+    activation_fee_discount_amount:
+      mappedMember.legacy_discount_amount ?? config.defaultActivationDiscountAmount,
+    activation_fee_final_amount: mappedMember.legacy_amount_final ?? config.defaultActivationAmount,
+    activation_coupon_code: mappedMember.legacy_coupon_code,
+    activation_fee_status: "paid",
+    activation_captured_at: mappedMember.legacy_paid_at || createdAt,
+    activation_gateway_order_id: mappedMember.legacy_gateway_order_id,
+    activation_gateway_payment_id: mappedMember.legacy_gateway_payment_id,
+    activation_gateway_signature: mappedMember.legacy_gateway_signature,
+    activation_gateway_status: "captured",
+    activation_gateway_meta: JSON.stringify({
+      source: "legacy_google_sheet_migration",
+      source_row_number: mappedMember.source_row_number,
+      action,
+    }),
+    activation_attempt_count: 1,
+    activation_last_error: null,
+    activation_webhook_received_at: mappedMember.legacy_paid_at || createdAt,
+    activation_webhook_event_type: "legacy_migration",
+  };
+}
+
+async function generateActivationValues(config, mappedMember) {
+  const activationToken = await randomToken("act");
+  const activationOrderToken = await randomToken("ord");
+  const uniqueToken = await randomToken("mem");
+  const receipt =
+    mappedMember.legacy_receipt ||
+    `legacy_${mappedMember.source_row_number}_${Date.now()}`;
+
+  return {
+    unique_token: uniqueToken,
+    activation_token: activationToken,
+    activation_token_created_at: nowIso(),
+    activation_order_token: activationOrderToken,
+    activation_receipt: receipt,
+    activation_created_at: nowIso(),
+    order_url: buildUrl(config.orderBaseUrl, {
+      token: activationOrderToken,
+      email: mappedMember.email,
+    }),
+    activation_url: buildUrl(config.activationBaseUrl, {
+      token: activationToken,
+      email: mappedMember.email,
+    }),
+  };
+}
+
+async function generateReferenceId() {
+  return `KF-${await randomToken("", 10)}`;
+}
+
+async function randomToken(prefix, byteLength) {
+  const bytes = new Uint8Array(byteLength || 18);
+  crypto.getRandomValues(bytes);
+  const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+  return prefix ? `${prefix}_${token}` : token.toUpperCase();
+}
+
+function buildUrl(baseUrl, params) {
+  const url = new URL(baseUrl);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  return url.toString();
+}
+
+/******************************************************************
+ INTERMEDIATE D1
+******************************************************************/
+
+async function initializeIntermediateDb(db) {
+  await db.batch([
+    db.prepare(
+      `
+      CREATE TABLE IF NOT EXISTS migration_rows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        action_required TEXT NOT NULL,
+        migration_status TEXT NOT NULL,
+        action_reason TEXT,
+        source_row_number INTEGER NOT NULL,
+        email TEXT,
+        phone TEXT,
+        source_payment_status TEXT,
+        target_payment_status TEXT,
+        target_member_id INTEGER,
+        generated_reference_id TEXT,
+        generated_unique_token TEXT,
+        generated_activation_url TEXT,
+        generated_order_url TEXT,
+        generated_gateway_order_id TEXT,
+        generated_gateway_payment_id TEXT,
+        processed_at TEXT NOT NULL,
+        production_written_at TEXT,
+        error_message TEXT,
+        source_json TEXT,
+        mapped_member_json TEXT,
+        run_id TEXT,
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(source_row_number)
+      )
+      `
+    ),
+    db.prepare(
+      `
+      CREATE INDEX IF NOT EXISTS idx_migration_rows_status
+      ON migration_rows (migration_status, action_required, source_row_number)
+      `
+    ),
+    db.prepare(
+      `
+      CREATE INDEX IF NOT EXISTS idx_migration_rows_email
+      ON migration_rows (email)
+      `
+    ),
+    db.prepare(
+      `
+      CREATE TABLE IF NOT EXISTS migration_state (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        last_scanned_sheet_row INTEGER NOT NULL DEFAULT 1,
+        last_written_sheet_row INTEGER NOT NULL DEFAULT 1,
+        total_scanned INTEGER NOT NULL DEFAULT 0,
+        total_created INTEGER NOT NULL DEFAULT 0,
+        total_upgraded INTEGER NOT NULL DEFAULT 0,
+        total_skipped INTEGER NOT NULL DEFAULT 0,
+        total_failed INTEGER NOT NULL DEFAULT 0,
+        current_mode TEXT,
+        worker_version TEXT,
+        last_started TEXT,
+        last_completed TEXT
+      )
+      `
+    ),
+    db.prepare(
+      `
+      CREATE TABLE IF NOT EXISTS migration_runs (
+        run_id TEXT PRIMARY KEY,
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        duration_ms INTEGER,
+        mode TEXT NOT NULL,
+        rows_processed INTEGER NOT NULL DEFAULT 0,
+        rows_created INTEGER NOT NULL DEFAULT 0,
+        rows_upgraded INTEGER NOT NULL DEFAULT 0,
+        rows_skipped INTEGER NOT NULL DEFAULT 0,
+        rows_failed INTEGER NOT NULL DEFAULT 0
+      )
+      `
+    ),
+  ]);
+
+  await db.prepare("INSERT OR IGNORE INTO migration_state (id) VALUES (1)").run();
+}
+
+async function startRun(db, runId, mode, workerVersion) {
+  const startedAt = nowIso();
+
+  await db.batch([
+    db.prepare(
+      `
+      INSERT INTO migration_runs (run_id, started_at, mode)
+      VALUES (?, ?, ?)
+      `
+    ).bind(runId, startedAt, mode),
+    db.prepare(
+      `
+      UPDATE migration_state
+      SET current_mode = ?, worker_version = ?, last_started = ?
+      WHERE id = 1
+      `
+    ).bind(mode, workerVersion, startedAt),
+  ]);
+}
+
+async function completeRun(db, runId, startedAtMs, summary) {
+  const completedAt = nowIso();
+  const durationMs = Date.now() - startedAtMs;
+
+  await db.batch([
+    db.prepare(
+      `
+      UPDATE migration_runs
+      SET
+        completed_at = ?,
+        duration_ms = ?,
+        rows_processed = ?,
+        rows_created = ?,
+        rows_upgraded = ?,
+        rows_skipped = ?,
+        rows_failed = ?
+      WHERE run_id = ?
+      `
+    ).bind(
+      completedAt,
+      durationMs,
+      summary.rowsProcessed,
+      summary.rowsCreated,
+      summary.rowsUpgraded,
+      summary.rowsSkipped,
+      summary.rowsFailed,
+      runId
+    ),
+    db.prepare(
+      `
+      UPDATE migration_state
+      SET
+        last_completed = ?,
+        total_scanned = total_scanned + ?,
+        total_created = total_created + ?,
+        total_upgraded = total_upgraded + ?,
+        total_skipped = total_skipped + ?,
+        total_failed = total_failed + ?
+      WHERE id = 1
+      `
+    ).bind(
+      completedAt,
+      summary.rowsScanned,
+      summary.rowsCreated,
+      summary.rowsUpgraded,
+      summary.rowsSkipped,
+      summary.rowsFailed
+    ),
+  ]);
+
+  return { completedAt, durationMs };
+}
+
+async function getMigrationState(db) {
+  return db.prepare("SELECT * FROM migration_state WHERE id = 1").first();
+}
+
+async function updateLastScannedSheetRow(db, rowNumber) {
+  await db.prepare(
+    `
+    UPDATE migration_state
+    SET last_scanned_sheet_row = MAX(last_scanned_sheet_row, ?)
+    WHERE id = 1
+    `
+  )
+    .bind(rowNumber)
+    .run();
+}
+
+async function updateLastWrittenSheetRow(db, rowNumber) {
+  await db.prepare(
+    `
+    UPDATE migration_state
+    SET last_written_sheet_row = MAX(last_written_sheet_row, ?)
+    WHERE id = 1
+    `
+  )
+    .bind(rowNumber)
+    .run();
+}
+
+async function saveAuditRow(db, auditRow) {
+  await db.prepare(
+    `
+    INSERT INTO migration_rows (
+      action_required,
+      migration_status,
+      action_reason,
+      source_row_number,
+      email,
+      phone,
+      source_payment_status,
+      target_payment_status,
+      target_member_id,
+      generated_reference_id,
+      generated_unique_token,
+      generated_activation_url,
+      generated_order_url,
+      generated_gateway_order_id,
+      generated_gateway_payment_id,
+      processed_at,
+      production_written_at,
+      error_message,
+      source_json,
+      mapped_member_json,
+      run_id,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(source_row_number) DO UPDATE SET
+      action_required = excluded.action_required,
+      migration_status = excluded.migration_status,
+      action_reason = excluded.action_reason,
+      email = excluded.email,
+      phone = excluded.phone,
+      source_payment_status = excluded.source_payment_status,
+      target_payment_status = excluded.target_payment_status,
+      target_member_id = excluded.target_member_id,
+      generated_reference_id = excluded.generated_reference_id,
+      generated_unique_token = excluded.generated_unique_token,
+      generated_activation_url = excluded.generated_activation_url,
+      generated_order_url = excluded.generated_order_url,
+      generated_gateway_order_id = excluded.generated_gateway_order_id,
+      generated_gateway_payment_id = excluded.generated_gateway_payment_id,
+      processed_at = excluded.processed_at,
+      production_written_at = excluded.production_written_at,
+      error_message = excluded.error_message,
+      source_json = excluded.source_json,
+      mapped_member_json = excluded.mapped_member_json,
+      run_id = excluded.run_id,
+      updated_at = excluded.updated_at
+    `
+  )
+    .bind(
+      auditRow.action_required,
+      auditRow.migration_status,
+      auditRow.action_reason,
+      auditRow.source_row_number,
+      auditRow.email,
+      auditRow.phone,
+      auditRow.source_payment_status,
+      auditRow.target_payment_status,
+      auditRow.target_member_id,
+      auditRow.generated_reference_id,
+      auditRow.generated_unique_token,
+      auditRow.generated_activation_url,
+      auditRow.generated_order_url,
+      auditRow.generated_gateway_order_id,
+      auditRow.generated_gateway_payment_id,
+      auditRow.processed_at,
+      auditRow.production_written_at,
+      auditRow.error_message,
+      safeJson(auditRow.source_json),
+      safeJson(auditRow.mapped_member_json),
+      auditRow.run_id,
+      nowIso()
+    )
+    .run();
+}
+
+async function markAuditRowSuccess(db, sourceRowNumber, targetMemberId) {
+  const writtenAt = nowIso();
+
+  await db.prepare(
+    `
+    UPDATE migration_rows
+    SET
+      migration_status = ?,
+      action_reason = 'Production write successful.',
+      target_member_id = ?,
+      production_written_at = ?,
+      error_message = NULL,
+      updated_at = ?
+    WHERE source_row_number = ?
+    `
+  )
+    .bind(MIGRATION_STATUS.SUCCESS, targetMemberId, writtenAt, writtenAt, sourceRowNumber)
+    .run();
+}
+
+async function markAuditRowGeneratedFields(db, sourceRowNumber, generatedFields) {
+  await db.prepare(
+    `
+    UPDATE migration_rows
+    SET
+      generated_reference_id = ?,
+      generated_unique_token = ?,
+      generated_activation_url = ?,
+      generated_order_url = ?,
+      generated_gateway_order_id = ?,
+      generated_gateway_payment_id = ?,
+      updated_at = ?
+    WHERE source_row_number = ?
+    `
+  )
+    .bind(
+      generatedFields.generated_reference_id,
+      generatedFields.generated_unique_token,
+      generatedFields.generated_activation_url,
+      generatedFields.generated_order_url,
+      generatedFields.generated_gateway_order_id,
+      generatedFields.generated_gateway_payment_id,
+      nowIso(),
+      sourceRowNumber
+    )
+    .run();
+}
+
+async function markAuditRowFailed(db, sourceRowNumber, error) {
+  const failedAt = nowIso();
+
+  await db.prepare(
+    `
+    UPDATE migration_rows
+    SET
+      migration_status = ?,
+      action_reason = 'Production write failed.',
+      error_message = ?,
+      retry_count = retry_count + 1,
+      updated_at = ?
+    WHERE source_row_number = ?
+    `
+  )
+    .bind(MIGRATION_STATUS.FAILED, error && error.message ? error.message : String(error), failedAt, sourceRowNumber)
+    .run();
+}
+
+async function getPendingProductionRows(db, limit) {
+  const rows = await db.prepare(
+    `
+    SELECT *
+    FROM migration_rows
+    WHERE migration_status IN (?, ?, ?)
+      AND action_required IN ('CREATE_PAID', 'CREATE_UNPAID', 'UPGRADE_TO_PAID')
+    ORDER BY source_row_number ASC
+    LIMIT ?
+    `
+  )
+    .bind(MIGRATION_STATUS.PENDING, MIGRATION_STATUS.NOT_WRITTEN, MIGRATION_STATUS.FAILED, limit)
+    .all();
+
+  return (rows.results || []).map((row) => ({
+    ...row,
+    source_json: parseJson(row.source_json),
+    mapped_member_json: parseJson(row.mapped_member_json),
+  }));
+}
+
+/******************************************************************
+ PRODUCTION D1
+******************************************************************/
+
+const CREATE_MEMBER_COLUMNS = [
+  "full_name",
+  "dob",
+  "gender",
+  "city",
+  "email",
+  "phone",
+  "expectations",
+  "accepted_terms",
+  "created_at",
+  "phone_opt_in_at",
+  "email_opt_in_at",
+  "activation_token",
+  "activation_token_created_at",
+  "activated_at",
+  "account_status",
+  "email_opt_in",
+  "ref_id",
+  "ref_by",
+  "unique_token",
+  "country",
+  "phone_opt_in",
+  "activation_fee_paid_at",
+  "activation_fee_currency",
+  "activation_fee_amount",
+  "activation_fee_discount_amount",
+  "activation_fee_final_amount",
+  "activation_coupon_code",
+  "activation_fee_status",
+  "activation_captured_at",
+  "activation_order_token",
+  "activation_receipt",
+  "activation_gateway_order_id",
+  "activation_gateway_payment_id",
+  "activation_gateway_signature",
+  "activation_gateway_meta",
+  "activation_attempt_count",
+  "activation_last_error",
+  "activation_created_at",
+  "order_url",
+  "activation_url",
+  "activation_gateway_status",
+  "activation_refunded_at",
+  "activation_webhook_received_at",
+  "activation_webhook_event_type",
+  "activation_capi_event_id",
+  "activation_capi_status",
+  "activation_capi_sent_at",
+  "activation_capi_last_error",
+  "telegram_revoked_at",
+  "telegram_revocation_reason",
+  "payment_gateway",
+  "payment_gateway_payment_id",
+  "welcome_email_sent",
+  "remail_stage",
+  "business_category",
+  "gst_number",
+  "gst_registered_name",
+  "gst_trade_name",
+  "gst_registered_address",
+  "gst_state",
+  "gst_state_code",
+  "gst_status",
+  "gst_lookup_status",
+  "gst_lookup_provider",
+  "gst_lookup_response",
+  "gst_lookup_error",
+  "gst_last_verified_at",
+  "business_name",
+];
+
+const PAID_UPDATE_COLUMNS = [
+  "activation_token",
+  "activation_token_created_at",
+  "unique_token",
+  "activation_fee_paid_at",
+  "activation_fee_currency",
+  "activation_fee_amount",
+  "activation_fee_discount_amount",
+  "activation_fee_final_amount",
+  "activation_coupon_code",
+  "activation_fee_status",
+  "activation_captured_at",
+  "activation_order_token",
+  "activation_receipt",
+  "activation_gateway_order_id",
+  "activation_gateway_payment_id",
+  "activation_gateway_signature",
+  "activation_gateway_meta",
+  "activation_attempt_count",
+  "activation_last_error",
+  "activation_created_at",
+  "order_url",
+  "activation_url",
+  "activation_gateway_status",
+  "activation_webhook_received_at",
+  "activation_webhook_event_type",
+  "payment_gateway",
+  "payment_gateway_payment_id",
+];
+
+async function writeMemberToProduction(options) {
+  const config = options.config;
+  const productionDb = options.productionDb;
+  const mappedMember = options.mappedMember;
+  const action = options.action;
+  const targetMemberId = options.targetMemberId;
+  const values = await buildMemberValues(config, mappedMember, action);
+
+  if (action === ACTIONS.CREATE_PAID || action === ACTIONS.CREATE_UNPAID) {
+    return createMember(productionDb, values);
+  }
+
+  if (action === ACTIONS.UPGRADE_TO_PAID) {
+    return upgradeMemberToPaid(productionDb, targetMemberId, values);
+  }
+
+  throw new Error(`Action is not a production write action: ${action}`);
+}
+
+async function createMember(db, values) {
+  const placeholders = CREATE_MEMBER_COLUMNS.map(() => "?").join(", ");
+  const sql = `
+    INSERT INTO members (${CREATE_MEMBER_COLUMNS.join(", ")})
+    VALUES (${placeholders})
+    RETURNING id
+  `;
+  const result = await db.prepare(sql)
+    .bind(...CREATE_MEMBER_COLUMNS.map((column) => values[column] ?? null))
+    .first();
+
+  if (!result || !result.id) {
+    throw new Error("Production insert did not return a member id.");
+  }
+
+  return { memberId: result.id, generated: values };
+}
+
+async function upgradeMemberToPaid(db, memberId, values) {
+  if (!memberId) {
+    throw new Error("Cannot upgrade member without target member id.");
+  }
+
+  const assignments = PAID_UPDATE_COLUMNS.map((column) => `${column} = ?`).join(", ");
+  const sql = `
+    UPDATE members
+    SET ${assignments}
+    WHERE id = ?
+      AND (
+        activation_fee_status IS NULL
+        OR LOWER(activation_fee_status) <> 'paid'
+      )
+    RETURNING id
+  `;
+  const result = await db.prepare(sql)
+    .bind(...PAID_UPDATE_COLUMNS.map((column) => values[column] ?? null), memberId)
+    .first();
+
+  if (!result || !result.id) {
+    throw new Error("Production upgrade did not update an unpaid member.");
+  }
+
+  return { memberId: result.id, generated: values };
+}
+
+function buildAuditGeneratedFields(generated) {
+  return {
+    generated_reference_id: generated && generated.ref_id ? generated.ref_id : null,
+    generated_unique_token: generated && generated.unique_token ? generated.unique_token : null,
+    generated_activation_url:
+      generated && generated.activation_url ? generated.activation_url : null,
+    generated_order_url: generated && generated.order_url ? generated.order_url : null,
+    generated_gateway_order_id:
+      generated && generated.activation_gateway_order_id
+        ? generated.activation_gateway_order_id
+        : null,
+    generated_gateway_payment_id:
+      generated && generated.activation_gateway_payment_id
+        ? generated.activation_gateway_payment_id
+        : null,
+  };
+}
+
+/******************************************************************
+ MIGRATION ENGINE
+******************************************************************/
+
+async function runMigration(options) {
+  const config = options.config;
+  const productionDb = options.productionDb;
+  const intermediateDb = options.intermediateDb;
+  const trigger = options.trigger;
+  const startedAtMs = Date.now();
+  const runId = crypto.randomUUID();
+  const mode = config.testMode ? "TEST" : "LIVE";
+  const summary = createRunSummary(runId, mode, trigger);
+
+  await startRun(intermediateDb, runId, mode, config.workerVersion);
+
+  logEvent("migration_run_started", {
+    run_id: runId,
+    mode,
+    trigger,
+    batch_size: config.batchSize,
+  });
+
+  try {
+    if (!config.testMode) {
+      await drainPendingProductionWrites(config, productionDb, intermediateDb, summary);
+    }
+
+    if (config.testMode || summary.rowsProcessed < config.batchSize) {
+      const remainingCapacity = config.testMode
+        ? config.batchSize
+        : config.batchSize - summary.rowsProcessed;
+
+      await scanSheetBatch(
+        config,
+        productionDb,
+        intermediateDb,
+        runId,
+        summary,
+        remainingCapacity
+      );
+    }
+  } catch (error) {
+    summary.success = false;
+    summary.error = formatError(error);
+    summary.rowsFailed += 1;
+    logEvent("migration_run_failed", {
+      run_id: runId,
+      error: formatError(error),
+    });
+  }
+
+  const completion = await completeRun(intermediateDb, runId, startedAtMs, summary);
+  summary.completedAt = completion.completedAt;
+  summary.durationMs = completion.durationMs;
+
+  logEvent("migration_run_completed", {
+    run_id: runId,
+    mode,
+    rows_scanned: summary.rowsScanned,
+    rows_processed: summary.rowsProcessed,
+    rows_written: summary.rowsCreated + summary.rowsUpgraded,
+    rows_skipped: summary.rowsSkipped,
+    rows_failed: summary.rowsFailed,
+    duration_ms: summary.durationMs,
+  });
+
+  return summary;
+}
+
+async function scanSheetBatch(config, productionDb, intermediateDb, runId, summary, rowCount) {
+  const state = await getMigrationState(intermediateDb);
+  const startRowNumber = Math.max(2, Number(state.last_scanned_sheet_row || 1) + 1);
+  const header = await readHeaderRow(config);
+  const sheetRows = await readSheetRows(config, startRowNumber, rowCount, header);
+  const batchSeenEmails = new Set();
+
+  for (const sheetRow of sheetRows) {
+    try {
+      const mappedMember = mapSourceRow(sheetRow);
+      const decision = await determineEligibility({
+        mappedMember,
+        productionDb,
+        intermediateDb,
+        batchSeenEmails,
+      });
+
+      if (mappedMember.email) {
+        batchSeenEmails.add(mappedMember.email);
+      }
+
+      await handleScannedRow(
+        config,
+        productionDb,
+        intermediateDb,
+        runId,
+        sheetRow,
+        mappedMember,
+        decision,
+        summary
+      );
+
+      summary.rowsScanned += 1;
+      summary.rowsProcessed += 1;
+      await updateLastScannedSheetRow(intermediateDb, sheetRow.sourceRowNumber);
+    } catch (error) {
+      summary.rowsScanned += 1;
+      summary.rowsProcessed += 1;
+      summary.rowsFailed += 1;
+
+      await saveAuditRow(intermediateDb, {
+        action_required: ACTIONS.ERROR,
+        migration_status: MIGRATION_STATUS.FAILED,
+        action_reason: "Row processing failed.",
+        source_row_number: sheetRow.sourceRowNumber,
+        email: null,
+        phone: null,
+        source_payment_status: null,
+        target_payment_status: null,
+        target_member_id: null,
+        generated_reference_id: null,
+        generated_unique_token: null,
+        generated_activation_url: null,
+        generated_order_url: null,
+        generated_gateway_order_id: null,
+        generated_gateway_payment_id: null,
+        processed_at: nowIso(),
+        production_written_at: null,
+        error_message: error.message,
+        source_json: sheetRow.rawObject,
+        mapped_member_json: null,
+        run_id: runId,
+      });
+
+      await updateLastScannedSheetRow(intermediateDb, sheetRow.sourceRowNumber);
+    }
+  }
+}
+
+async function handleScannedRow(
+  config,
+  productionDb,
+  intermediateDb,
+  runId,
+  sheetRow,
+  mappedMember,
+  decision,
+  summary
+) {
+  const shouldWriteProduction =
+    isProductionAction(decision.action) &&
+    (!config.testMode || sheetRow.sourceRowNumber === config.testSheetRow);
+  const initialStatus = resolveInitialStatus(config, decision, sheetRow.sourceRowNumber);
+
+  await saveAuditRow(intermediateDb, {
+    action_required: decision.action,
+    migration_status: initialStatus,
+    action_reason: resolveActionReason(config, decision, sheetRow.sourceRowNumber),
+    source_row_number: sheetRow.sourceRowNumber,
+    email: mappedMember.email,
+    phone: mappedMember.phone,
+    source_payment_status: mappedMember.source_payment_status,
+    target_payment_status: mappedMember.target_payment_status,
+    target_member_id: decision.targetMember ? decision.targetMember.id : null,
+    generated_reference_id: null,
+    generated_unique_token: null,
+    generated_activation_url: null,
+    generated_order_url: null,
+    generated_gateway_order_id: mappedMember.legacy_gateway_order_id,
+    generated_gateway_payment_id: mappedMember.legacy_gateway_payment_id,
+    processed_at: nowIso(),
+    production_written_at: null,
+    error_message: null,
+    source_json: sheetRow.rawObject,
+    mapped_member_json: mappedMember,
+    run_id: runId,
+  });
+
+  if (decision.action === ACTIONS.ERROR) {
+    summary.rowsFailed += 1;
+    return;
+  }
+
+  if (!isProductionAction(decision.action)) {
+    summary.rowsSkipped += 1;
+    await updateLastWrittenSheetRow(intermediateDb, sheetRow.sourceRowNumber);
+    return;
+  }
+
+  if (!shouldWriteProduction) {
+    summary.rowsSkipped += 1;
+    return;
+  }
+
+  await writeProductionAndMarkAudit({
+    config,
+    productionDb,
+    intermediateDb,
+    mappedMember,
+    action: decision.action,
+    targetMemberId: decision.targetMember ? decision.targetMember.id : null,
+    sourceRowNumber: sheetRow.sourceRowNumber,
+    summary,
+  });
+}
+
+async function drainPendingProductionWrites(config, productionDb, intermediateDb, summary) {
+  const pendingRows = await getPendingProductionRows(intermediateDb, config.batchSize);
+
+  for (const row of pendingRows) {
+    if (summary.rowsProcessed >= config.batchSize) {
+      return;
+    }
+
+    const mappedMember = row.mapped_member_json;
+    const decision = await determineEligibility({
+      mappedMember,
+      productionDb,
+      intermediateDb,
+      batchSeenEmails: new Set(),
+    });
+
+    if (!isProductionAction(decision.action) || decision.action === ACTIONS.ERROR) {
+      await saveAuditRow(intermediateDb, {
+        action_required: decision.action,
+        migration_status:
+          decision.action === ACTIONS.ERROR ? MIGRATION_STATUS.FAILED : MIGRATION_STATUS.SUCCESS,
+        action_reason: decision.reason,
+        source_row_number: row.source_row_number,
+        email: mappedMember && mappedMember.email ? mappedMember.email : row.email,
+        phone: mappedMember && mappedMember.phone ? mappedMember.phone : row.phone,
+        source_payment_status:
+          mappedMember && mappedMember.source_payment_status
+            ? mappedMember.source_payment_status
+            : row.source_payment_status,
+        target_payment_status:
+          mappedMember && mappedMember.target_payment_status
+            ? mappedMember.target_payment_status
+            : row.target_payment_status,
+        target_member_id: decision.targetMember ? decision.targetMember.id : row.target_member_id,
+        generated_reference_id: row.generated_reference_id,
+        generated_unique_token: row.generated_unique_token,
+        generated_activation_url: row.generated_activation_url,
+        generated_order_url: row.generated_order_url,
+        generated_gateway_order_id: row.generated_gateway_order_id,
+        generated_gateway_payment_id: row.generated_gateway_payment_id,
+        processed_at: nowIso(),
+        production_written_at: row.production_written_at,
+        error_message: decision.action === ACTIONS.ERROR ? decision.reason : null,
+        source_json: row.source_json,
+        mapped_member_json: mappedMember,
+        run_id: summary.runId,
+      });
+
+      if (decision.action === ACTIONS.ERROR) {
+        summary.rowsFailed += 1;
+      } else {
+        summary.rowsSkipped += 1;
+      }
+
+      summary.rowsProcessed += 1;
+      continue;
+    }
+
+    await writeProductionAndMarkAudit({
+      config,
+      productionDb,
+      intermediateDb,
+      mappedMember,
+      action: decision.action,
+      targetMemberId: decision.targetMember ? decision.targetMember.id : row.target_member_id,
+      sourceRowNumber: row.source_row_number,
+      summary,
+    });
+    summary.rowsProcessed += 1;
+  }
+}
+
+async function writeProductionAndMarkAudit(options) {
+  const config = options.config;
+  const productionDb = options.productionDb;
+  const intermediateDb = options.intermediateDb;
+  const mappedMember = options.mappedMember;
+  const action = options.action;
+  const targetMemberId = options.targetMemberId;
+  const sourceRowNumber = options.sourceRowNumber;
+  const summary = options.summary;
+
+  try {
+    const result = await writeMemberToProduction({
+      config,
+      productionDb,
+      mappedMember,
+      action,
+      targetMemberId,
+    });
+    const generatedFields = buildAuditGeneratedFields(result.generated);
+
+    await markAuditRowGeneratedFields(intermediateDb, sourceRowNumber, generatedFields);
+    await markAuditRowSuccess(intermediateDb, sourceRowNumber, result.memberId);
+    await updateLastWrittenSheetRow(intermediateDb, sourceRowNumber);
+
+    if (action === ACTIONS.UPGRADE_TO_PAID) {
+      summary.rowsUpgraded += 1;
+    } else {
+      summary.rowsCreated += 1;
+    }
+  } catch (error) {
+    await markAuditRowFailed(intermediateDb, sourceRowNumber, error);
+    summary.rowsFailed += 1;
+    logEvent("production_write_failed", {
+      source_row_number: sourceRowNumber,
+      action,
+      error: formatError(error),
+    });
+  }
+}
+
+function resolveInitialStatus(config, decision, sourceRowNumber) {
+  if (decision.action === ACTIONS.ERROR) {
+    return MIGRATION_STATUS.FAILED;
+  }
+
+  if (!isProductionAction(decision.action)) {
+    return MIGRATION_STATUS.SUCCESS;
+  }
+
+  if (config.testMode && sourceRowNumber !== config.testSheetRow) {
+    return MIGRATION_STATUS.NOT_WRITTEN;
+  }
+
+  return MIGRATION_STATUS.PENDING;
+}
+
+function resolveActionReason(config, decision, sourceRowNumber) {
+  if (!config.testMode || !isProductionAction(decision.action)) {
+    return decision.reason;
+  }
+
+  if (sourceRowNumber === config.testSheetRow) {
+    return "Configured test row written.";
+  }
+
+  return "Test mode skipped production write.";
+}
+
+function createRunSummary(runId, mode, trigger) {
+  return {
+    success: true,
+    runId,
+    mode,
+    trigger,
+    rowsScanned: 0,
+    rowsProcessed: 0,
+    rowsCreated: 0,
+    rowsUpgraded: 0,
+    rowsSkipped: 0,
+    rowsFailed: 0,
+    startedAt: nowIso(),
+    completedAt: null,
+    durationMs: null,
+  };
+}
+
+/******************************************************************
+ CRON HANDLER
+******************************************************************/
+
+addEventListener("fetch", (event) => {
+  event.respondWith(handleFetchRequest(event.request));
+});
+
+addEventListener("scheduled", (event) => {
+  event.waitUntil(handleScheduledRun(event));
+});
+
+async function handleFetchRequest(request) {
+  try {
+    const url = new URL(request.url);
+
+    if (request.method !== "GET" && request.method !== "POST") {
+      return jsonResponse(
+        { success: false, error: "Method Not Allowed" },
+        HTTP_STATUS.METHOD_NOT_ALLOWED
+      );
+    }
+
+    const config = getRuntimeConfig();
+    const databases = getDatabases(config);
+
+    await initializeIntermediateDb(databases.intermediateDb);
+
+    if (url.pathname === "/" || url.pathname === "/health") {
+      return jsonResponse({
+        success: true,
+        worker_name: "Google Sheets to D1 Member Migration",
+        worker_version: config.workerVersion,
+        mode: config.testMode ? "TEST" : "LIVE",
+        batch_size: config.batchSize,
+        worksheet_name: config.worksheetName,
+        test_sheet_row: config.testSheetRow,
+        production_binding_name: config.productionBindingName,
+        intermediate_binding_name: config.intermediateBindingName,
+      });
+    }
+
+    if (url.pathname === "/run") {
+      return jsonResponse(
+        await runMigration({
+          config,
+          productionDb: databases.productionDb,
+          intermediateDb: databases.intermediateDb,
+          trigger: "http",
+        })
+      );
+    }
+
+    return jsonResponse({ success: false, error: "Not Found" }, HTTP_STATUS.NOT_FOUND);
+  } catch (error) {
+    return jsonResponse(
+      {
+        success: false,
+        error: error.message,
+        details: formatError(error),
+      },
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function handleScheduledRun(event) {
+  const config = getRuntimeConfig();
+  const databases = getDatabases(config);
+
+  await initializeIntermediateDb(databases.intermediateDb);
+  await runMigration({
+    config,
+    productionDb: databases.productionDb,
+    intermediateDb: databases.intermediateDb,
+    trigger: "scheduled",
+    scheduledTime: event && event.scheduledTime ? event.scheduledTime : null,
+  });
+}
