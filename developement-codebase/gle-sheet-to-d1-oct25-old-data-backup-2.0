@@ -1967,48 +1967,15 @@ function createRunSummary(runId, mode, trigger) {
  CRON HANDLER
 ******************************************************************/
 
-addEventListener("fetch", (event) => {
-  event.respondWith(handleFetchRequest(event.request, getWorkerEnvFromBindings()));
-});
+export default {
+  async fetch(request, env, ctx) {
+    return handleFetchRequest(request, env);
+  },
 
-addEventListener("scheduled", (event) => {
-  event.waitUntil(handleScheduledRun(event, getWorkerEnvFromBindings()));
-});
-
-function getWorkerEnvFromBindings() {
-  return {
-    PRODUCTION_DB,
-    MIGRATION_DB,
-    WORKER_VERSION: typeof WORKER_VERSION === "undefined" ? undefined : WORKER_VERSION,
-    BATCH_SIZE: typeof BATCH_SIZE === "undefined" ? undefined : BATCH_SIZE,
-    TEST_MODE: typeof TEST_MODE === "undefined" ? undefined : TEST_MODE,
-    TEST_SHEET_ROW: typeof TEST_SHEET_ROW === "undefined" ? undefined : TEST_SHEET_ROW,
-    GOOGLE_SHEET_ID: typeof GOOGLE_SHEET_ID === "undefined" ? undefined : GOOGLE_SHEET_ID,
-    WORKSHEET_NAME: typeof WORKSHEET_NAME === "undefined" ? undefined : WORKSHEET_NAME,
-    MAX_RETRIES: typeof MAX_RETRIES === "undefined" ? undefined : MAX_RETRIES,
-    LOCK_TIMEOUT: typeof LOCK_TIMEOUT === "undefined" ? undefined : LOCK_TIMEOUT,
-    INITIAL_RETRY_DELAY_MS:
-      typeof INITIAL_RETRY_DELAY_MS === "undefined" ? undefined : INITIAL_RETRY_DELAY_MS,
-    ACTIVATION_BASE_URL:
-      typeof ACTIVATION_BASE_URL === "undefined" ? undefined : ACTIVATION_BASE_URL,
-    ORDER_BASE_URL: typeof ORDER_BASE_URL === "undefined" ? undefined : ORDER_BASE_URL,
-    DEFAULT_ACTIVATION_CURRENCY:
-      typeof DEFAULT_ACTIVATION_CURRENCY === "undefined"
-        ? undefined
-        : DEFAULT_ACTIVATION_CURRENCY,
-    DEFAULT_ACTIVATION_AMOUNT:
-      typeof DEFAULT_ACTIVATION_AMOUNT === "undefined" ? undefined : DEFAULT_ACTIVATION_AMOUNT,
-    DEFAULT_ACTIVATION_DISCOUNT_AMOUNT:
-      typeof DEFAULT_ACTIVATION_DISCOUNT_AMOUNT === "undefined"
-        ? undefined
-        : DEFAULT_ACTIVATION_DISCOUNT_AMOUNT,
-    GOOGLE_SERVICE_ACCOUNT_EMAIL:
-      typeof GOOGLE_SERVICE_ACCOUNT_EMAIL === "undefined" ? undefined : GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    GOOGLE_CLIENT_EMAIL:
-      typeof GOOGLE_CLIENT_EMAIL === "undefined" ? undefined : GOOGLE_CLIENT_EMAIL,
-    GOOGLE_PRIVATE_KEY: typeof GOOGLE_PRIVATE_KEY === "undefined" ? undefined : GOOGLE_PRIVATE_KEY,
-  };
-}
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(handleScheduledRun(controller, env));
+  },
+};
 
 async function handleFetchRequest(request, env) {
   try {
