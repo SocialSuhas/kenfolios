@@ -2,15 +2,14 @@
  CONFIGURATION
 ******************************************************************/
 
-const WORKER_VERSION = "1.0.0";
+const DEFAULT_WORKER_VERSION = "2.0.0";
 const DEFAULT_BATCH_SIZE = 500;
 const DEFAULT_TEST_MODE = true;
 const DEFAULT_TEST_SHEET_ROW = 2;
 const DEFAULT_WORKSHEET_NAME = "members";
 const DEFAULT_MAX_RETRIES = 4;
 const DEFAULT_INITIAL_RETRY_DELAY_MS = 500;
-const DEFAULT_PRODUCTION_D1_BINDING_NAME = "PRODUCTION_DB";
-const DEFAULT_INTERMEDIATE_D1_BINDING_NAME = "MIGRATION_DB";
+const DEFAULT_LOCK_TIMEOUT_MS = 9 * 60 * 1000;
 const DEFAULT_ACTIVATION_BASE_URL = "https://kenfolios.com/activate";
 const DEFAULT_ORDER_BASE_URL = "https://kenfolios.com/order";
 const DEFAULT_ACTIVATION_CURRENCY = "INR";
@@ -46,66 +45,56 @@ const HTTP_STATUS = Object.freeze({
   INTERNAL_SERVER_ERROR: 500,
 });
 
-function getRuntimeConfig() {
+function getRuntimeConfig(env) {
   const config = {
-    workerVersion: getTextVar("WORKER_VERSION", WORKER_VERSION),
-    batchSize: getIntegerVar("BATCH_SIZE", DEFAULT_BATCH_SIZE),
-    testMode: getBooleanVar("TEST_MODE", DEFAULT_TEST_MODE),
-    testSheetRow: getIntegerVar("TEST_SHEET_ROW", DEFAULT_TEST_SHEET_ROW),
-    googleSheetId: getRequiredTextVar("GOOGLE_SHEET_ID"),
-    worksheetName: getTextVar("WORKSHEET_NAME", DEFAULT_WORKSHEET_NAME),
-    maxRetries: getIntegerVar("MAX_RETRIES", DEFAULT_MAX_RETRIES),
+    workerVersion: getTextVar(env, "WORKER_VERSION", DEFAULT_WORKER_VERSION),
+    batchSize: getIntegerVar(env, "BATCH_SIZE", DEFAULT_BATCH_SIZE),
+    testMode: getBooleanVar(env, "TEST_MODE", DEFAULT_TEST_MODE),
+    testSheetRow: getIntegerVar(env, "TEST_SHEET_ROW", DEFAULT_TEST_SHEET_ROW),
+    googleSheetId: getRequiredTextVar(env, "GOOGLE_SHEET_ID"),
+    worksheetName: getTextVar(env, "WORKSHEET_NAME", DEFAULT_WORKSHEET_NAME),
+    maxRetries: getIntegerVar(env, "MAX_RETRIES", DEFAULT_MAX_RETRIES),
+    lockTimeoutMs: getIntegerVar(env, "LOCK_TIMEOUT", DEFAULT_LOCK_TIMEOUT_MS),
     initialRetryDelayMs: getIntegerVar(
+      env,
       "INITIAL_RETRY_DELAY_MS",
       DEFAULT_INITIAL_RETRY_DELAY_MS
     ),
-    productionBindingName: getTextVar(
-      "PRODUCTION_D1_BINDING_NAME",
-      DEFAULT_PRODUCTION_D1_BINDING_NAME
-    ),
-    intermediateBindingName: getTextVar(
-      "INTERMEDIATE_D1_BINDING_NAME",
-      DEFAULT_INTERMEDIATE_D1_BINDING_NAME
-    ),
-    activationBaseUrl: getTextVar("ACTIVATION_BASE_URL", DEFAULT_ACTIVATION_BASE_URL),
-    orderBaseUrl: getTextVar("ORDER_BASE_URL", DEFAULT_ORDER_BASE_URL),
+    activationBaseUrl: getTextVar(env, "ACTIVATION_BASE_URL", DEFAULT_ACTIVATION_BASE_URL),
+    orderBaseUrl: getTextVar(env, "ORDER_BASE_URL", DEFAULT_ORDER_BASE_URL),
     defaultCurrency: getTextVar(
+      env,
       "DEFAULT_ACTIVATION_CURRENCY",
       DEFAULT_ACTIVATION_CURRENCY
     ),
-    defaultActivationAmount: getNullableIntegerVar("DEFAULT_ACTIVATION_AMOUNT"),
+    defaultActivationAmount: getNullableIntegerVar(env, "DEFAULT_ACTIVATION_AMOUNT"),
     defaultActivationDiscountAmount:
-      getNullableIntegerVar("DEFAULT_ACTIVATION_DISCOUNT_AMOUNT") || 0,
+      getNullableIntegerVar(env, "DEFAULT_ACTIVATION_DISCOUNT_AMOUNT") || 0,
   };
 
   if (config.batchSize <= 0) {
-    throw new Error("BATCH_SIZE must be greater than zero.");
+    fail("BATCH_SIZE must be greater than zero.");
   }
 
   if (config.testMode && config.testSheetRow < 2) {
-    throw new Error("TEST_SHEET_ROW must be a Google Sheet data row number, starting at 2.");
+    fail("TEST_SHEET_ROW must be a Google Sheet data row number, starting at 2.");
   }
 
   return config;
 }
 
-function getDatabases(config) {
-  const productionDb = globalThis[config.productionBindingName];
-  const intermediateDb = globalThis[config.intermediateBindingName];
+function getDatabases(env) {
+  assertConfigured(env.PRODUCTION_DB, "Missing production D1 binding: PRODUCTION_DB");
+  assertConfigured(env.MIGRATION_DB, "Missing intermediate D1 binding: MIGRATION_DB");
 
-  if (!productionDb) {
-    throw new Error(`Missing production D1 binding: ${config.productionBindingName}`);
-  }
-
-  if (!intermediateDb) {
-    throw new Error(`Missing intermediate D1 binding: ${config.intermediateBindingName}`);
-  }
-
-  return { productionDb, intermediateDb };
+  return {
+    productionDb: env.PRODUCTION_DB,
+    intermediateDb: env.MIGRATION_DB,
+  };
 }
 
-function getTextVar(name, fallback) {
-  const value = globalThis[name];
+function getTextVar(env, name, fallback) {
+  const value = env[name];
 
   if (value === undefined || value === null || String(value).trim() === "") {
     return fallback;
@@ -114,18 +103,18 @@ function getTextVar(name, fallback) {
   return String(value).trim();
 }
 
-function getRequiredTextVar(name) {
-  const value = getTextVar(name, null);
+function getRequiredTextVar(env, name) {
+  const value = getTextVar(env, name, null);
 
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    fail(`Missing required environment variable: ${name}`);
   }
 
   return value;
 }
 
-function getBooleanVar(name, fallback) {
-  const value = globalThis[name];
+function getBooleanVar(env, name, fallback) {
+  const value = env[name];
 
   if (value === undefined || value === null || String(value).trim() === "") {
     return fallback;
@@ -134,8 +123,8 @@ function getBooleanVar(name, fallback) {
   return String(value).trim().toLowerCase() === "true";
 }
 
-function getIntegerVar(name, fallback) {
-  const value = globalThis[name];
+function getIntegerVar(env, name, fallback) {
+  const value = env[name];
 
   if (value === undefined || value === null || String(value).trim() === "") {
     return fallback;
@@ -146,8 +135,8 @@ function getIntegerVar(name, fallback) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
-function getNullableIntegerVar(name) {
-  const value = globalThis[name];
+function getNullableIntegerVar(env, name) {
+  const value = env[name];
 
   if (value === undefined || value === null || String(value).trim() === "") {
     return null;
@@ -156,6 +145,12 @@ function getNullableIntegerVar(name) {
   const parsed = Number.parseInt(String(value), 10);
 
   return Number.isNaN(parsed) ? null : parsed;
+}
+
+function assertConfigured(value, message) {
+  if (!value) {
+    fail(message);
+  }
 }
 
 /******************************************************************
@@ -179,6 +174,12 @@ function formatError(error) {
     message: error && error.message ? error.message : String(error),
     stack: error && error.stack ? error.stack : null,
   };
+}
+
+function fail(message) {
+  const WorkerError = Error;
+
+  throw new WorkerError(message);
 }
 
 function safeJson(value) {
@@ -213,19 +214,19 @@ function logEvent(event, details) {
  GOOGLE SHEETS
 ******************************************************************/
 
-async function readHeaderRow(config) {
+async function readHeaderRow(env, config) {
   const range = `${escapeSheetName(config.worksheetName)}!1:1`;
-  const values = await readSheetValues(config, range);
+  const values = await readSheetValues(env, config, range);
 
   return (values[0] || []).map((name) => String(name || "").trim());
 }
 
-async function readSheetRows(config, startRowNumber, rowCount, header) {
+async function readSheetRows(env, config, startRowNumber, rowCount, header) {
   const lastColumn = columnLetter(Math.max(header.length - 1, 0));
   const endRowNumber = startRowNumber + rowCount - 1;
   const range =
     `${escapeSheetName(config.worksheetName)}!A${startRowNumber}:${lastColumn}${endRowNumber}`;
-  const values = await readSheetValues(config, range);
+  const values = await readSheetValues(env, config, range);
 
   return values.map((row, index) => ({
     sourceRowNumber: startRowNumber + index,
@@ -234,8 +235,8 @@ async function readSheetRows(config, startRowNumber, rowCount, header) {
   }));
 }
 
-async function readSheetValues(config, range) {
-  const accessToken = await getGoogleAccessToken(config);
+async function readSheetValues(env, config, range) {
+  const accessToken = await getGoogleAccessToken(env, config);
   const endpoint =
     `${GOOGLE_SHEETS_API_BASE}/${encodeURIComponent(config.googleSheetId)}` +
     `/values/${encodeURIComponent(range)}` +
@@ -247,7 +248,7 @@ async function readSheetValues(config, range) {
     });
 
     if (!response.ok) {
-      throw new Error(`Google Sheets read failed: ${response.status} ${await response.text()}`);
+      fail(`Google Sheets read failed: ${response.status} ${await response.text()}`);
     }
 
     const payload = await response.json();
@@ -256,18 +257,18 @@ async function readSheetValues(config, range) {
   });
 }
 
-async function getGoogleAccessToken(config) {
+async function getGoogleAccessToken(env, config) {
   const serviceAccountEmail =
-    getTextVar("GOOGLE_SERVICE_ACCOUNT_EMAIL", null) ||
-    getTextVar("GOOGLE_CLIENT_EMAIL", null);
-  const privateKey = normalizePrivateKey(getTextVar("GOOGLE_PRIVATE_KEY", null));
+    getTextVar(env, "GOOGLE_SERVICE_ACCOUNT_EMAIL", null) ||
+    getTextVar(env, "GOOGLE_CLIENT_EMAIL", null);
+  const privateKey = normalizePrivateKey(getTextVar(env, "GOOGLE_PRIVATE_KEY", null));
 
   if (!serviceAccountEmail) {
-    throw new Error("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_CLIENT_EMAIL.");
+    fail("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_CLIENT_EMAIL.");
   }
 
   if (!privateKey) {
-    throw new Error("Missing GOOGLE_PRIVATE_KEY.");
+    fail("Missing GOOGLE_PRIVATE_KEY.");
   }
 
   const issuedAt = Math.floor(Date.now() / 1000);
@@ -291,13 +292,13 @@ async function getGoogleAccessToken(config) {
     });
 
     if (!response.ok) {
-      throw new Error(`Google OAuth failed: ${response.status} ${await response.text()}`);
+      fail(`Google OAuth failed: ${response.status} ${await response.text()}`);
     }
 
     const payload = await response.json();
 
     if (!payload.access_token) {
-      throw new Error("Google OAuth response did not include an access_token.");
+      fail("Google OAuth response did not include an access_token.");
     }
 
     return payload.access_token;
@@ -733,7 +734,7 @@ async function buildMemberValues(config, mappedMember, action) {
     email_opt_in_at: null,
     account_status: "active",
     email_opt_in: 0,
-    ref_id: await generateReferenceId(),
+    ref_id: await generateRefFromMember(mappedMember),
     ref_by: null,
     country: mappedMember.country,
     phone_opt_in: 0,
@@ -755,6 +756,7 @@ async function buildMemberValues(config, mappedMember, action) {
   }
 
   const activation = await generateActivationValues(config, mappedMember);
+  const orderReference = await generateOrderReference();
 
   return {
     ...values,
@@ -775,6 +777,7 @@ async function buildMemberValues(config, mappedMember, action) {
     activation_gateway_meta: JSON.stringify({
       source: "legacy_google_sheet_migration",
       source_row_number: mappedMember.source_row_number,
+      order_reference: orderReference,
       action,
     }),
     activation_attempt_count: 1,
@@ -785,12 +788,10 @@ async function buildMemberValues(config, mappedMember, action) {
 }
 
 async function generateActivationValues(config, mappedMember) {
-  const activationToken = await randomToken("act");
-  const activationOrderToken = await randomToken("ord");
-  const uniqueToken = await randomToken("mem");
-  const receipt =
-    mappedMember.legacy_receipt ||
-    `legacy_${mappedMember.source_row_number}_${Date.now()}`;
+  const activationToken = await generateActivationToken();
+  const activationOrderToken = await generateActivationOrderToken();
+  const uniqueToken = await generateUniqueToken();
+  const receipt = generateActivationReceipt(mappedMember);
 
   return {
     unique_token: uniqueToken,
@@ -799,27 +800,81 @@ async function generateActivationValues(config, mappedMember) {
     activation_order_token: activationOrderToken,
     activation_receipt: receipt,
     activation_created_at: nowIso(),
-    order_url: buildUrl(config.orderBaseUrl, {
-      token: activationOrderToken,
-      email: mappedMember.email,
-    }),
-    activation_url: buildUrl(config.activationBaseUrl, {
-      token: activationToken,
-      email: mappedMember.email,
-    }),
+    order_url: generateOrderUrl(config, activationOrderToken, mappedMember.email),
+    activation_url: generateActivationUrl(config, activationToken, mappedMember.email),
   };
 }
 
-async function generateReferenceId() {
-  return `KF-${await randomToken("", 10)}`;
+async function generateRefFromMember(member) {
+  const namePart = normalizeReferencePart(member.full_name, "MEMBER");
+  const cityPart = normalizeReferencePart(member.city, "GLOBAL");
+  const suffix = await generateUppercaseToken(4);
+
+  return `KF-${namePart}-${cityPart}-${suffix}`;
 }
 
-async function randomToken(prefix, byteLength) {
+async function generateUniqueToken() {
+  return `mem_${await generateHexToken(18)}`;
+}
+
+async function generateActivationToken() {
+  return `act_${await generateHexToken(18)}`;
+}
+
+async function generateActivationOrderToken() {
+  return `ord_${await generateHexToken(18)}`;
+}
+
+async function generateOrderReference() {
+  return `KFO-${await generateUppercaseToken(12)}`;
+}
+
+function generateActivationReceipt(mappedMember) {
+  if (mappedMember.legacy_receipt) {
+    return mappedMember.legacy_receipt;
+  }
+
+  return `rcpt_${mappedMember.source_row_number}_${Date.now()}`;
+}
+
+function generateActivationUrl(config, activationToken, email) {
+  return buildUrl(config.activationBaseUrl, {
+    token: activationToken,
+    email,
+  });
+}
+
+function generateOrderUrl(config, activationOrderToken, email) {
+  return buildUrl(config.orderBaseUrl, {
+    token: activationOrderToken,
+    email,
+  });
+}
+
+function normalizeReferencePart(value, fallback) {
+  const normalized = normalizeString(value);
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  const compact = normalized
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "")
+    .slice(0, 8);
+
+  return compact || fallback;
+}
+
+async function generateUppercaseToken(byteLength) {
+  return (await generateHexToken(byteLength)).toUpperCase();
+}
+
+async function generateHexToken(byteLength) {
   const bytes = new Uint8Array(byteLength || 18);
   crypto.getRandomValues(bytes);
-  const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
-  return prefix ? `${prefix}_${token}` : token.toUpperCase();
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function buildUrl(baseUrl, params) {
@@ -846,6 +901,7 @@ async function initializeIntermediateDb(db) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         action_required TEXT NOT NULL,
         migration_status TEXT NOT NULL,
+        production_write_status TEXT NOT NULL,
         action_reason TEXT,
         source_row_number INTEGER NOT NULL,
         email TEXT,
@@ -885,6 +941,22 @@ async function initializeIntermediateDb(db) {
     ),
     db.prepare(
       `
+      CREATE TABLE IF NOT EXISTS migration_locks (
+        lock_name TEXT PRIMARY KEY,
+        lock_id TEXT NOT NULL,
+        acquired_at TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+      )
+      `
+    ),
+    db.prepare(
+      `
+      CREATE INDEX IF NOT EXISTS idx_migration_locks_expires_at
+      ON migration_locks (expires_at)
+      `
+    ),
+    db.prepare(
+      `
       CREATE TABLE IF NOT EXISTS migration_state (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         last_scanned_sheet_row INTEGER NOT NULL DEFAULT 1,
@@ -919,7 +991,99 @@ async function initializeIntermediateDb(db) {
     ),
   ]);
 
+  await ensureMigrationRowsProductionStatusColumn(db);
+
   await db.prepare("INSERT OR IGNORE INTO migration_state (id) VALUES (1)").run();
+}
+
+async function ensureMigrationRowsProductionStatusColumn(db) {
+  const columns = await db.prepare("PRAGMA table_info(migration_rows)").all();
+  const columnNames = new Set((columns.results || []).map((column) => column.name));
+
+  if (!columnNames.has("production_write_status")) {
+    await db.prepare(
+      `
+      ALTER TABLE migration_rows
+      ADD COLUMN production_write_status TEXT NOT NULL DEFAULT 'PENDING'
+      `
+    ).run();
+
+    await db.prepare(
+      `
+      UPDATE migration_rows
+      SET production_write_status =
+        CASE
+          WHEN migration_status = 'SUCCESS'
+            AND action_required IN ('CREATE_PAID', 'CREATE_UNPAID', 'UPGRADE_TO_PAID')
+            AND production_written_at IS NULL
+          THEN 'NOT_WRITTEN'
+          ELSE migration_status
+        END
+      `
+    ).run();
+  }
+}
+
+async function acquireMigrationLock(db, config, runId) {
+  const nowMs = Date.now();
+  const expiresAt = nowMs + config.lockTimeoutMs;
+
+  await db.prepare(
+    `
+    DELETE FROM migration_locks
+    WHERE lock_name = 'member_migration'
+      AND expires_at <= ?
+    `
+  )
+    .bind(nowMs)
+    .run();
+
+  try {
+    await db.prepare(
+      `
+      INSERT INTO migration_locks (
+        lock_name,
+        lock_id,
+        acquired_at,
+        expires_at
+      )
+      VALUES ('member_migration', ?, ?, ?)
+      `
+    )
+      .bind(runId, nowIso(), expiresAt)
+      .run();
+
+    return true;
+  } catch (error) {
+    const activeLock = await db.prepare(
+      `
+      SELECT lock_id, acquired_at, expires_at
+      FROM migration_locks
+      WHERE lock_name = 'member_migration'
+      LIMIT 1
+      `
+    ).first();
+
+    logEvent("migration_lock_busy", {
+      run_id: runId,
+      active_lock: activeLock,
+      error: formatError(error),
+    });
+
+    return false;
+  }
+}
+
+async function releaseMigrationLock(db, runId) {
+  await db.prepare(
+    `
+    DELETE FROM migration_locks
+    WHERE lock_name = 'member_migration'
+      AND lock_id = ?
+    `
+  )
+    .bind(runId)
+    .run();
 }
 
 async function startRun(db, runId, mode, workerVersion) {
@@ -1029,6 +1193,7 @@ async function saveAuditRow(db, auditRow) {
     INSERT INTO migration_rows (
       action_required,
       migration_status,
+      production_write_status,
       action_reason,
       source_row_number,
       email,
@@ -1050,10 +1215,11 @@ async function saveAuditRow(db, auditRow) {
       run_id,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(source_row_number) DO UPDATE SET
       action_required = excluded.action_required,
       migration_status = excluded.migration_status,
+      production_write_status = excluded.production_write_status,
       action_reason = excluded.action_reason,
       email = excluded.email,
       phone = excluded.phone,
@@ -1078,6 +1244,7 @@ async function saveAuditRow(db, auditRow) {
     .bind(
       auditRow.action_required,
       auditRow.migration_status,
+      auditRow.production_write_status,
       auditRow.action_reason,
       auditRow.source_row_number,
       auditRow.email,
@@ -1110,6 +1277,7 @@ async function markAuditRowSuccess(db, sourceRowNumber, targetMemberId) {
     UPDATE migration_rows
     SET
       migration_status = ?,
+      production_write_status = ?,
       action_reason = 'Production write successful.',
       target_member_id = ?,
       production_written_at = ?,
@@ -1118,7 +1286,14 @@ async function markAuditRowSuccess(db, sourceRowNumber, targetMemberId) {
     WHERE source_row_number = ?
     `
   )
-    .bind(MIGRATION_STATUS.SUCCESS, targetMemberId, writtenAt, writtenAt, sourceRowNumber)
+    .bind(
+      MIGRATION_STATUS.SUCCESS,
+      MIGRATION_STATUS.SUCCESS,
+      targetMemberId,
+      writtenAt,
+      writtenAt,
+      sourceRowNumber
+    )
     .run();
 }
 
@@ -1158,6 +1333,7 @@ async function markAuditRowFailed(db, sourceRowNumber, error) {
     UPDATE migration_rows
     SET
       migration_status = ?,
+      production_write_status = ?,
       action_reason = 'Production write failed.',
       error_message = ?,
       retry_count = retry_count + 1,
@@ -1165,7 +1341,13 @@ async function markAuditRowFailed(db, sourceRowNumber, error) {
     WHERE source_row_number = ?
     `
   )
-    .bind(MIGRATION_STATUS.FAILED, error && error.message ? error.message : String(error), failedAt, sourceRowNumber)
+    .bind(
+      MIGRATION_STATUS.FAILED,
+      MIGRATION_STATUS.FAILED,
+      error && error.message ? error.message : String(error),
+      failedAt,
+      sourceRowNumber
+    )
     .run();
 }
 
@@ -1174,7 +1356,7 @@ async function getPendingProductionRows(db, limit) {
     `
     SELECT *
     FROM migration_rows
-    WHERE migration_status IN (?, ?, ?)
+    WHERE production_write_status IN (?, ?, ?)
       AND action_required IN ('CREATE_PAID', 'CREATE_UNPAID', 'UPGRADE_TO_PAID')
     ORDER BY source_row_number ASC
     LIMIT ?
@@ -1311,7 +1493,7 @@ async function writeMemberToProduction(options) {
     return upgradeMemberToPaid(productionDb, targetMemberId, values);
   }
 
-  throw new Error(`Action is not a production write action: ${action}`);
+  fail(`Action is not a production write action: ${action}`);
 }
 
 async function createMember(db, values) {
@@ -1326,7 +1508,7 @@ async function createMember(db, values) {
     .first();
 
   if (!result || !result.id) {
-    throw new Error("Production insert did not return a member id.");
+    fail("Production insert did not return a member id.");
   }
 
   return { memberId: result.id, generated: values };
@@ -1334,7 +1516,7 @@ async function createMember(db, values) {
 
 async function upgradeMemberToPaid(db, memberId, values) {
   if (!memberId) {
-    throw new Error("Cannot upgrade member without target member id.");
+    fail("Cannot upgrade member without target member id.");
   }
 
   const assignments = PAID_UPDATE_COLUMNS.map((column) => `${column} = ?`).join(", ");
@@ -1353,7 +1535,7 @@ async function upgradeMemberToPaid(db, memberId, values) {
     .first();
 
   if (!result || !result.id) {
-    throw new Error("Production upgrade did not update an unpaid member.");
+    fail("Production upgrade did not update an unpaid member.");
   }
 
   return { memberId: result.id, generated: values };
@@ -1383,6 +1565,7 @@ function buildAuditGeneratedFields(generated) {
 
 async function runMigration(options) {
   const config = options.config;
+  const env = options.env;
   const productionDb = options.productionDb;
   const intermediateDb = options.intermediateDb;
   const trigger = options.trigger;
@@ -1390,17 +1573,29 @@ async function runMigration(options) {
   const runId = crypto.randomUUID();
   const mode = config.testMode ? "TEST" : "LIVE";
   const summary = createRunSummary(runId, mode, trigger);
+  const lockAcquired = await acquireMigrationLock(intermediateDb, config, runId);
+
+  if (!lockAcquired) {
+    return {
+      ...summary,
+      success: false,
+      skipped: true,
+      reason: "Another migration run is already active.",
+      completedAt: nowIso(),
+      durationMs: Date.now() - startedAtMs,
+    };
+  }
 
   await startRun(intermediateDb, runId, mode, config.workerVersion);
 
-  logEvent("migration_run_started", {
-    run_id: runId,
-    mode,
-    trigger,
-    batch_size: config.batchSize,
-  });
-
   try {
+    logEvent("migration_run_started", {
+      run_id: runId,
+      mode,
+      trigger,
+      batch_size: config.batchSize,
+    });
+
     if (!config.testMode) {
       await drainPendingProductionWrites(config, productionDb, intermediateDb, summary);
     }
@@ -1411,6 +1606,7 @@ async function runMigration(options) {
         : config.batchSize - summary.rowsProcessed;
 
       await scanSheetBatch(
+        env,
         config,
         productionDb,
         intermediateDb,
@@ -1427,6 +1623,8 @@ async function runMigration(options) {
       run_id: runId,
       error: formatError(error),
     });
+  } finally {
+    await releaseMigrationLock(intermediateDb, runId);
   }
 
   const completion = await completeRun(intermediateDb, runId, startedAtMs, summary);
@@ -1447,11 +1645,11 @@ async function runMigration(options) {
   return summary;
 }
 
-async function scanSheetBatch(config, productionDb, intermediateDb, runId, summary, rowCount) {
+async function scanSheetBatch(env, config, productionDb, intermediateDb, runId, summary, rowCount) {
   const state = await getMigrationState(intermediateDb);
   const startRowNumber = Math.max(2, Number(state.last_scanned_sheet_row || 1) + 1);
-  const header = await readHeaderRow(config);
-  const sheetRows = await readSheetRows(config, startRowNumber, rowCount, header);
+  const header = await readHeaderRow(env, config);
+  const sheetRows = await readSheetRows(env, config, startRowNumber, rowCount, header);
   const batchSeenEmails = new Set();
 
   for (const sheetRow of sheetRows) {
@@ -1490,6 +1688,7 @@ async function scanSheetBatch(config, productionDb, intermediateDb, runId, summa
       await saveAuditRow(intermediateDb, {
         action_required: ACTIONS.ERROR,
         migration_status: MIGRATION_STATUS.FAILED,
+        production_write_status: MIGRATION_STATUS.FAILED,
         action_reason: "Row processing failed.",
         source_row_number: sheetRow.sourceRowNumber,
         email: null,
@@ -1534,6 +1733,11 @@ async function handleScannedRow(
   await saveAuditRow(intermediateDb, {
     action_required: decision.action,
     migration_status: initialStatus,
+    production_write_status: resolveProductionWriteStatus(
+      config,
+      decision,
+      sheetRow.sourceRowNumber
+    ),
     action_reason: resolveActionReason(config, decision, sheetRow.sourceRowNumber),
     source_row_number: sheetRow.sourceRowNumber,
     email: mappedMember.email,
@@ -1603,6 +1807,8 @@ async function drainPendingProductionWrites(config, productionDb, intermediateDb
       await saveAuditRow(intermediateDb, {
         action_required: decision.action,
         migration_status:
+          decision.action === ACTIONS.ERROR ? MIGRATION_STATUS.FAILED : MIGRATION_STATUS.SUCCESS,
+        production_write_status:
           decision.action === ACTIONS.ERROR ? MIGRATION_STATUS.FAILED : MIGRATION_STATUS.SUCCESS,
         action_reason: decision.reason,
         source_row_number: row.source_row_number,
@@ -1711,6 +1917,22 @@ function resolveInitialStatus(config, decision, sourceRowNumber) {
   return MIGRATION_STATUS.PENDING;
 }
 
+function resolveProductionWriteStatus(config, decision, sourceRowNumber) {
+  if (decision.action === ACTIONS.ERROR) {
+    return MIGRATION_STATUS.FAILED;
+  }
+
+  if (!isProductionAction(decision.action)) {
+    return MIGRATION_STATUS.SUCCESS;
+  }
+
+  if (config.testMode && sourceRowNumber !== config.testSheetRow) {
+    return MIGRATION_STATUS.NOT_WRITTEN;
+  }
+
+  return MIGRATION_STATUS.PENDING;
+}
+
 function resolveActionReason(config, decision, sourceRowNumber) {
   if (!config.testMode || !isProductionAction(decision.action)) {
     return decision.reason;
@@ -1746,14 +1968,49 @@ function createRunSummary(runId, mode, trigger) {
 ******************************************************************/
 
 addEventListener("fetch", (event) => {
-  event.respondWith(handleFetchRequest(event.request));
+  event.respondWith(handleFetchRequest(event.request, getWorkerEnvFromBindings()));
 });
 
 addEventListener("scheduled", (event) => {
-  event.waitUntil(handleScheduledRun(event));
+  event.waitUntil(handleScheduledRun(event, getWorkerEnvFromBindings()));
 });
 
-async function handleFetchRequest(request) {
+function getWorkerEnvFromBindings() {
+  return {
+    PRODUCTION_DB,
+    MIGRATION_DB,
+    WORKER_VERSION: typeof WORKER_VERSION === "undefined" ? undefined : WORKER_VERSION,
+    BATCH_SIZE: typeof BATCH_SIZE === "undefined" ? undefined : BATCH_SIZE,
+    TEST_MODE: typeof TEST_MODE === "undefined" ? undefined : TEST_MODE,
+    TEST_SHEET_ROW: typeof TEST_SHEET_ROW === "undefined" ? undefined : TEST_SHEET_ROW,
+    GOOGLE_SHEET_ID: typeof GOOGLE_SHEET_ID === "undefined" ? undefined : GOOGLE_SHEET_ID,
+    WORKSHEET_NAME: typeof WORKSHEET_NAME === "undefined" ? undefined : WORKSHEET_NAME,
+    MAX_RETRIES: typeof MAX_RETRIES === "undefined" ? undefined : MAX_RETRIES,
+    LOCK_TIMEOUT: typeof LOCK_TIMEOUT === "undefined" ? undefined : LOCK_TIMEOUT,
+    INITIAL_RETRY_DELAY_MS:
+      typeof INITIAL_RETRY_DELAY_MS === "undefined" ? undefined : INITIAL_RETRY_DELAY_MS,
+    ACTIVATION_BASE_URL:
+      typeof ACTIVATION_BASE_URL === "undefined" ? undefined : ACTIVATION_BASE_URL,
+    ORDER_BASE_URL: typeof ORDER_BASE_URL === "undefined" ? undefined : ORDER_BASE_URL,
+    DEFAULT_ACTIVATION_CURRENCY:
+      typeof DEFAULT_ACTIVATION_CURRENCY === "undefined"
+        ? undefined
+        : DEFAULT_ACTIVATION_CURRENCY,
+    DEFAULT_ACTIVATION_AMOUNT:
+      typeof DEFAULT_ACTIVATION_AMOUNT === "undefined" ? undefined : DEFAULT_ACTIVATION_AMOUNT,
+    DEFAULT_ACTIVATION_DISCOUNT_AMOUNT:
+      typeof DEFAULT_ACTIVATION_DISCOUNT_AMOUNT === "undefined"
+        ? undefined
+        : DEFAULT_ACTIVATION_DISCOUNT_AMOUNT,
+    GOOGLE_SERVICE_ACCOUNT_EMAIL:
+      typeof GOOGLE_SERVICE_ACCOUNT_EMAIL === "undefined" ? undefined : GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    GOOGLE_CLIENT_EMAIL:
+      typeof GOOGLE_CLIENT_EMAIL === "undefined" ? undefined : GOOGLE_CLIENT_EMAIL,
+    GOOGLE_PRIVATE_KEY: typeof GOOGLE_PRIVATE_KEY === "undefined" ? undefined : GOOGLE_PRIVATE_KEY,
+  };
+}
+
+async function handleFetchRequest(request, env) {
   try {
     const url = new URL(request.url);
 
@@ -1764,8 +2021,8 @@ async function handleFetchRequest(request) {
       );
     }
 
-    const config = getRuntimeConfig();
-    const databases = getDatabases(config);
+    const config = getRuntimeConfig(env);
+    const databases = getDatabases(env);
 
     await initializeIntermediateDb(databases.intermediateDb);
 
@@ -1778,8 +2035,8 @@ async function handleFetchRequest(request) {
         batch_size: config.batchSize,
         worksheet_name: config.worksheetName,
         test_sheet_row: config.testSheetRow,
-        production_binding_name: config.productionBindingName,
-        intermediate_binding_name: config.intermediateBindingName,
+        production_binding_name: "PRODUCTION_DB",
+        intermediate_binding_name: "MIGRATION_DB",
       });
     }
 
@@ -1787,6 +2044,7 @@ async function handleFetchRequest(request) {
       return jsonResponse(
         await runMigration({
           config,
+          env,
           productionDb: databases.productionDb,
           intermediateDb: databases.intermediateDb,
           trigger: "http",
@@ -1807,13 +2065,14 @@ async function handleFetchRequest(request) {
   }
 }
 
-async function handleScheduledRun(event) {
-  const config = getRuntimeConfig();
-  const databases = getDatabases(config);
+async function handleScheduledRun(event, env) {
+  const config = getRuntimeConfig(env);
+  const databases = getDatabases(env);
 
   await initializeIntermediateDb(databases.intermediateDb);
   await runMigration({
     config,
+    env,
     productionDb: databases.productionDb,
     intermediateDb: databases.intermediateDb,
     trigger: "scheduled",
