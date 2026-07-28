@@ -1,0 +1,165 @@
+const TELEGRAM_API = "https://api.telegram.org";
+
+/**
+ * =========================
+ * SLOT CONTROL PANEL
+ * =========================
+ * Enable / disable by commenting lines
+ */
+
+const ACTIVE_SLOT = {
+
+  // TEST SLOT
+  //"05:10": true,
+
+  // DAILY SLOTS
+  "08:00": true,
+  //"09:00": true,
+  "10:00": true,
+  //"11:00": true,
+  "12:00": true,
+
+  //"13:00": true,
+  "14:00": true,
+  //"15:00": true,
+  "16:00": true,
+  //"17:00": true,
+
+  "18:00": true,
+ // "19:00": true,
+  "20:00": true,
+ // "21:00": true,
+  "22:00": true
+
+};
+
+/**
+ * =========================
+ * TIME SLOT GENERATOR (IST)
+ * =========================
+ */
+
+function getISTSlot() {
+
+  const now = new Date();
+
+  const ist = new Date(
+    now.getTime() +
+    now.getTimezoneOffset() * 60000 +
+    330 * 60000
+  );
+
+  const hh = String(ist.getHours()).padStart(2, "0");
+  const mm = String(ist.getMinutes()).padStart(2, "0");
+
+  return `${hh}:${mm}`;
+
+}
+
+/**
+ * =========================
+ * TELEGRAM SENDER
+ * =========================
+ */
+
+async function sendTelegram(env, text) {
+
+  const response = await fetch(
+    `${TELEGRAM_API}/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_GROUP_ID,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return response.json();
+
+}
+
+/**
+ * =========================
+ * CORE HANDLER
+ * =========================
+ */
+
+async function handleScheduled(env) {
+
+  const slot = getISTSlot();
+
+  // Ignore disabled slots
+  if (!ACTIVE_SLOT[slot]) {
+    return;
+  }
+
+  const MESSAGE = `
+🔶 <b>KENFOLIOS ANNOUNCEMENT GROUP</b> 🔶
+
+Note: This is the default landing group for all members. Leaving this group may pause your membership and prevent important announcements from reaching you. Please keep notifications enabled or check the group regularly for updates.
+
+<b>Posting is not allowed in this Announcement Group. Members are encouraged to use the WhatsApp Groups and 24/7 Live Discussion Group below to post, interact, network and participate in community discussions.</b>
+
+Use the links below to join our WhatsApp Groups, Live Discussion Group, and read about the Hidden Advantage of the KenFolios Community.
+
+<b>Important:</b> WhatsApp group joining has now resumed. Members can use the link below to join the WhatsApp groups. Due to a high volume of requests, approvals may take a few days. Thank you for your patience.
+
+📲 <b>WhatsApp Groups</b>
+${env.WHATSAPP_GROUPS_URL}
+
+💬 <b>24/7 Live Discussion Group</b>
+${env.LIVE_DISCUSSION_GROUP_URL}
+
+📖 <b>The Hidden Advantage</b>
+${env.ADVANTAGE_URL}
+
+🛟 <b>Support</b>
+${env.SUPPORT_URL}
+
+More important announcements, updates, events and new features will be shared here soon. Stay tuned.
+`;
+
+  await sendTelegram(env, MESSAGE);
+
+}
+/**
+ * =========================
+ * EXPORTS
+ * =========================
+ */
+
+export default {
+
+  async fetch(request) {
+
+    return new Response(
+      "KenFolios Telegram Announcement Worker is running.",
+      {
+        status: 200,
+        headers: {
+          "content-type": "text/plain"
+        }
+      }
+    );
+
+  },
+
+  async scheduled(event, env, ctx) {
+
+    ctx.waitUntil(
+      handleScheduled(env)
+    );
+
+  }
+
+};
