@@ -4770,7 +4770,10 @@ const j = await resp.json();
         } catch (e) {
           // ignore
         }
-
+// This page was not reached via a live Razorpay success.
+if (!eventId) {
+  return;
+}
         metaEvent('Purchase', payload, eventId);
       }
     }
