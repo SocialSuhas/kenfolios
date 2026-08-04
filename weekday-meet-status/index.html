@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="description"
+    content="KenFolios Business Community online founder meetup information, membership access, reactivation and support."
+>
+
+<meta name="robots" content="noindex, follow">
+
+<title>Online Founder Meetup | KenFolios Business Community</title>
+
+<style>
+
+:root{
+    --kf-red:#E11D2E;
+    --kf-red-light:#ff5f6d;
+    --bg:#0f172a;
+    --card:#111827;
+    --card-light:#172033;
+    --text:#ffffff;
+    --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    overflow-x:hidden;
+    line-height:1.6;
+}
+
+a{
+    -webkit-tap-highlight-color:transparent;
+}
+
+.watermark{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18vw;
+    font-weight:900;
+    letter-spacing:-1vw;
+    color:rgba(225,29,46,.03);
+    pointer-events:none;
+    user-select:none;
+    z-index:0;
+}
+
+.floating{
+    position:fixed;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:1;
+}
+
+.float{
+    position:absolute;
+    bottom:-120px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.05);
+    padding:.8rem 1rem;
+    border-radius:14px;
+    color:rgba(255,255,255,.35);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    animation:float linear infinite;
+}
+
+.float:nth-child(1){
+    left:5%;
+    animation-duration:18s;
+}
+
+.float:nth-child(2){
+    left:20%;
+    animation-duration:24s;
+    animation-delay:3s;
+}
+
+.float:nth-child(3){
+    left:40%;
+    animation-duration:20s;
+    animation-delay:7s;
+}
+
+.float:nth-child(4){
+    left:60%;
+    animation-duration:17s;
+    animation-delay:1s;
+}
+
+.float:nth-child(5){
+    left:80%;
+    animation-duration:22s;
+    animation-delay:5s;
+}
+
+.float:nth-child(6){
+    left:90%;
+    animation-duration:25s;
+    animation-delay:9s;
+}
+
+@keyframes float{
+    from{
+        transform:translateY(0) rotate(0deg);
+    }
+
+    to{
+        transform:translateY(-125vh) rotate(8deg);
+    }
+}
+
+.container{
+    width:min(1180px,92%);
+    margin:auto;
+    position:relative;
+    z-index:5;
+}
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:5rem 0;
+}
+
+.hero-content{
+    width:100%;
+}
+
+.brand{
+    font-size:clamp(4rem,10vw,8rem);
+    font-weight:900;
+    letter-spacing:-4px;
+    line-height:.9;
+}
+
+.subbrand{
+    color:var(--muted);
+    margin-top:.8rem;
+    font-size:clamp(1rem,2vw,1.25rem);
+    letter-spacing:.04em;
+}
+
+.divider{
+    width:140px;
+    height:3px;
+    background:var(--kf-red);
+    margin:2rem auto;
+    border-radius:999px;
+}
+
+.eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:.6rem;
+    padding:.55rem 1rem;
+    margin-bottom:1.5rem;
+    border:1px solid rgba(225,29,46,.32);
+    background:rgba(225,29,46,.09);
+    color:#fecdd3;
+    border-radius:999px;
+    font-size:.86rem;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+}
+
+.eyebrow-dot{
+    width:8px;
+    height:8px;
+    background:var(--kf-red);
+    border-radius:50%;
+    box-shadow:0 0 18px rgba(225,29,46,.9);
+}
+
+.hero h1{
+    max-width:950px;
+    margin:0 auto 1.5rem;
+    font-size:clamp(2.2rem,5vw,4.5rem);
+    line-height:1.08;
+    letter-spacing:-2px;
+}
+
+.hero h1 span{
+    color:var(--kf-red);
+}
+
+.hero-description{
+    max-width:850px;
+    margin:auto;
+    color:var(--muted);
+    line-height:1.9;
+    font-size:clamp(1rem,2vw,1.12rem);
+}
+
+.hero-description strong{
+    color:#fff;
+}
+
+.hero-note{
+    max-width:760px;
+    margin:1.25rem auto 0;
+    color:#cbd5e1;
+    font-size:.98rem;
+}
+
+.hero-actions{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:1rem;
+    margin-top:2.3rem;
+}
+
+.btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:54px;
+    padding:.95rem 1.5rem;
+    border-radius:999px;
+    font-weight:750;
+    text-decoration:none;
+    transition:
+        transform .25s ease,
+        opacity .25s ease,
+        border-color .25s ease,
+        background .25s ease;
+}
+
+.btn:hover{
+    transform:translateY(-3px);
+}
+
+.btn-primary{
+    background:var(--kf-red);
+    color:#fff;
+    box-shadow:0 16px 45px rgba(225,29,46,.22);
+}
+
+.btn-primary:hover{
+    opacity:.92;
+}
+
+.btn-secondary{
+    color:#fff;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.04);
+}
+
+.btn-secondary:hover{
+    border-color:rgba(225,29,46,.5);
+    background:rgba(225,29,46,.08);
+}
+
+.scroll-cue{
+    margin-top:3.5rem;
+    color:rgba(255,255,255,.42);
+    font-size:.8rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+}
+
+.scroll-line{
+    width:1px;
+    height:42px;
+    margin:1rem auto 0;
+    background:linear-gradient(
+        to bottom,
+        rgba(225,29,46,.9),
+        transparent
+    );
+}
+
+.section{
+    padding:6rem 0;
+}
+
+.section-heading{
+    max-width:800px;
+    margin:0 auto 3rem;
+    text-align:center;
+}
+
+.section-label{
+    color:var(--kf-red);
+    font-size:.85rem;
+    font-weight:800;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+}
+
+.section-heading h2{
+    margin-top:.8rem;
+    font-size:clamp(2rem,4vw,3.4rem);
+    line-height:1.15;
+}
+
+.section-heading p{
+    margin-top:1rem;
+    color:var(--muted);
+    line-height:1.9;
+}
+
+.actions-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1.25rem;
+}
+
+.action-card{
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+    padding:2rem;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.035),
+            rgba(255,255,255,.012)
+        ),
+        var(--card);
+    border:1px solid var(--border);
+    border-radius:24px;
+    transition:
+        transform .3s ease,
+        border-color .3s ease,
+        box-shadow .3s ease;
+}
+
+.action-card:hover{
+    transform:translateY(-7px);
+    border-color:rgba(225,29,46,.45);
+    box-shadow:0 22px 55px rgba(0,0,0,.22);
+}
+
+.icon{
+    width:54px;
+    height:54px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:1.4rem;
+    border-radius:16px;
+    background:rgba(225,29,46,.1);
+    border:1px solid rgba(225,29,46,.25);
+    color:#fff;
+    font-size:1.4rem;
+    font-weight:900;
+}
+
+.action-card h3{
+    font-size:1.45rem;
+    line-height:1.25;
+}
+
+.action-card p{
+    margin-top:1rem;
+    color:var(--muted);
+    line-height:1.8;
+    flex-grow:1;
+}
+
+.action-card .btn{
+    width:100%;
+    margin-top:1.7rem;
+}
+
+.content-card{
+    position:relative;
+    overflow:hidden;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.035),
+            rgba(255,255,255,.01)
+        ),
+        var(--card);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:clamp(2rem,5vw,4rem);
+    transition:
+        transform .3s ease,
+        border-color .3s ease;
+}
+
+.content-card:hover{
+    transform:translateY(-5px);
+    border-color:rgba(225,29,46,.35);
+}
+
+.content-card::before{
+    content:"";
+    position:absolute;
+    top:-120px;
+    right:-120px;
+    width:280px;
+    height:280px;
+    border-radius:50%;
+    background:rgba(225,29,46,.07);
+    filter:blur(2px);
+}
+
+.content-card-inner{
+    position:relative;
+    z-index:2;
+}
+
+.card-logo{
+    margin-bottom:1.2rem;
+    font-size:clamp(2rem,5vw,3.6rem);
+    font-weight:900;
+    line-height:1.05;
+    letter-spacing:-1px;
+}
+
+.content-card p{
+    max-width:900px;
+    color:var(--muted);
+    line-height:1.95;
+}
+
+.content-card p + p{
+    margin-top:1.25rem;
+}
+
+.content-card strong{
+    color:#fff;
+}
+
+.info-highlight{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:1.2rem;
+    align-items:flex-start;
+    margin-top:2rem;
+    padding:1.4rem;
+    background:rgba(255,255,255,.025);
+    border:1px solid var(--border);
+    border-radius:18px;
+}
+
+.info-number{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:46px;
+    height:46px;
+    flex-shrink:0;
+    border-radius:50%;
+    background:var(--kf-red);
+    color:#fff;
+    font-weight:900;
+}
+
+.info-highlight h3{
+    font-size:1.1rem;
+}
+
+.info-highlight p{
+    margin-top:.4rem;
+    line-height:1.75;
+}
+
+.spacer{
+    height:2rem;
+}
+
+.meetup-section{
+    text-align:center;
+}
+
+.meetup-time{
+    font-size:clamp(5rem,13vw,10rem);
+    color:var(--kf-red);
+    font-weight:900;
+    line-height:.9;
+    letter-spacing:-5px;
+}
+
+.meetup-label{
+    margin-top:1.2rem;
+    color:#fff;
+    font-weight:800;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+}
+
+.meetup-section p{
+    max-width:800px;
+    margin:1.4rem auto 0;
+    color:var(--muted);
+    line-height:1.9;
+}
+
+.timeline{
+    max-width:900px;
+    margin:2.4rem auto 0;
+}
+
+.timeline-bar{
+    height:12px;
+    overflow:hidden;
+    position:relative;
+    background:rgba(255,255,255,.08);
+    border-radius:999px;
+}
+
+.timeline-fill{
+    width:100%;
+    height:100%;
+    position:relative;
+    border-radius:999px;
+    background:linear-gradient(
+        90deg,
+        var(--kf-red),
+        var(--kf-red-light)
+    );
+}
+
+.timeline-fill::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:-100px;
+    width:100px;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.95),
+        transparent
+    );
+    animation:pulse 2.5s linear infinite;
+}
+
+@keyframes pulse{
+    from{
+        left:-100px;
+    }
+
+    to{
+        left:100%;
+    }
+}
+
+.final-card{
+    text-align:center;
+}
+
+.final-card .card-logo{
+    max-width:850px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.final-card p{
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.signature{
+    margin-top:2rem;
+    color:#fff;
+    font-weight:750;
+}
+
+.footer{
+    position:relative;
+    z-index:5;
+    margin-top:5rem;
+    border-top:1px solid var(--border);
+}
+
+.footer-inner{
+    width:min(1180px,92%);
+    margin:auto;
+    padding:2rem 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:1.2rem;
+    color:var(--muted);
+}
+
+.footer-links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:1rem;
+}
+
+.footer a{
+    color:#fff;
+    text-decoration:none;
+    transition:color .25s ease;
+}
+
+.footer a:hover{
+    color:var(--kf-red);
+}
+
+@media(max-width:900px){
+
+    .actions-grid{
+        grid-template-columns:1fr;
+    }
+
+    .action-card{
+        max-width:680px;
+        width:100%;
+        margin:auto;
+    }
+
+}
+
+@media(max-width:768px){
+
+    .hero{
+        min-height:auto;
+        padding:5rem 0 4rem;
+    }
+
+    .brand{
+        letter-spacing:-2px;
+    }
+
+    .hero h1{
+        letter-spacing:-1px;
+    }
+
+    .hero-actions{
+        flex-direction:column;
+        width:100%;
+    }
+
+    .hero-actions .btn{
+        width:min(100%,420px);
+    }
+
+    .section{
+        padding:4rem 0;
+    }
+
+    .content-card{
+        border-radius:22px;
+    }
+
+    .info-highlight{
+        grid-template-columns:1fr;
+    }
+
+    .footer-inner{
+        flex-direction:column;
+        text-align:center;
+    }
+
+    .footer-links{
+        justify-content:center;
+    }
+
+}
+
+@media(max-width:480px){
+
+    .container{
+        width:min(92%,1180px);
+    }
+
+    .brand{
+        font-size:3.6rem;
+    }
+
+    .subbrand{
+        font-size:1rem;
+    }
+
+    .hero h1{
+        font-size:2.25rem;
+    }
+
+    .action-card{
+        padding:1.5rem;
+        border-radius:20px;
+    }
+
+    .meetup-time{
+        letter-spacing:-3px;
+    }
+
+}
+
+@media(prefers-reduced-motion:reduce){
+
+    html{
+        scroll-behavior:auto;
+    }
+
+    *,
+    *::before,
+    *::after{
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="watermark">
+    KENFOLIOS
+</div>
+
+<div class="floating" aria-hidden="true">
+    <div class="float">Community</div>
+    <div class="float">Founders</div>
+    <div class="float">Networking</div>
+    <div class="float">Business</div>
+    <div class="float">Meetups</div>
+    <div class="float">Connections</div>
+</div>
+
+<main>
+
+<section class="hero">
+
+    <div class="container hero-content">
+
+        <div class="brand">
+            KenFolios
+        </div>
+
+        <div class="subbrand">
+            Business Community
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Online Founder Meetup
+        </div>
+
+        <h1>
+            One Community.<br>
+            <span>Always Connected.</span>
+        </h1>
+
+        <p class="hero-description">
+            Today's <strong>5:00 PM weekday online meetup</strong> is not being
+            hosted due to <strong>scheduling and operational commitments</strong>.
+            We appreciate your understanding and look forward to welcoming you
+            at one of our upcoming online sessions.
+        </p>
+
+        <p class="hero-note">
+            You can use the same online meetup link that brought you to this page
+            to join future weekday online meetups whenever they are scheduled.
+        </p>
+
+        <div class="hero-actions">
+
+            <a
+                href="https://kenfolios.com/community"
+                class="btn btn-primary"
+                rel="nofollow noopener"
+            >
+                Access Membership
+            </a>
+
+            <a
+                href="https://kenfolios.com/reactivate"
+                class="btn btn-secondary"
+                rel="nofollow noopener"
+            >
+                Reactivate Membership
+            </a>
+
+            <a
+                href="https://kenfolios.com/support"
+                class="btn btn-secondary"
+                rel="nofollow noopener"
+            >
+                Get Support
+            </a>
+
+        </div>
+
+        <div class="scroll-cue">
+            Membership Assistance
+            <div class="scroll-line"></div>
+        </div>
+
+    </div>
+
+</section>
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div class="section-label">
+                Member Services
+            </div>
+
+            <h2>
+                Everything You May Need
+            </h2>
+
+            <p>
+                Access your membership, retrieve your activation details or contact
+                the KenFolios support team using the options below.
+            </p>
+
+        </div>
+
+        <div class="actions-grid">
+
+            <article class="action-card">
+
+                <div class="icon">
+                    01
+                </div>
+
+                <h3>
+                    Access Your Membership
+                </h3>
+
+                <p>
+                    Create a new KenFolios Business Community membership or use
+                    your existing registered email address to access your
+                    membership Order Page.
+                </p>
+
+                <a
+                    href="https://kenfolios.com/community"
+                    class="btn btn-primary"
+                    rel="nofollow noopener"
+                >
+                    Access Membership
+                </a>
+
+            </article>
+
+            <article class="action-card">
+
+                <div class="icon">
+                    02
+                </div>
+
+                <h3>
+                    Retrieve Your Links
+                </h3>
+
+                <p>
+                    Paid members can receive their Order Page link and Activation
+                    Link again through their registered email address.
+                </p>
+
+                <a
+                    href="https://kenfolios.com/reactivate"
+                    class="btn btn-primary"
+                    rel="nofollow noopener"
+                >
+                    Reactivate Membership
+                </a>
+
+            </article>
+
+            <article class="action-card">
+
+                <div class="icon">
+                    03
+                </div>
+
+                <h3>
+                    Get Membership Support
+                </h3>
+
+                <p>
+                    Contact our support team if you are facing any difficulty
+                    activating, accessing or using your KenFolios membership.
+                </p>
+
+                <a
+                    href="https://kenfolios.com/support"
+                    class="btn btn-primary"
+                    rel="nofollow noopener"
+                >
+                    Visit Support
+                </a>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="section">
+
+    <div class="container">
+
+        <article class="content-card">
+
+            <div class="content-card-inner">
+
+                <div class="card-logo">
+                    Access Your Membership
+                </div>
+
+                <p>
+                    Visit the KenFolios Business Community page to create a new
+                    membership or access an existing membership using your
+                    registered email address.
+                </p>
+
+                <p>
+                    Existing members can use their registered email address to
+                    reach their membership Order Page and continue the activation
+                    or onboarding process.
+                </p>
+
+                <a
+                    href="https://kenfolios.com/community"
+                    class="btn btn-primary"
+                    rel="nofollow noopener"
+                >
+                    Visit Community
+                </a>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+<section class="section">
+
+    <div class="container">
+
+        <article class="content-card">
+
+            <div class="content-card-inner">
+
+                <div class="card-logo">
+                    Need Your Activation Link Again?
+                </div>
+
+                <p>
+                    If you are a <strong>paid member</strong> and no longer have
+                    your Order Page link or Activation Link, you can request both
+                    links through the membership reactivation page.
+                </p>
+
+                <p>
+                    Your membership information will be sent to your registered
+                    email address after the system verifies your details.
+                </p>
+
+                <a
+                    href="https://kenfolios.com/reactivate"
+                    class="btn btn-primary"
+                    rel="nofollow noopener"
+                >
+                    Retrieve Membership Links
+                </a>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+<section class="section">
+
+    <div class="container">
+
+        <article class="content-card">
+
+            <div class="content-card-inner">
+
+                <div class="card-logo">
+                    Important Membership Information
+                </div>
+
+                <p>
+                    The KenFolios Business Community continues to operate across
+                    dedicated <strong>WhatsApp networking groups</strong>.
+                </p>
+
+                <p>
+                    Since <strong>December 2025</strong>, we have used a
+                    <strong>Telegram Landing Group</strong> for community
+                    automation, member onboarding and the distribution of
+                    membership-related information.
+                </p>
+
+                <div class="info-highlight">
+
+                    <div class="info-number">
+                        1
+                    </div>
+
+                    <div>
+                        <h3>
+                            Join the Telegram Landing Group
+                        </h3>
+
+                        <p>
+                            Paid members should join the Telegram Landing Group
+                            mentioned on their Order Page. Membership activation
+                            instructions, onboarding information and important
+                            community access details are shared there.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="info-highlight">
+
+                    <div class="info-number">
+                        2
+                    </div>
+
+                    <div>
+                        <h3>
+                            Participate Through WhatsApp Groups
+                        </h3>
+
+                        <p>
+                            Business networking and member interactions continue
+                            through dedicated WhatsApp groups based on cities,
+                            industries, interests and community activities.
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+<section class="section meetup-section">
+
+    <div class="container">
+
+        <div class="meetup-time">
+            5 PM
+        </div>
+
+        <div class="meetup-label">
+            Weekday Online Founder Meetups
+        </div>
+
+        <div class="timeline">
+
+            <div class="timeline-bar">
+                <div class="timeline-fill"></div>
+            </div>
+
+        </div>
+
+        <p>
+            Our online Founder Meetups are conducted on weekdays whenever
+            scheduled. You do not need a new meeting link. Simply use the same
+            online meetup link that brought you to this page to join an upcoming
+            session.
+        </p>
+
+        <p>
+            We look forward to meeting you, learning about your business and
+            helping you connect with other members of the KenFolios Business
+            Community.
+        </p>
+
+    </div>
+
+</section>
+
+<section class="section">
+
+    <div class="container">
+
+        <article class="content-card final-card">
+
+            <div class="content-card-inner">
+
+                <div class="card-logo">
+                    Thank You for Being Part of the Community
+                </div>
+
+                <p>
+                    Together, we continue building a powerful community of
+                    entrepreneurs, founders, business owners, professionals,
+                    startups and leaders from across India.
+                </p>
+
+                <p>
+                    We appreciate your understanding and look forward to welcoming
+                    you at an upcoming KenFolios online Founder Meetup.
+                </p>
+
+                <div class="signature">
+                    Team KenFolios
+                </div>
+
+                <div class="hero-actions">
+
+                    <a
+                        href="https://kenfolios.com/community"
+                        class="btn btn-primary"
+                        rel="nofollow noopener"
+                    >
+                        Access Membership
+                    </a>
+
+                    <a
+                        href="https://kenfolios.com/support"
+                        class="btn btn-secondary"
+                        rel="nofollow noopener"
+                    >
+                        Contact Support
+                    </a>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+</main>
+
+<footer class="footer">
+
+    <div class="footer-inner">
+
+        <div>
+            © 2026 KenFolios Media Private Limited
+        </div>
+
+        <nav class="footer-links" aria-label="Footer navigation">
+
+            <a
+                href="https://kenfolios.com/stories/"
+                rel="nofollow noopener"
+            >
+                Stories
+            </a>
+
+            <a
+                href="https://kenfolios.com/community/"
+                rel="nofollow noopener"
+            >
+                Community
+            </a>
+
+            <a
+                href="https://vstreet.in/"
+                rel="nofollow noopener"
+            >
+                VStreet
+            </a>
+
+            <a
+                href="https://kenfolios.com/privacy/"
+                rel="nofollow noopener"
+            >
+                Privacy
+            </a>
+
+            <a
+                href="https://kenfolios.com/terms/"
+                rel="nofollow noopener"
+            >
+                Terms
+            </a>
+
+            <a
+                href="https://kenfolios.com/support/"
+                rel="nofollow noopener"
+            >
+                Support
+            </a>
+
+        </nav>
+
+    </div>
+
+</footer>
+
+</body>
+</html>
