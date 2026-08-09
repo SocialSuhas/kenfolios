@@ -4087,6 +4087,20 @@ wrap.appendChild(gstWrap);
     }
   }
 
+// Read a browser cookie by name.
+// Used for Meta _fbp / _fbc identifiers during payment.
+function getCookie(name) {
+  const cookies = document.cookie.split('; ');
+
+  for (const cookie of cookies) {
+    const parts = cookie.split('=');
+    if (parts[0] === name) {
+      return decodeURIComponent(parts.slice(1).join('='));
+    }
+  }
+
+  return null;
+}
   /* -------- UPDATED: confirmPay now lazy-loads Razorpay script AND turns UI into "Activate Membership" -------- */
   async function confirmPay(id, box){
     // If there is no pay button (paid order), or it’s disabled, do nothing
@@ -4136,7 +4150,10 @@ const resp = await fetch(CREATE_ORDER_ENDPOINT, {
 
     business_category: ($id('ord_business_category')?.value || '').trim(),
     business_name: ($id('ord_business_name')?.value || '').trim(),
-    gst_number: (($id('ord_gst_number')?.value || '').trim()).toUpperCase()
+    gst_number: (($id('ord_gst_number')?.value || '').trim()).toUpperCase(),
+
+   fbp: getCookie('_fbp'),
+fbc: getCookie('_fbc')
   })
 });
 
