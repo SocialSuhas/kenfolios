@@ -4613,6 +4613,8 @@ const j = await resp.json();
   })();
 
   // ---------- 2) Lead when join form is submitted ("Submit Details & Continue") ----------
+ var registrationSubmitted = false;
+ 
   (function trackLeadOnFormSubmit() {
     var sent = false;
 
@@ -4621,8 +4623,10 @@ const j = await resp.json();
       var form = e.target;
       if (!form || form.id !== 'kfJoinInfoForm') return;
 
-      sent = true;
-      metaEvent('Lead', {
+      registrationSubmitted = true;
+sent = true;
+
+metaEvent('Lead', {
         content_name: 'Membership Lead',
         content_type: 'membership_registration',
         step: 'submit_details_continue'
@@ -4674,7 +4678,7 @@ const j = await resp.json();
     var sent = false;
 
     function scanForOrderBox(node) {
-      if (sent || !node || node.nodeType !== 1) return;
+if (sent || !registrationSubmitted || !node || node.nodeType !== 1) return;
 
       var box = node.matches && node.matches('.kf-order-wrapper')
         ? node
