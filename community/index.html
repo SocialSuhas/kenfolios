@@ -4301,6 +4301,22 @@ const j = await resp.json();
           return;
         }
 
+       // Worker confirmed successful registration/order creation
+metaEvent('Lead', {
+  content_name: 'Membership Lead',
+  content_type: 'membership_registration',
+  step: 'registration_success'
+});
+
+metaEvent('AddToCart', {
+  content_name: 'Membership Add to Cart',
+  content_type: 'membership_registration',
+  content_ids: j.order?.order_ref ? [j.order.order_ref] : undefined,
+  value: j.order?.totals?.total || 1999,
+  currency: 'INR',
+  step: 'order_created'
+});
+       
         // Remove any intro/whitespace, then show order UI
         removeFormIntroMessage();
         removeExtraWhitespaceAroundForm();
@@ -4612,109 +4628,7 @@ const j = await resp.json();
     }
   })();
 
-  // ---------- 2) Lead when join form is submitted ("Submit Details & Continue") ----------
-  (function trackLeadOnFormSubmit() {
-    var sent = false;
-
-    document.addEventListener('submit', function(e) {
-      if (sent) return;
-      var form = e.target;
-      if (!form || form.id !== 'kfJoinInfoForm') return;
-
-      sent = true;
-      metaEvent('Lead', {
-        content_name: 'Membership Lead',
-        content_type: 'membership_registration',
-        step: 'submit_details_continue'
-      });
-    }, true);
-  })();
-
-  // Helper: extract total value (number) from nearest order wrapper
-  function extractOrderTotalValueFromDom(node) {
-    try {
-      var wrapper = node && node.closest && node.closest('.kf-order-wrapper');
-      if (!wrapper) {
-        wrapper = document.querySelector('.kf-order-wrapper');
-        if (!wrapper) return null;
-      }
-
-      // Look for a row containing "Total"
-      var divs = wrapper.querySelectorAll('div');
-      var totalText = null;
-
-      for (var i = divs.length - 1; i >= 0; i--) {
-        var txt = (divs[i].textContent || '').trim();
-        if (!txt) continue;
-        if (/total/i.test(txt)) {
-          totalText = txt;
-          break;
-        }
-      }
-
-      if (!totalText) return null;
-
-      // Extract number like ₹1,999.00 or 1,999 or 1999
-      var match = totalText.match(/₹?\s*([\d,]+(?:\.\d+)?)/);
-      if (!match || !match[1]) return null;
-
-      var numeric = match[1].replace(/,/g, '');
-      var val = parseFloat(numeric);
-      if (!isFinite(val)) return null;
-
-      return val;
-    } catch (e) {
-      console.warn('Failed to parse order total from DOM', e);
-      return null;
-    }
-  }
-
-  // ---------- 3) AddToCart when order summary (.kf-order-wrapper) appears ----------
-  (function trackAddToCartOnOrderSummary() {
-    var sent = false;
-
-    function scanForOrderBox(node) {
-      if (sent || !node || node.nodeType !== 1) return;
-
-      var box = node.matches && node.matches('.kf-order-wrapper')
-        ? node
-        : (node.querySelector && node.querySelector('.kf-order-wrapper'));
-
-      if (!box) return;
-
-      sent = true;
-
-      var payload = {
-        content_name: 'Membership Add to Cart',
-        content_type: 'membership_registration',
-        step: 'order_summary_loaded'
-      };
-
-      var value = extractOrderTotalValueFromDom(box);
-      if (value != null) {
-        payload.value = value;
-        payload.currency = 'INR';
-      }
-
-      metaEvent('AddToCart', payload);
-    }
-
-    var mo = new MutationObserver(function(mutations) {
-      if (sent) {
-        mo.disconnect();
-        return;
-      }
-      mutations.forEach(function(m) {
-        if (!m.addedNodes) return;
-        Array.prototype.forEach.call(m.addedNodes, function(node) {
-          scanForOrderBox(node);
-        });
-      });
-    });
-
-    mo.observe(document.body, { childList: true, subtree: true });
-  })();
-
+ 
   // ---------- 4) InitiateCheckout when "Confirm & Pay" is clicked ----------
   (function trackInitiateCheckout() {
     var sent = false;
