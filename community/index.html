@@ -3249,11 +3249,12 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   (function init(){
     // Render quickly from localStorage
     const lastTotal = Number(localStorage.getItem('kf_last_count_total'));
-    if (lastTotal && !isNaN(lastTotal)){
-      renderTotal(lastTotal, false);
-    } else {
-      renderTotal(BASE_OFFSET, false);
-    }
+  if (lastTotal && !isNaN(lastTotal)){
+  renderTotal(BASE_OFFSET, false);
+  renderTotal(Math.max(BASE_OFFSET, lastTotal), true);
+} else {
+  renderTotal(BASE_OFFSET, false);
+}
 
     // Fetch fresh immediately, then poll
     fetchDbCount();
