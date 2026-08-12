@@ -3139,7 +3139,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 (function(){
   // ===== MANUAL BASE NUMBER (update this anytime) =====
   const BASE_OFFSET = 50032;   // <--- LAST UPDATE AS ON 4TH DEC 25 AFTER MOVING FROM WIX 24836 - UPDATE THIS NUMBER WHEN HISTORICAL COUNT CHANGES
-
+const ANIMATION_START = 99999;  // visual animation starting point
   // ===== CONFIG =====
   const ENDPOINT = 'https://kf-members-count-x9r4z-worker.ksn-nvl.workers.dev/api/members';
   const POLL_MS = 60 * 1000;   // match worker edge cache
@@ -3236,36 +3236,27 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     } catch(err){
   console.warn('[MemberCounter] failed:', err);
 
-  const lastDb = Number(localStorage.getItem('kf_last_count_db')) || BASE_OFFSET;
-
-  const fallback = Math.max(BASE_OFFSET, lastDb);
-
-  renderTotal(fallback, true);
-  return fallback;
+  renderTotal(BASE_OFFSET, true);
+  return BASE_OFFSET;
 }
   }
 
-  // Init
-  (function init(){
-    // Render quickly from localStorage
-    const lastTotal = Number(localStorage.getItem('kf_last_count_total'));
-  if (lastTotal && !isNaN(lastTotal)){
-  renderTotal(BASE_OFFSET, false);
-  renderTotal(Math.max(BASE_OFFSET, lastTotal), true);
-} else {
-  renderTotal(BASE_OFFSET, false);
-}
+// Init
+(function init(){
 
-    // Fetch fresh immediately, then poll
-    fetchDbCount();
-    setInterval(fetchDbCount, POLL_MS);
+  // Visual starting point for every visitor
+  renderTotal(ANIMATION_START, false);
 
-    // Expose manual trigger
-    window.KF_refreshMemberCount = fetchDbCount;
-  })();
+  // Fetch fresh immediately, then poll
+  fetchDbCount();
+  setInterval(fetchDbCount, POLL_MS);
+
+  // Expose manual trigger
+  window.KF_refreshMemberCount = fetchDbCount;
 
 })();
 
+})();
 /* kf-join-frontend v6.4 — full updated frontend script
    - Adds responsive .kf-order-wrapper/.kf-member-box styles (injected)
    - Removes visible order URL / "pay later" copy from saved notice
