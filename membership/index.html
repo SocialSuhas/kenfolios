@@ -4,23 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Keep private while the membership architecture is evolving -->
   <meta name="robots" content="noindex, nofollow" />
 
   <title>KenFolios Membership — One Community. A Journey That Grows With You.</title>
 
   <meta
     name="description"
-    content="Explore the KenFolios membership journey — from free registration to activated membership, subscription, Founder Circle and VStreet."
+    content="Explore the KenFolios membership journey — from free registration and community activation to business tools, integrations, Founder Circle and VStreet."
   />
 
   <meta name="author" content="KenFolios Media Private Limited" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#D71920" />
 
   <link rel="canonical" href="https://kenfolios.com/membership" />
-  <link rel="icon" href="https://kenfolios.com/favicon.ico" />
+  <link rel="icon" href="/favicon.ico" />
 
-  <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="KenFolios" />
   <meta property="og:title" content="KenFolios Membership" />
@@ -37,23 +35,24 @@
       --black-3: #202020;
 
       --white: #ffffff;
-      --off-white: #f7f7f5;
-      --off-white-2: #efefed;
+      --off: #f7f7f5;
+      --off-2: #efefed;
 
       --grey: #8d8d8d;
       --grey-2: #b7b7b7;
       --grey-3: #d8d8d8;
 
+      --red: #d71920;
+      --red-dark: #b51219;
+      --red-deep: #920d13;
+      --red-soft: #fff1f1;
+      --red-soft-2: #fbe7e7;
+      --red-line: rgba(215, 25, 32, 0.22);
+
       --line: rgba(0, 0, 0, 0.09);
       --dark-line: rgba(255, 255, 255, 0.10);
 
-      /*
-        Deliberately used only as a micro-accent.
-        The page itself remains black / white / grey.
-      */
-      --accent: #d61f2c;
-
-      --max-width: 1240px;
+      --max: 1240px;
       --radius: 26px;
     }
 
@@ -90,18 +89,13 @@
       text-decoration: none;
     }
 
-    button,
-    a {
-      -webkit-tap-highlight-color: transparent;
-    }
-
     ::selection {
-      background: var(--black);
+      background: var(--red);
       color: var(--white);
     }
 
     .container {
-      width: min(calc(100% - 42px), var(--max-width));
+      width: min(calc(100% - 42px), var(--max));
       margin: auto;
     }
 
@@ -121,14 +115,14 @@
 
       border-bottom: 1px solid var(--line);
 
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
 
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
     }
 
     .nav-wrap {
-      width: min(calc(100% - 42px), var(--max-width));
+      width: min(calc(100% - 42px), var(--max));
       margin: auto;
 
       display: flex;
@@ -149,15 +143,15 @@
     }
 
     .logo {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
 
       display: grid;
       place-items: center;
 
       border-radius: 50%;
 
-      background: var(--black);
+      background: var(--red);
       color: var(--white);
 
       font-size: 11px;
@@ -175,11 +169,11 @@
 
     .nav-links a {
       color: #666;
-      transition: color 0.2s ease;
+      transition: color .2s ease;
     }
 
     .nav-links a:hover {
-      color: var(--black);
+      color: var(--red);
     }
 
     .nav-links .join {
@@ -187,10 +181,15 @@
 
       border-radius: 999px;
 
-      background: var(--black);
+      background: var(--red);
       color: var(--white);
 
       font-weight: 700;
+    }
+
+    .nav-links .join:hover {
+      background: var(--red-dark);
+      color: var(--white);
     }
 
     /* ==========================================================
@@ -222,7 +221,7 @@
       right: -300px;
       top: -330px;
 
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(215, 25, 32, .30);
       border-radius: 50%;
     }
 
@@ -234,13 +233,13 @@
       right: 1%;
       bottom: -140px;
 
-      color: rgba(255, 255, 255, 0.035);
+      color: rgba(215, 25, 32, .12);
 
       font-size: clamp(270px, 35vw, 520px);
       font-weight: 900;
 
-      line-height: 0.8;
-      letter-spacing: -0.09em;
+      line-height: .8;
+      letter-spacing: -.09em;
 
       pointer-events: none;
       user-select: none;
@@ -260,7 +259,7 @@
 
       padding: 8px 13px;
 
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255,255,255,.15);
       border-radius: 999px;
 
       color: #bbb;
@@ -268,17 +267,17 @@
       font-size: 10px;
       font-weight: 700;
 
-      letter-spacing: 0.16em;
+      letter-spacing: .16em;
       text-transform: uppercase;
     }
 
     .dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
 
       border-radius: 50%;
 
-      background: var(--accent);
+      background: var(--red);
     }
 
     .hero h1 {
@@ -289,8 +288,8 @@
       font-size: clamp(62px, 8vw, 112px);
       font-weight: 850;
 
-      line-height: 0.92;
-      letter-spacing: -0.065em;
+      line-height: .92;
+      letter-spacing: -.065em;
     }
 
     .hero h1 span {
@@ -332,29 +331,32 @@
       font-weight: 700;
 
       transition:
-        transform 0.2s ease,
-        background 0.2s ease,
-        border-color 0.2s ease;
+        transform .2s ease,
+        background .2s ease,
+        border-color .2s ease;
     }
 
     .btn:hover {
       transform: translateY(-2px);
     }
 
-    .btn-light {
-      background: var(--white);
-      color: var(--black);
-    }
-
-    .btn-dark {
-      border: 1px solid rgba(255, 255, 255, 0.18);
-
-      background: transparent;
+    .btn-red {
+      background: var(--red);
       color: var(--white);
     }
 
-    .btn-dark:hover {
-      border-color: rgba(255, 255, 255, 0.35);
+    .btn-red:hover {
+      background: var(--red-dark);
+    }
+
+    .btn-outline {
+      border: 1px solid rgba(255,255,255,.18);
+
+      color: var(--white);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--red);
     }
 
     .hero-footer {
@@ -370,12 +372,12 @@
       font-size: 11px;
       font-weight: 650;
 
-      letter-spacing: 0.08em;
+      letter-spacing: .08em;
       text-transform: uppercase;
     }
 
     /* ==========================================================
-       GLOBAL SECTIONS
+       GLOBAL
     ========================================================== */
 
     section {
@@ -383,11 +385,20 @@
     }
 
     .soft {
-      background: var(--off-white);
+      background: var(--off);
     }
 
     .dark {
       background: var(--black);
+      color: var(--white);
+    }
+
+    .red-section {
+      position: relative;
+
+      overflow: hidden;
+
+      background: var(--red);
       color: var(--white);
     }
 
@@ -399,7 +410,7 @@
       font-size: 10px;
       font-weight: 800;
 
-      letter-spacing: 0.18em;
+      letter-spacing: .18em;
       text-transform: uppercase;
     }
 
@@ -415,7 +426,19 @@
 
       vertical-align: middle;
 
-      background: var(--accent);
+      background: var(--red);
+    }
+
+    .dark .label {
+      color: #999;
+    }
+
+    .red-section .label {
+      color: rgba(255,255,255,.72);
+    }
+
+    .red-section .label::before {
+      background: var(--white);
     }
 
     .heading {
@@ -426,8 +449,8 @@
       font-size: clamp(44px, 6vw, 82px);
       font-weight: 830;
 
-      line-height: 0.98;
-      letter-spacing: -0.055em;
+      line-height: .98;
+      letter-spacing: -.055em;
     }
 
     .lead {
@@ -443,6 +466,10 @@
 
     .dark .lead {
       color: #aaa;
+    }
+
+    .red-section .lead {
+      color: rgba(255,255,255,.78);
     }
 
     /* ==========================================================
@@ -462,12 +489,12 @@
       right: -20px;
       bottom: -55px;
 
-      color: rgba(0, 0, 0, 0.025);
+      color: rgba(215,25,32,.05);
 
-      font-size: clamp(90px, 15vw, 200px);
+      font-size: clamp(90px,15vw,200px);
       font-weight: 900;
 
-      letter-spacing: -0.07em;
+      letter-spacing: -.07em;
 
       pointer-events: none;
     }
@@ -480,7 +507,7 @@
       margin-top: 70px;
 
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5,1fr);
 
       gap: 12px;
     }
@@ -503,20 +530,23 @@
       background: var(--white);
 
       transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
+        transform .25s ease,
+        box-shadow .25s ease,
+        border-color .25s ease;
     }
 
     .step:hover {
       transform: translateY(-5px);
 
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.07);
+      border-color: var(--red-line);
+
+      box-shadow: 0 18px 50px rgba(0,0,0,.07);
     }
 
-    .step.dark-card {
-      border-color: var(--black-2);
+    .step.featured {
+      border-color: var(--red);
 
-      background: var(--black-2);
+      background: var(--red);
       color: var(--white);
     }
 
@@ -526,31 +556,35 @@
       right: -8px;
       bottom: -30px;
 
-      color: rgba(0, 0, 0, 0.035);
+      color: rgba(215,25,32,.08);
 
       font-size: 145px;
       font-weight: 900;
 
       line-height: 1;
-      letter-spacing: -0.08em;
+      letter-spacing: -.08em;
 
       pointer-events: none;
     }
 
-    .dark-card .step-number {
-      color: rgba(255, 255, 255, 0.04);
+    .featured .step-number {
+      color: rgba(255,255,255,.12);
     }
 
     .level {
       margin-bottom: 40px;
 
-      color: #999;
+      color: var(--red);
 
       font-size: 9px;
       font-weight: 800;
 
-      letter-spacing: 0.18em;
+      letter-spacing: .18em;
       text-transform: uppercase;
+    }
+
+    .featured .level {
+      color: rgba(255,255,255,.72);
     }
 
     .step h3 {
@@ -559,7 +593,7 @@
       font-size: 25px;
       font-weight: 780;
 
-      letter-spacing: -0.035em;
+      letter-spacing: -.035em;
     }
 
     .step p {
@@ -571,8 +605,8 @@
       line-height: 1.65;
     }
 
-    .dark-card p {
-      color: #aaa;
+    .featured p {
+      color: rgba(255,255,255,.78);
     }
 
     .position {
@@ -585,14 +619,14 @@
     }
 
     /* ==========================================================
-       MEMBERSHIP TIERS
+       TIERS
     ========================================================== */
 
     .tiers {
       margin-top: 65px;
 
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3,1fr);
 
       gap: 20px;
     }
@@ -606,11 +640,28 @@
       background: var(--white);
     }
 
-    .tier.black {
-      border-color: var(--black-2);
+    .tier.subscriber {
+      position: relative;
 
-      background: var(--black-2);
+      overflow: hidden;
+
+      border-color: var(--black);
+
+      background: var(--black);
       color: var(--white);
+    }
+
+    .tier.subscriber::before {
+      content: "";
+
+      position: absolute;
+      top: 0;
+      left: 0;
+
+      width: 100%;
+      height: 5px;
+
+      background: var(--red);
     }
 
     .badge {
@@ -620,20 +671,20 @@
 
       border-radius: 999px;
 
-      background: #eee;
+      background: var(--red-soft);
 
-      color: #555;
+      color: var(--red);
 
       font-size: 9px;
       font-weight: 800;
 
-      letter-spacing: 0.1em;
+      letter-spacing: .1em;
       text-transform: uppercase;
     }
 
-    .black .badge {
-      background: #242424;
-      color: #bbb;
+    .subscriber .badge {
+      background: var(--red);
+      color: var(--white);
     }
 
     .tier h3 {
@@ -642,7 +693,7 @@
       font-size: 34px;
       font-weight: 800;
 
-      letter-spacing: -0.04em;
+      letter-spacing: -.04em;
     }
 
     .price {
@@ -652,7 +703,7 @@
       font-weight: 850;
 
       line-height: 1;
-      letter-spacing: -0.05em;
+      letter-spacing: -.05em;
     }
 
     .small {
@@ -663,7 +714,7 @@
       font-size: 12px;
     }
 
-    .black .small {
+    .subscriber .small {
       color: #999;
     }
 
@@ -678,7 +729,7 @@
       line-height: 1.7;
     }
 
-    .black .desc {
+    .subscriber .desc {
       color: #aaa;
     }
 
@@ -699,7 +750,7 @@
       font-size: 13px;
     }
 
-    .black .features li {
+    .subscriber .features li {
       border-color: var(--dark-line);
     }
 
@@ -709,20 +760,226 @@
       position: absolute;
       left: 0;
 
-      color: var(--accent);
+      color: var(--red);
 
       font-weight: 900;
     }
 
     /* ==========================================================
-       PHILOSOPHY
+       BUSINESS PLATFORM
+    ========================================================== */
+
+    .platform-intro {
+      position: relative;
+      z-index: 2;
+    }
+
+    .red-section::after {
+      content: "TOOLS";
+
+      position: absolute;
+
+      right: -20px;
+      top: 20px;
+
+      color: rgba(255,255,255,.07);
+
+      font-size: clamp(150px,25vw,360px);
+      font-weight: 900;
+
+      line-height: 1;
+      letter-spacing: -.09em;
+
+      pointer-events: none;
+    }
+
+    .platform-grid {
+      position: relative;
+      z-index: 2;
+
+      margin-top: 70px;
+
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+
+      gap: 14px;
+    }
+
+    .platform-card {
+      min-height: 270px;
+
+      padding: 30px;
+
+      display: flex;
+      flex-direction: column;
+
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 22px;
+
+      background: rgba(255,255,255,.06);
+    }
+
+    .platform-number {
+      color: rgba(255,255,255,.60);
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: .15em;
+    }
+
+    .platform-card h3 {
+      margin: 45px 0 12px;
+
+      font-size: 23px;
+      font-weight: 780;
+
+      line-height: 1.1;
+      letter-spacing: -.035em;
+    }
+
+    .platform-card p {
+      margin: 0;
+
+      color: rgba(255,255,255,.74);
+
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .platform-tag {
+      margin-top: auto;
+      padding-top: 25px;
+
+      color: var(--white);
+
+      font-size: 11px;
+      font-weight: 700;
+
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       INTEGRATIONS
+    ========================================================== */
+
+    .integration-layout {
+      margin-top: 70px;
+
+      display: grid;
+      grid-template-columns: .8fr 1.2fr;
+
+      gap: 70px;
+
+      align-items: start;
+    }
+
+    .integration-copy h3 {
+      margin: 0;
+
+      font-size: clamp(36px,4vw,58px);
+      font-weight: 820;
+
+      line-height: 1;
+      letter-spacing: -.05em;
+    }
+
+    .integration-copy p {
+      margin: 24px 0 0;
+
+      color: #666;
+
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .subscriber-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      margin-top: 28px;
+
+      padding: 9px 13px;
+
+      border-radius: 999px;
+
+      background: var(--red-soft);
+      color: var(--red);
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+
+      gap: 10px;
+    }
+
+    .integration {
+      min-height: 110px;
+
+      padding: 20px;
+
+      display: flex;
+      align-items: flex-end;
+
+      border: 1px solid var(--line);
+      border-radius: 18px;
+
+      background: var(--white);
+
+      font-size: 16px;
+      font-weight: 750;
+
+      letter-spacing: -.02em;
+
+      transition:
+        transform .2s ease,
+        border-color .2s ease;
+    }
+
+    .integration:hover {
+      transform: translateY(-3px);
+      border-color: var(--red);
+    }
+
+    .integration::before {
+      content: "";
+
+      width: 7px;
+      height: 7px;
+
+      margin-right: 9px;
+      margin-bottom: 7px;
+
+      flex: 0 0 auto;
+
+      border-radius: 50%;
+
+      background: var(--red);
+    }
+
+    .integration.more {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    /* ==========================================================
+       BUILT TO SCALE
     ========================================================== */
 
     .philosophy {
       margin-top: 70px;
 
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
+      grid-template-columns: 1.1fr .9fr;
 
       gap: 90px;
 
@@ -730,11 +987,11 @@
     }
 
     .quote {
-      font-size: clamp(40px, 5vw, 64px);
+      font-size: clamp(40px,5vw,64px);
       font-weight: 800;
 
       line-height: 1.05;
-      letter-spacing: -0.05em;
+      letter-spacing: -.05em;
     }
 
     .quote span {
@@ -746,9 +1003,26 @@
     }
 
     .point {
-      padding: 24px 0;
+      position: relative;
+
+      padding: 24px 0 24px 22px;
 
       border-top: 1px solid var(--dark-line);
+    }
+
+    .point::before {
+      content: "";
+
+      position: absolute;
+      left: 0;
+      top: 31px;
+
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+
+      background: var(--red);
     }
 
     .point strong {
@@ -776,7 +1050,7 @@
       margin-top: 65px;
 
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4,1fr);
 
       gap: 14px;
     }
@@ -792,23 +1066,26 @@
       background: var(--white);
 
       transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        transform .2s ease,
+        box-shadow .2s ease,
+        border-color .2s ease;
     }
 
     .eco:hover {
       transform: translateY(-4px);
 
-      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.055);
+      border-color: var(--red-line);
+
+      box-shadow: 0 16px 45px rgba(0,0,0,.055);
     }
 
     .eco-number {
-      color: #999;
+      color: var(--red);
 
       font-size: 10px;
       font-weight: 800;
 
-      letter-spacing: 0.14em;
+      letter-spacing: .14em;
     }
 
     .eco h4 {
@@ -817,7 +1094,7 @@
       font-size: 20px;
       font-weight: 760;
 
-      letter-spacing: -0.025em;
+      letter-spacing: -.025em;
     }
 
     .eco p {
@@ -830,20 +1107,24 @@
     }
 
     /* ==========================================================
-       CURATED LAYERS
+       CURATED
     ========================================================== */
 
     .curated {
       margin-top: 60px;
 
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2,1fr);
 
       gap: 18px;
     }
 
     .curated-card {
+      position: relative;
+
       min-height: 440px;
+
+      overflow: hidden;
 
       padding: 42px;
 
@@ -854,14 +1135,28 @@
       border-radius: var(--radius);
     }
 
+    .curated-card::before {
+      content: "";
+
+      position: absolute;
+
+      left: 42px;
+      top: 0;
+
+      width: 60px;
+      height: 4px;
+
+      background: var(--red);
+    }
+
     .curated-card h3 {
       margin: 10px 0 18px;
 
-      font-size: clamp(42px, 5vw, 65px);
+      font-size: clamp(42px,5vw,65px);
       font-weight: 820;
 
-      line-height: 0.94;
-      letter-spacing: -0.055em;
+      line-height: .94;
+      letter-spacing: -.055em;
     }
 
     .curated-card p {
@@ -918,7 +1213,7 @@
       font-size: 18px;
       font-weight: 700;
 
-      letter-spacing: -0.02em;
+      letter-spacing: -.02em;
     }
 
     summary::-webkit-details-marker {
@@ -933,7 +1228,7 @@
       right: 0;
       top: 20px;
 
-      color: #777;
+      color: var(--red);
 
       font-size: 28px;
       font-weight: 400;
@@ -941,8 +1236,6 @@
 
     details[open] summary::after {
       content: "−";
-
-      color: var(--accent);
     }
 
     details p {
@@ -973,6 +1266,22 @@
       text-align: center;
     }
 
+    .final::before {
+      content: "";
+
+      position: absolute;
+
+      left: 50%;
+      top: 0;
+
+      width: 100px;
+      height: 5px;
+
+      transform: translateX(-50%);
+
+      background: var(--red);
+    }
+
     .final::after {
       content: "99";
 
@@ -983,13 +1292,13 @@
 
       transform: translateX(-50%);
 
-      color: rgba(255, 255, 255, 0.025);
+      color: rgba(215,25,32,.12);
 
-      font-size: clamp(300px, 40vw, 520px);
+      font-size: clamp(300px,40vw,520px);
       font-weight: 900;
 
-      line-height: 0.8;
-      letter-spacing: -0.09em;
+      line-height: .8;
+      letter-spacing: -.09em;
 
       pointer-events: none;
     }
@@ -1004,11 +1313,11 @@
 
       margin: auto;
 
-      font-size: clamp(52px, 7vw, 96px);
+      font-size: clamp(52px,7vw,96px);
       font-weight: 850;
 
-      line-height: 0.93;
-      letter-spacing: -0.065em;
+      line-height: .93;
+      letter-spacing: -.065em;
     }
 
     .final p {
@@ -1047,6 +1356,11 @@
       gap: 20px;
     }
 
+    .footer-brand {
+      color: var(--white);
+      font-weight: 750;
+    }
+
     .footer-links {
       display: flex;
       flex-wrap: wrap;
@@ -1054,12 +1368,8 @@
       gap: 20px;
     }
 
-    .footer-links a {
-      transition: color 0.2s ease;
-    }
-
     .footer-links a:hover {
-      color: var(--white);
+      color: var(--red);
     }
 
     /* ==========================================================
@@ -1068,7 +1378,7 @@
 
     @media (max-width: 1080px) {
       .journey {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
       }
 
       .journey .step:last-child {
@@ -1076,7 +1386,11 @@
       }
 
       .ecosystem {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2,1fr);
+      }
+
+      .platform-grid {
+        grid-template-columns: repeat(2,1fr);
       }
     }
 
@@ -1087,11 +1401,13 @@
 
       .tiers,
       .philosophy,
-      .curated {
+      .curated,
+      .integration-layout {
         grid-template-columns: 1fr;
       }
 
-      .philosophy {
+      .philosophy,
+      .integration-layout {
         gap: 50px;
       }
 
@@ -1101,12 +1417,9 @@
     }
 
     @media (max-width: 620px) {
-      .container {
-        width: min(calc(100% - 28px), var(--max-width));
-      }
-
+      .container,
       .nav-wrap {
-        width: min(calc(100% - 28px), var(--max-width));
+        width: min(calc(100% - 28px),var(--max));
       }
 
       section {
@@ -1122,7 +1435,7 @@
       }
 
       .hero h1 {
-        font-size: clamp(52px, 15vw, 68px);
+        font-size: clamp(52px,15vw,68px);
       }
 
       .hero-copy {
@@ -1134,7 +1447,9 @@
         gap: 15px;
       }
 
-      .journey {
+      .journey,
+      .ecosystem,
+      .platform-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1142,8 +1457,8 @@
         grid-column: auto;
       }
 
-      .ecosystem {
-        grid-template-columns: 1fr;
+      .integration-grid {
+        grid-template-columns: repeat(2,1fr);
       }
 
       .tier,
@@ -1174,20 +1489,19 @@
 
       <div class="nav-links">
         <a href="#journey">Membership</a>
-        <a href="#benefits">Benefits</a>
+        <a href="#platform">Business Platform</a>
+        <a href="#ecosystem">Ecosystem</a>
         <a href="#circle">Founder Circle</a>
         <a href="#faq">FAQ</a>
 
-        <a
-          href="https://kenfolios.com/community/"
-          class="join"
-        >
+        <a href="https://kenfolios.com/community/" class="join">
           Join KenFolios
         </a>
       </div>
 
     </div>
   </nav>
+
 
   <!-- ========================================================
        HERO
@@ -1209,37 +1523,36 @@
 
       <p class="hero-copy">
         KenFolios is being built as a progressive business ecosystem.
-        You begin by creating an account, activate your membership when
-        you're ready to participate, unlock additional services through
-        subscription, and may eventually become part of our curated
-        founder-led networks.
+        Begin with an account, activate your membership to participate,
+        subscribe to unlock a growing business platform of tools,
+        services and integrations, and eventually become part of
+        our curated founder-led networks.
       </p>
 
       <div class="hero-actions">
 
-        <a href="#journey" class="btn btn-light">
+        <a href="#journey" class="btn btn-red">
           Explore the Journey →
         </a>
 
-        <a
-          href="https://kenfolios.com/community/"
-          class="btn btn-dark"
-        >
-          Join the Community
+        <a href="#platform" class="btn btn-outline">
+          Explore Business Platform
         </a>
 
       </div>
 
       <div class="hero-footer">
-        <span>Built for Entrepreneurs</span>
+        <span>Entrepreneurs</span>
         <span>Professionals</span>
         <span>Creators</span>
+        <span>Founders</span>
         <span>Business Leaders</span>
       </div>
 
     </div>
 
   </header>
+
 
   <!-- ========================================================
        THE IDEA
@@ -1259,18 +1572,20 @@
       </h2>
 
       <p class="lead">
-        KenFolios is designed as a growing ecosystem rather than a single
-        group, app or event. Your account connects you to community spaces,
-        networking, meetups, opportunities, resources, digital services
-        and future products as the platform evolves.
+        KenFolios is designed as a growing ecosystem rather than a
+        single group, app or event. Your account can progressively
+        connect community, networking, meetups, opportunities,
+        business tools, integrations, resources and future products
+        through one evolving membership.
       </p>
 
     </div>
 
   </section>
 
+
   <!-- ========================================================
-       MEMBERSHIP JOURNEY
+       JOURNEY
   ========================================================= -->
 
   <section class="soft" id="journey">
@@ -1288,23 +1603,18 @@
 
       <p class="lead">
         Every KenFolios relationship begins with a member account.
-        The journey can then progressively unlock deeper participation,
-        additional services and highly curated communities.
+        The journey progressively unlocks community participation,
+        business infrastructure and eventually highly curated
+        relationships.
       </p>
 
       <div class="journey">
 
-        <!-- REGISTER -->
-
         <article class="step">
 
-          <div class="level">
-            Level 01
-          </div>
+          <div class="level">Level 01</div>
 
-          <h3>
-            Register
-          </h3>
+          <h3>Register</h3>
 
           <p>
             Create your free KenFolios account, receive community
@@ -1316,23 +1626,16 @@
             Discover KenFolios
           </div>
 
-          <div class="step-number">
-            01
-          </div>
+          <div class="step-number">01</div>
 
         </article>
 
-        <!-- ACTIVATE -->
 
         <article class="step">
 
-          <div class="level">
-            Level 02
-          </div>
+          <div class="level">Level 02</div>
 
-          <h3>
-            Activate
-          </h3>
+          <h3>Activate</h3>
 
           <p>
             Activate your membership to become a participating member
@@ -1341,95 +1644,73 @@
           </p>
 
           <div class="position">
-            Become a Member
+            Connect
           </div>
 
-          <div class="step-number">
-            02
-          </div>
+          <div class="step-number">02</div>
 
         </article>
 
-        <!-- SUBSCRIBE -->
 
-        <article class="step dark-card">
+        <article class="step featured">
 
-          <div class="level">
-            Level 03
-          </div>
+          <div class="level">Level 03</div>
 
-          <h3>
-            Subscribe
-          </h3>
+          <h3>Subscribe</h3>
 
           <p>
-            Add recurring services and enhanced digital community
-            benefits through an optional KenFolios subscription.
+            Unlock recurring services, business tools, specialised
+            communities, integrations and the expanding KenFolios
+            business platform.
           </p>
 
           <div class="position">
-            Unlock More
+            Operate + Grow
           </div>
 
-          <div class="step-number">
-            03
-          </div>
+          <div class="step-number">03</div>
 
         </article>
 
-        <!-- FOUNDER CIRCLE -->
 
         <article class="step">
 
-          <div class="level">
-            Level 04
-          </div>
+          <div class="level">Level 04</div>
 
-          <h3>
-            Founder Circle
-          </h3>
+          <h3>Founder Circle</h3>
 
           <p>
-            A curated, invitation-led community for selected members
-            where relationships become more direct and founder engagement
-            becomes part of the experience.
+            A curated, invitation-led community where relationships
+            become more direct and founder participation becomes
+            part of the experience.
           </p>
 
           <div class="position">
-            Invitation Based
+            Curated Relationships
           </div>
 
-          <div class="step-number">
-            04
-          </div>
+          <div class="step-number">04</div>
 
         </article>
 
-        <!-- VSTREET -->
 
         <article class="step">
 
-          <div class="level">
-            Level 05
-          </div>
+          <div class="level">Level 05</div>
 
-          <h3>
-            VStreet
-          </h3>
+          <h3>VStreet</h3>
 
           <p>
             A highly selective relationship network designed around
-            credibility, influence, trust, meaningful connections and
-            long-term participation.
+            credibility, influence, trust, meaningful connections
+            and long-term participation.
           </p>
 
           <div class="position">
             Highly Curated
           </div>
 
-          <div class="step-number">
-            05
-          </div>
+          <div class="step-number">05</div>
 
         </article>
 
@@ -1438,6 +1719,7 @@
     </div>
 
   </section>
+
 
   <!-- ========================================================
        MEMBERSHIP FOUNDATION
@@ -1452,17 +1734,18 @@
       </div>
 
       <h2 class="heading">
-        Three scalable levels.<br>
-        One connected account.
+        Explore. Connect.<br>
+        Operate. Grow.
       </h2>
 
       <p class="lead">
-        Registration, activation and subscription are designed to be
-        digital-first and scalable. Your KenFolios account remains the
-        common identity across every level.
+        Registration, activation and subscription share one KenFolios
+        identity. Each stage expands what that account can do without
+        requiring members to start again.
       </p>
 
       <div class="tiers">
+
 
         <!-- REGISTERED -->
 
@@ -1472,9 +1755,7 @@
             Registered Member
           </div>
 
-          <h3>
-            Explore
-          </h3>
+          <h3>Explore</h3>
 
           <div class="price">
             Free
@@ -1485,8 +1766,8 @@
           </div>
 
           <p class="desc">
-            Start your relationship with KenFolios and understand
-            the community before activating.
+            Discover KenFolios and understand the ecosystem before
+            activating your membership.
           </p>
 
           <ul class="features">
@@ -1501,6 +1782,7 @@
 
         </article>
 
+
         <!-- ACTIVATED -->
 
         <article class="tier">
@@ -1509,9 +1791,7 @@
             Activated Member
           </div>
 
-          <h3>
-            Connect
-          </h3>
+          <h3>Connect</h3>
 
           <div class="price">
             Activation
@@ -1534,25 +1814,24 @@
             <li>General networking groups</li>
             <li>Weekday online meetups</li>
             <li>Offline event invitations</li>
-            <li>KenFolios mobile community experience</li>
-            <li>Member profile</li>
+            <li>Mobile community experience</li>
+            <li>Member and business profile</li>
             <li>Community resources</li>
             <li>Membership support</li>
           </ul>
 
         </article>
 
+
         <!-- SUBSCRIBER -->
 
-        <article class="tier black">
+        <article class="tier subscriber">
 
           <div class="badge">
             Subscriber
           </div>
 
-          <h3>
-            Grow
-          </h3>
+          <h3>Operate + Grow</h3>
 
           <div class="price">
             ₹499
@@ -1563,20 +1842,27 @@
           </div>
 
           <p class="desc">
-            Unlock a growing layer of recurring digital services,
-            specialised communities and enhanced member benefits.
+            Move beyond community participation into an expanding
+            digital business platform built around tools, services,
+            opportunities and integrations.
           </p>
 
           <ul class="features">
             <li>Everything included with activation</li>
-            <li>Subscriber-only community groups</li>
-            <li>Specialised interest and business groups</li>
+            <li>Subscriber-only communities</li>
+            <li>Specialised business groups</li>
+            <li>Lead generation tools</li>
+            <li>Business management tools</li>
+            <li>Business discovery and directory tools</li>
+            <li>Mentorship platform access</li>
+            <li>Fundraising platform access</li>
+            <li>AI-powered business tools</li>
+            <li>Business opportunities and matching</li>
+            <li>Third-party platform integrations</li>
             <li>Subscriber sessions and digital events</li>
-            <li>Enhanced community discovery</li>
-            <li>Additional networking tools</li>
-            <li>Premium digital resources</li>
-            <li>Subscriber opportunities and offers</li>
-            <li>New recurring benefits as introduced</li>
+            <li>Premium resources</li>
+            <li>Subscriber offers and benefits</li>
+            <li>New tools and services as introduced</li>
           </ul>
 
         </article>
@@ -1586,6 +1872,338 @@
     </div>
 
   </section>
+
+
+  <!-- ========================================================
+       BUSINESS PLATFORM
+  ========================================================= -->
+
+  <section class="red-section" id="platform">
+
+    <div class="container platform-intro">
+
+      <div class="label">
+        Available From Subscription
+      </div>
+
+      <h2 class="heading">
+        Community meets<br>
+        business infrastructure.
+      </h2>
+
+      <p class="lead">
+        Subscription is where KenFolios expands from a business
+        community into a connected business platform. Members can
+        progressively access KenFolios-built tools alongside
+        integrations with the platforms they already use.
+      </p>
+
+
+      <div class="platform-grid">
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            01 / ACQUIRE
+          </div>
+
+          <h3>
+            Lead Generation
+          </h3>
+
+          <p>
+            Tools for discovering, capturing, organising and following
+            up on relevant business leads and opportunities.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios Tool
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            02 / OPERATE
+          </div>
+
+          <h3>
+            Business Management Suite
+          </h3>
+
+          <p>
+            Manage business profiles, contacts, leads, opportunities,
+            tasks and other operational workflows as the suite evolves.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios Tool
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            03 / DISCOVER
+          </div>
+
+          <h3>
+            Business Discovery
+          </h3>
+
+          <p>
+            Search businesses, discover relevant members and use
+            increasingly intelligent matching to identify useful
+            connections.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios Tool
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            04 / LEARN
+          </div>
+
+          <h3>
+            Mentorship Platform
+          </h3>
+
+          <p>
+            Discover mentors, programmes, structured learning
+            opportunities and relevant knowledge resources.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios Platform
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            05 / FUND
+          </div>
+
+          <h3>
+            Fundraising Platform
+          </h3>
+
+          <p>
+            Build fundraising profiles, access investor-readiness
+            resources and discover relevant programmes and funding
+            opportunities as the platform expands.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios Platform
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            06 / INTELLIGENCE
+          </div>
+
+          <h3>
+            AI Business Tools
+          </h3>
+
+          <p>
+            A growing set of AI-powered tools for research,
+            productivity, discovery, communication and business
+            intelligence.
+          </p>
+
+          <div class="platform-tag">
+            KenFolios + AI
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            07 / OPPORTUNITIES
+          </div>
+
+          <h3>
+            Opportunity Matching
+          </h3>
+
+          <p>
+            Surface relevant requirements, collaborations,
+            programmes and opportunities using member and
+            business information.
+          </p>
+
+          <div class="platform-tag">
+            Smart Discovery
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            08 / CONNECT
+          </div>
+
+          <h3>
+            Platform Integrations
+          </h3>
+
+          <p>
+            Connect KenFolios with external communication,
+            productivity, marketing and business platforms
+            wherever supported.
+          </p>
+
+          <div class="platform-tag">
+            Connected Ecosystem
+          </div>
+
+        </article>
+
+
+        <article class="platform-card">
+
+          <div class="platform-number">
+            09 / EVOLVE
+          </div>
+
+          <h3>
+            More Business Services
+          </h3>
+
+          <p>
+            Additional tools, integrations and services can be
+            introduced continuously as member and business
+            requirements evolve.
+          </p>
+
+          <div class="platform-tag">
+            Always Building
+          </div>
+
+        </article>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       INTEGRATIONS
+  ========================================================= -->
+
+  <section class="soft">
+
+    <div class="container">
+
+      <div class="label">
+        Connected Platforms
+      </div>
+
+      <h2 class="heading">
+        Your business already uses tools.<br>
+        KenFolios can connect with them.
+      </h2>
+
+      <div class="integration-layout">
+
+        <div class="integration-copy">
+
+          <h3>
+            One ecosystem.<br>
+            Many platforms.
+          </h3>
+
+          <p>
+            KenFolios does not need to replace every platform a
+            business already uses. Our own services can work alongside
+            third-party platforms, with integrations introduced wherever
+            they create meaningful value for members.
+          </p>
+
+          <p>
+            Communication, marketing, productivity, collaboration,
+            identity, business discovery and other workflows can
+            progressively become part of a more connected member
+            experience.
+          </p>
+
+          <div class="subscriber-marker">
+            ● Starts at Subscriber Level
+          </div>
+
+        </div>
+
+
+        <div class="integration-grid">
+
+          <div class="integration">
+            WhatsApp
+          </div>
+
+          <div class="integration">
+            Telegram
+          </div>
+
+          <div class="integration">
+            Google
+          </div>
+
+          <div class="integration">
+            Meta
+          </div>
+
+          <div class="integration">
+            LinkedIn
+          </div>
+
+          <div class="integration">
+            Slack
+          </div>
+
+          <div class="integration">
+            Discord
+          </div>
+
+          <div class="integration">
+            Wix
+          </div>
+
+          <div class="integration more">
+            + More
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
 
   <!-- ========================================================
        BUILT TO SCALE
@@ -1608,6 +2226,7 @@
           </span>
         </div>
 
+
         <div class="points">
 
           <div class="point">
@@ -1617,12 +2236,28 @@
             </strong>
 
             <p>
-              Registration, activation, subscription, community access,
-              updates and standard support are designed to increasingly
-              work through technology and automation.
+              Registration, activation, subscription, access,
+              updates and standard support are designed to
+              increasingly operate through technology and automation.
             </p>
 
           </div>
+
+
+          <div class="point">
+
+            <strong>
+              Business infrastructure
+            </strong>
+
+            <p>
+              Subscribers can progressively access tools for leads,
+              operations, discovery, mentorship, fundraising,
+              intelligence and other business requirements.
+            </p>
+
+          </div>
+
 
           <div class="point">
 
@@ -1631,23 +2266,24 @@
             </strong>
 
             <p>
-              Web, WhatsApp, Telegram, community groups, events,
-              mobile experiences and future KenFolios products can
-              progressively connect through one member identity.
+              KenFolios can combine its own technology with external
+              communication, productivity and business platforms
+              through one evolving member identity.
             </p>
 
           </div>
 
+
           <div class="point">
 
             <strong>
-              Human interaction where it creates value
+              Human interaction where it matters
             </strong>
 
             <p>
-              Founder-led and deeply curated interactions are intentionally
-              reserved for higher relationship layers such as Founder
-              Circle and VStreet.
+              Founder-led and deeply curated relationships are
+              intentionally concentrated within Founder Circle
+              and VStreet.
             </p>
 
           </div>
@@ -1660,11 +2296,12 @@
 
   </section>
 
+
   <!-- ========================================================
        ECOSYSTEM
   ========================================================= -->
 
-  <section class="soft" id="benefits">
+  <section class="soft" id="ecosystem">
 
     <div class="container">
 
@@ -1680,8 +2317,10 @@
       <p class="lead">
         Different parts of KenFolios serve different purposes.
         Together they create an environment for discovery,
-        networking, conversations, events and business participation.
+        networking, conversations, events, tools and business
+        participation.
       </p>
+
 
       <div class="ecosystem">
 
@@ -1696,11 +2335,12 @@
           </h4>
 
           <p>
-            A central place for membership information, important
-            links, services, updates and future account features.
+            Membership information, services, links, updates,
+            tools and future account features in one place.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1713,11 +2353,12 @@
           </h4>
 
           <p>
-            Communication, announcements, networking spaces and
-            community access across familiar platforms.
+            Communication, announcements, networking spaces
+            and community participation.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1730,12 +2371,12 @@
           </h4>
 
           <p>
-            Existing mobile experiences through the KenFolios
-            community infrastructure, evolving toward a more
-            integrated KenFolios application.
+            Mobile community experiences evolving toward
+            increasingly integrated KenFolios services.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1749,10 +2390,11 @@
 
           <p>
             General and specialised communities organised around
-            business interests, industries, cities and shared goals.
+            industries, cities, interests and shared business goals.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1766,10 +2408,11 @@
 
           <p>
             Recurring opportunities to introduce businesses,
-            exchange ideas and meet fellow members remotely.
+            exchange ideas and meet other members remotely.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1783,27 +2426,29 @@
 
           <p>
             Physical networking events and selected community
-            gatherings in cities across India.
+            gatherings across cities.
           </p>
 
         </article>
+
 
         <article class="eco">
 
           <div class="eco-number">
-            07 / DISCOVER
+            07 / BUSINESS
           </div>
 
           <h4>
-            Opportunities
+            Tools &amp; Opportunities
           </h4>
 
           <p>
-            Access to relevant community announcements, business
-            opportunities, programmes and ecosystem initiatives.
+            Subscriber tools, business services, discovery,
+            opportunities and integrations.
           </p>
 
         </article>
+
 
         <article class="eco">
 
@@ -1816,9 +2461,8 @@
           </h4>
 
           <p>
-            Digital support through web, social and messaging
-            channels, progressively supported by intelligent
-            automation.
+            Digital support through web, messaging and social
+            channels, progressively supported by automation.
           </p>
 
         </article>
@@ -1829,8 +2473,9 @@
 
   </section>
 
+
   <!-- ========================================================
-       FOUNDER CIRCLE / VSTREET
+       CURATED LEVELS
   ========================================================= -->
 
   <section class="dark" id="circle">
@@ -1838,23 +2483,22 @@
     <div class="container">
 
       <div class="label">
-        Beyond Standard Membership
+        Beyond The Platform
       </div>
 
       <h2 class="heading">
-        Some communities scale.<br>
-        Some become more selective.
+        Technology can scale access.<br>
+        Relationships become more selective.
       </h2>
 
       <p class="lead">
-        Founder Circle and VStreet are not simply additional digital
-        subscription plans. They represent progressively more curated
-        relationship layers within the broader ecosystem.
+        Founder Circle and VStreet are not simply additional software
+        plans. They represent progressively more curated relationship
+        layers within the broader KenFolios ecosystem.
       </p>
 
-      <div class="curated">
 
-        <!-- FOUNDER CIRCLE -->
+      <div class="curated">
 
         <article class="curated-card">
 
@@ -1881,7 +2525,6 @@
 
         </article>
 
-        <!-- VSTREET -->
 
         <article class="curated-card">
 
@@ -1912,6 +2555,7 @@
 
   </section>
 
+
   <!-- ========================================================
        ALWAYS BUILDING
   ========================================================= -->
@@ -1925,25 +2569,26 @@
       </div>
 
       <h2 class="heading">
-        The membership will keep evolving.
+        The platform will keep evolving.
       </h2>
 
       <p class="lead">
         KenFolios continues to build new community infrastructure,
-        integrations, groups, digital services, networking formats,
-        support systems and member experiences.
+        business tools, integrations, groups, digital services,
+        networking formats, support systems and member experiences.
       </p>
 
       <p class="lead">
         Some features may change, improve or move between platforms
         as the ecosystem develops. The objective remains simple:
         create increasingly useful ways for serious business people
-        to discover, connect and participate.
+        to discover, connect, operate and grow.
       </p>
 
     </div>
 
   </section>
+
 
   <!-- ========================================================
        FAQ
@@ -1961,6 +2606,7 @@
         Understand your membership.
       </h2>
 
+
       <div class="faq">
 
         <details>
@@ -1975,6 +2621,7 @@
           </p>
         </details>
 
+
         <details>
           <summary>
             What is the difference between registration and activation?
@@ -1988,18 +2635,66 @@
           </p>
         </details>
 
+
         <details>
           <summary>
-            Is subscription compulsory?
+            What does the subscription add?
           </summary>
 
           <p>
-            No. Subscription is an additional recurring layer.
-            Activated members continue to receive the benefits
-            included with their activated membership, while subscribers
-            receive additional recurring services and features.
+            Subscription adds an expanding layer of recurring digital
+            services. This can include specialised communities,
+            business tools, lead-generation systems, business management
+            services, mentorship and fundraising platforms, intelligent
+            discovery, premium resources and supported third-party
+            integrations.
           </p>
         </details>
+
+
+        <details>
+          <summary>
+            Are business tools available to every member?
+          </summary>
+
+          <p>
+            Business tools and integrations are being introduced
+            beginning with the Subscriber level. Individual tools,
+            services or third-party integrations may have their own
+            availability, eligibility or usage conditions.
+          </p>
+        </details>
+
+
+        <details>
+          <summary>
+            Will KenFolios replace the business tools I already use?
+          </summary>
+
+          <p>
+            Not necessarily. KenFolios can provide its own services
+            while also integrating with external platforms where useful.
+            The objective is to create a connected business ecosystem
+            rather than force every member into a single technology stack.
+          </p>
+        </details>
+
+
+        <details>
+          <summary>
+            Which external platforms can KenFolios integrate with?
+          </summary>
+
+          <p>
+            The integration layer may progressively support relevant
+            communication, productivity, marketing, collaboration and
+            business platforms such as WhatsApp, Telegram, Google,
+            Meta, LinkedIn, Slack, Discord, Wix and other services.
+            Availability will depend on the specific integration and
+            supported platform capabilities.
+          </p>
+        </details>
+
 
         <details>
           <summary>
@@ -2008,11 +2703,13 @@
 
           <p>
             Ending a subscription does not automatically erase your
-            activated membership. Subscriber-only benefits may stop,
-            while benefits attached to your activation remain subject
-            to the applicable membership terms.
+            activated membership. Subscriber-only tools, integrations
+            and benefits may stop, while benefits attached to your
+            activated membership remain subject to the applicable
+            membership terms.
           </p>
         </details>
+
 
         <details>
           <summary>
@@ -2027,31 +2724,19 @@
           </p>
         </details>
 
+
         <details>
           <summary>
             Are online and offline meetups part of KenFolios?
           </summary>
 
           <p>
-            Yes. KenFolios uses both online and offline formats to help
-            members interact. Individual events may have their own
-            eligibility, registration requirements or ticket pricing.
+            Yes. KenFolios uses both online and offline formats to
+            help members interact. Individual events may have their
+            own eligibility, registration requirements or ticket pricing.
           </p>
         </details>
 
-        <details>
-          <summary>
-            Where is the KenFolios community hosted?
-          </summary>
-
-          <p>
-            KenFolios uses multiple platforms and integrations including
-            its own web infrastructure, messaging communities, mobile
-            community experiences and meeting/event platforms.
-            These will become increasingly integrated through the
-            KenFolios member account.
-          </p>
-        </details>
 
         <details>
           <summary>
@@ -2066,6 +2751,7 @@
           </p>
         </details>
 
+
         <details>
           <summary>
             Can I directly purchase Founder Circle membership?
@@ -2077,6 +2763,7 @@
             membership journey before becoming eligible for consideration.
           </p>
         </details>
+
 
         <details>
           <summary>
@@ -2090,27 +2777,16 @@
           </p>
         </details>
 
+
         <details>
           <summary>
-            Will KenFolios introduce more membership benefits?
+            Will KenFolios introduce more tools and membership benefits?
           </summary>
 
           <p>
             Yes. The ecosystem is continuously being developed.
-            New digital features, integrations, groups, events,
-            tools and services may be added over time.
-          </p>
-        </details>
-
-        <details>
-          <summary>
-            Where can I see my membership information?
-          </summary>
-
-          <p>
-            KenFolios is developing a centralized account experience
-            where members will be able to access membership information,
-            services, community links, updates and future account features.
+            New digital features, business tools, integrations,
+            groups, events and services may be introduced over time.
           </p>
         </details>
 
@@ -2120,6 +2796,7 @@
 
   </section>
 
+
   <!-- ========================================================
        FINAL CTA
   ========================================================= -->
@@ -2128,17 +2805,19 @@
 
     <div class="container final-inner">
 
-      <div class="label" style="color:#888;">
+      <div class="label">
         KenFolios Membership
       </div>
 
       <h2>
-        Your KenFolios journey starts with one account.
+        One account.<br>
+        An ecosystem that grows with you.
       </h2>
 
       <p>
-        Register, explore the ecosystem and decide how far you
-        want to take your participation.
+        Register. Connect with the community. Unlock business
+        infrastructure. And decide how far you want to take
+        your KenFolios journey.
       </p>
 
       <div
@@ -2148,14 +2827,14 @@
 
         <a
           href="https://kenfolios.com/community/"
-          class="btn btn-light"
+          class="btn btn-red"
         >
           Explore KenFolios →
         </a>
 
         <a
           href="https://kenfolios.com/support/"
-          class="btn btn-dark"
+          class="btn btn-outline"
         >
           Contact Support
         </a>
@@ -2166,6 +2845,7 @@
 
   </section>
 
+
   <!-- ========================================================
        FOOTER
   ========================================================= -->
@@ -2175,7 +2855,8 @@
     <div class="container footer">
 
       <div>
-        © 2026 KenFolios Media Private Limited
+        <span class="footer-brand">KenFolios</span>
+        &nbsp;© 2026 KenFolios Media Private Limited
       </div>
 
       <div class="footer-links">
@@ -2190,6 +2871,14 @@
 
         <a href="https://kenfolios.com/support/">
           Support
+        </a>
+
+        <a href="https://kenfolios.com/privacy/">
+          Privacy
+        </a>
+
+        <a href="https://kenfolios.com/terms-of-service">
+          Terms
         </a>
 
       </div>
