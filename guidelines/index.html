@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="description"
+    content="KenFolios Business Community Guidelines — standards for professional, respectful and useful participation across KenFolios groups, events and platforms."
+  />
+
+  <title>Community Guidelines | KenFolios Business Community</title>
+
+  <link rel="icon" href="https://kenfolios.com/favicon.ico" />
+
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --text: #111111;
+      --muted: #666666;
+      --line: #e9e9e5;
+
+      --brand: #d81f2a;
+      --brand-dark: #a9141d;
+      --soft: #fff3f3;
+
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+
+      --radius: 22px;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Inter,
+        ui-sans-serif,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    /* =========================================================
+       HEADER
+    ========================================================= */
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+
+      background: rgba(255, 255, 255, 0.92);
+
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .nav {
+      max-width: var(--max);
+      margin: auto;
+
+      min-height: 74px;
+      padding: 0 24px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+
+      text-decoration: none;
+
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      font-size: 21px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 12px;
+
+      background: #111;
+      color: #fff;
+
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+
+      gap: 24px;
+
+      font-size: 14px;
+      color: #444;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+    }
+
+    .nav-links a:hover {
+      color: #000;
+    }
+
+    .nav-cta {
+      padding: 11px 16px;
+
+      border-radius: 999px;
+
+      background: #111;
+      color: #fff !important;
+
+      font-weight: 700;
+    }
+
+    /* =========================================================
+       HERO
+    ========================================================= */
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+
+      background:
+        radial-gradient(
+          circle at 90% 15%,
+          rgba(216, 31, 42, 0.16),
+          transparent 28%
+        ),
+        linear-gradient(
+          180deg,
+          #ffffff 0%,
+          #f7f7f5 100%
+        );
+
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-inner {
+      max-width: var(--max);
+      margin: auto;
+
+      padding: 92px 24px 72px;
+
+      display: grid;
+      grid-template-columns:
+        minmax(0, 1.2fr)
+        minmax(280px, 0.8fr);
+
+      gap: 56px;
+
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 7px 11px;
+
+      border: 1px solid #f2c5c8;
+      border-radius: 999px;
+
+      background: #fff8f8;
+      color: var(--brand-dark);
+
+      text-transform: uppercase;
+
+      letter-spacing: 0.1em;
+
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 20px 0;
+
+      max-width: 850px;
+
+      font-size: clamp(42px, 6vw, 76px);
+
+      line-height: 1.02;
+      letter-spacing: -0.055em;
+    }
+
+    .hero p {
+      margin: 0;
+
+      max-width: 760px;
+
+      font-size: clamp(18px, 2vw, 22px);
+
+      line-height: 1.6;
+
+      color: #4c4c4c;
+    }
+
+    .hero-note {
+      padding: 28px;
+
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+
+      background: rgba(255, 255, 255, 0.9);
+
+      box-shadow: var(--shadow);
+    }
+
+    .hero-note small {
+      display: block;
+
+      margin-bottom: 8px;
+
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+
+      font-weight: 800;
+
+      color: var(--brand);
+    }
+
+    .hero-note strong {
+      display: block;
+
+      font-size: 23px;
+
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-note p {
+      margin-top: 12px;
+
+      font-size: 15px;
+
+      color: var(--muted);
+    }
+
+    /* =========================================================
+       MAIN LAYOUT
+    ========================================================= */
+
+    .layout {
+      max-width: var(--max);
+      margin: auto;
+
+      padding: 56px 24px 88px;
+
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+
+      gap: 46px;
+
+      align-items: start;
+    }
+
+    /* =========================================================
+       TABLE OF CONTENTS
+    ========================================================= */
+
+    .toc {
+      position: sticky;
+      top: 98px;
+
+      border: 1px solid var(--line);
+      border-radius: 18px;
+
+      background: var(--surface);
+
+      padding: 18px;
+    }
+
+    .toc-title {
+      margin: 0 0 12px;
+
+      font-size: 13px;
+      font-weight: 850;
+
+      color: #222;
+
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+    }
+
+    .toc a {
+      display: block;
+
+      padding: 8px 10px;
+
+      border-radius: 10px;
+
+      color: #666;
+
+      text-decoration: none;
+
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .toc a:hover {
+      background: #f5f5f2;
+      color: #111;
+    }
+
+    /* =========================================================
+       CONTENT
+    ========================================================= */
+
+    .content {
+      min-width: 0;
+    }
+
+    .intro-card {
+      padding: 30px;
+
+      margin-bottom: 26px;
+
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+
+      background: #fff;
+    }
+
+    .intro-card p {
+      margin: 0;
+
+      font-size: 17px;
+
+      color: #444;
+    }
+
+    /* =========================================================
+       SIMPLE RULE
+    ========================================================= */
+
+    .principle {
+      margin: 30px 0;
+
+      padding: 30px;
+
+      border-radius: var(--radius);
+
+      background: #111;
+      color: #fff;
+    }
+
+    .principle .label {
+      display: block;
+
+      margin-bottom: 8px;
+
+      color: #ff7a82;
+
+      font-size: 12px;
+      font-weight: 850;
+
+      letter-spacing: 0.12em;
+
+      text-transform: uppercase;
+    }
+
+    .principle blockquote {
+      margin: 0;
+
+      font-size: clamp(22px, 3vw, 33px);
+
+      line-height: 1.35;
+      letter-spacing: -0.025em;
+
+      font-weight: 750;
+    }
+
+    /* =========================================================
+       GUIDELINE SECTIONS
+    ========================================================= */
+
+    .section {
+      scroll-margin-top: 100px;
+
+      margin-bottom: 22px;
+
+      padding: 34px;
+
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+
+      background: var(--surface);
+    }
+
+    .section-number {
+      width: 38px;
+      height: 38px;
+
+      margin-bottom: 18px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 11px;
+
+      background: var(--soft);
+
+      color: var(--brand);
+
+      font-weight: 850;
+      font-size: 14px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+
+      font-size: clamp(24px, 3vw, 34px);
+
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+
+    .section > p {
+      margin: 0 0 16px;
+
+      color: #505050;
+
+      font-size: 16px;
+    }
+
+    .section ul {
+      margin: 12px 0 0;
+
+      padding-left: 22px;
+
+      color: #444;
+    }
+
+    .section li {
+      margin: 8px 0;
+    }
+
+    /* =========================================================
+       GOOD / AVOID CARDS
+    ========================================================= */
+
+    .do-dont {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 14px;
+
+      margin-top: 20px;
+    }
+
+    .mini {
+      padding: 18px;
+
+      border-radius: 16px;
+
+      border: 1px solid var(--line);
+
+      background: #fafaf8;
+    }
+
+    .mini strong {
+      display: block;
+
+      margin-bottom: 6px;
+
+      font-size: 14px;
+    }
+
+    .mini p {
+      margin: 0;
+
+      color: #606060;
+
+      font-size: 14px;
+    }
+
+    /* =========================================================
+       CALLOUT
+    ========================================================= */
+
+    .callout {
+      margin-top: 20px;
+
+      padding: 18px 20px;
+
+      border-left: 4px solid var(--brand);
+
+      border-radius: 0 14px 14px 0;
+
+      background: #fff7f7;
+
+      color: #4a3334;
+
+      font-size: 14px;
+    }
+
+    /* =========================================================
+       ENFORCEMENT
+    ========================================================= */
+
+    .enforcement-grid {
+      margin-top: 22px;
+
+      display: grid;
+
+      grid-template-columns: repeat(3, 1fr);
+
+      gap: 12px;
+    }
+
+    .step {
+      padding: 18px;
+
+      border: 1px solid var(--line);
+      border-radius: 16px;
+
+      background: #fafaf8;
+    }
+
+    .step b {
+      display: block;
+
+      margin-bottom: 4px;
+
+      font-size: 14px;
+    }
+
+    .step span {
+      color: #666;
+
+      font-size: 13px;
+    }
+
+    /* =========================================================
+       LEGAL BOX
+    ========================================================= */
+
+    .legal-box {
+      margin-top: 30px;
+
+      padding: 28px;
+
+      border: 1px solid #f1d3d5;
+      border-radius: var(--radius);
+
+      background: #fffafa;
+    }
+
+    .legal-box h2 {
+      font-size: 24px;
+    }
+
+    .legal-box p {
+      color: #555;
+    }
+
+    .legal-links {
+      display: flex;
+      flex-wrap: wrap;
+
+      gap: 10px;
+
+      margin-top: 18px;
+    }
+
+    .legal-links a {
+      display: inline-flex;
+
+      padding: 10px 14px;
+
+      border-radius: 999px;
+
+      background: #fff;
+
+      border: 1px solid var(--line);
+
+      text-decoration: none;
+
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .legal-links a:hover {
+      border-color: #ccc;
+    }
+
+    .updated {
+      margin: 28px 0 0;
+
+      color: #777 !important;
+
+      font-size: 13px;
+    }
+
+    /* =========================================================
+       FOOTER
+    ========================================================= */
+
+    footer {
+      background: #111;
+      color: #fff;
+    }
+
+    .footer-inner {
+      max-width: var(--max);
+      margin: auto;
+
+      padding: 38px 24px;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 24px;
+
+      flex-wrap: wrap;
+    }
+
+    footer a {
+      margin-right: 16px;
+
+      color: #ccc;
+
+      text-decoration: none;
+
+      font-size: 13px;
+    }
+
+    footer a:hover {
+      color: #fff;
+    }
+
+    .copyright {
+      color: #8d8d8d;
+
+      font-size: 13px;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 900px) {
+
+      .nav-links a:not(.nav-cta) {
+        display: none;
+      }
+
+      .hero-inner {
+        grid-template-columns: 1fr;
+
+        gap: 30px;
+
+        padding-top: 66px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+
+        gap: 24px;
+      }
+
+      .toc {
+        position: relative;
+        top: auto;
+
+        display: flex;
+
+        overflow: auto;
+
+        gap: 6px;
+
+        padding: 10px;
+
+        scrollbar-width: none;
+      }
+
+      .toc::-webkit-scrollbar {
+        display: none;
+      }
+
+      .toc-title {
+        display: none;
+      }
+
+      .toc a {
+        flex: 0 0 auto;
+
+        white-space: nowrap;
+
+        background: #f7f7f5;
+      }
+    }
+
+    @media (max-width: 640px) {
+
+      .nav {
+        min-height: 66px;
+
+        padding: 0 16px;
+      }
+
+      .brand {
+        font-size: 18px;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+      }
+
+      .nav-cta {
+        padding: 9px 13px;
+
+        font-size: 13px;
+      }
+
+      .hero-inner {
+        padding: 54px 18px 46px;
+      }
+
+      h1 {
+        font-size: 46px;
+      }
+
+      .hero-note {
+        padding: 22px;
+      }
+
+      .layout {
+        padding: 28px 16px 56px;
+      }
+
+      .section,
+      .intro-card,
+      .principle {
+        padding: 23px;
+      }
+
+      .do-dont,
+      .enforcement-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        padding: 30px 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =======================================================
+       HEADER
+  ======================================================== -->
+
+  <header class="site-header">
+
+    <div class="nav">
+
+      <a
+        class="brand"
+        href="https://kenfolios.com/"
+        aria-label="KenFolios home"
+      >
+        <span class="brand-mark">KF</span>
+        <span>KenFolios</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary">
+
+        <a href="https://kenfolios.com/">
+          Home
+        </a>
+
+        <a href="https://kenfolios.com/community/">
+          Community
+        </a>
+
+        <a href="https://kenfolios.com/membership/">
+          Membership
+        </a>
+
+        <a
+          class="nav-cta"
+          href="https://kenfolios.com/community/"
+        >
+          Explore Community
+        </a>
+
+      </nav>
+
+    </div>
+
+  </header>
+
+
+  <!-- =======================================================
+       PAGE
+  ======================================================== -->
+
+  <main>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="hero-inner">
+
+        <div>
+
+          <span class="eyebrow">
+            KenFolios Business Community
+          </span>
+
+          <h1>
+            Community Guidelines
+          </h1>
+
+          <p>
+            Build relationships. Create opportunities. Respect the community.
+            These guidelines explain the standards that help KenFolios remain
+            professional, useful, trusted and welcoming for everyone.
+          </p>
+
+        </div>
+
+
+        <aside class="hero-note">
+
+          <small>
+            Our approach
+          </small>
+
+          <strong>
+            Professional freedom with responsible participation.
+          </strong>
+
+          <p>
+            KenFolios encourages conversations, collaboration, business
+            development, networking and new opportunities — while protecting
+            members from spam, harassment, misuse of data and deceptive
+            behaviour.
+          </p>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+
+    <!-- MAIN CONTENT -->
+
+    <div class="layout">
+
+      <!-- TABLE OF CONTENTS -->
+
+      <aside
+        class="toc"
+        aria-label="On this page"
+      >
+
+        <div class="toc-title">
+          On this page
+        </div>
+
+        <a href="#purpose">Purpose</a>
+
+        <a href="#respect">Respect</a>
+
+        <a href="#promotion">Promotion</a>
+
+        <a href="#spam">Spam & outreach</a>
+
+        <a href="#privacy">Privacy & data</a>
+
+        <a href="#truth">Authenticity</a>
+
+        <a href="#transactions">Business dealings</a>
+
+        <a href="#groups">Groups</a>
+
+        <a href="#events">Events</a>
+
+        <a href="#organisers">Member-led activity</a>
+
+        <a href="#content">Content</a>
+
+        <a href="#reporting">Reporting</a>
+
+        <a href="#enforcement">Enforcement</a>
+
+      </aside>
+
+
+      <!-- GUIDELINES -->
+
+      <article class="content">
+
+
+        <!-- INTRO -->
+
+        <div
+          class="intro-card"
+          id="purpose"
+        >
+
+          <p>
+            KenFolios Business Community brings together entrepreneurs,
+            founders, professionals, creators, investors, mentors and business
+            leaders across digital communities, events, programs, tools and
+            partner platforms.
+            These Guidelines apply wherever members participate in an activity
+            associated with KenFolios.
+          </p>
+
+        </div>
+
+
+        <!-- SIMPLE RULE -->
+
+        <div class="principle">
+
+          <span class="label">
+            The simple rule
+          </span>
+
+          <blockquote>
+            If an activity would make other members less comfortable
+            introducing themselves, sharing their professional information,
+            attending an event or participating in a group, don't do it.
+          </blockquote>
+
+        </div>
+
+
+        <!-- 01 -->
+
+        <section
+          class="section"
+          id="respect"
+        >
+
+          <div class="section-number">
+            01
+          </div>
+
+          <h2>
+            Be professional and respectful
+          </h2>
+
+          <p>
+            Strong opinions and disagreements are part of business communities.
+            Personal attacks are not.
+            Treat other members with the same professionalism you would expect
+            in a serious workplace or business meeting.
+          </p>
+
+          <ul>
+
+            <li>
+              No harassment, threats, intimidation or abusive conduct.
+            </li>
+
+            <li>
+              No discriminatory or degrading remarks directed at individuals
+              or groups.
+            </li>
+
+            <li>
+              No persistent unwanted personal communication.
+            </li>
+
+            <li>
+              No deliberately disruptive behaviour in groups, events or
+              community spaces.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 02 -->
+
+        <section
+          class="section"
+          id="promotion"
+        >
+
+          <div class="section-number">
+            02
+          </div>
+
+          <h2>
+            Build relationships before broadcasting promotions
+          </h2>
+
+          <p>
+            KenFolios is a business network, so members may introduce their
+            work, seek opportunities and respond to relevant requirements.
+            But community access should not be treated as unlimited advertising
+            inventory.
+          </p>
+
+
+          <div class="do-dont">
+
+            <div class="mini">
+
+              <strong>
+                Good participation
+              </strong>
+
+              <p>
+                Responding to a member seeking a supplier, posting a relevant
+                opportunity, sharing expertise or making a useful introduction.
+              </p>
+
+            </div>
+
+
+            <div class="mini">
+
+              <strong>
+                Avoid
+              </strong>
+
+              <p>
+                Repeatedly posting the same advertisement, flooding multiple
+                groups, or forcing unrelated conversations toward your offer.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- 03 -->
+
+        <section
+          class="section"
+          id="spam"
+        >
+
+          <div class="section-number">
+            03
+          </div>
+
+          <h2>
+            No spam, scraping or unsolicited mass outreach
+          </h2>
+
+          <p>
+            Access to a KenFolios group, directory, event or platform does not
+            automatically give permission to contact every member for commercial
+            purposes.
+          </p>
+
+          <ul>
+
+            <li>
+              Do not scrape, copy or harvest member contact details.
+            </li>
+
+            <li>
+              Do not send bulk WhatsApp messages, emails, calls or DMs using
+              community data without permission.
+            </li>
+
+            <li>
+              Do not add members to external groups, mailing lists or databases
+              without consent.
+            </li>
+
+            <li>
+              Do not automate member outreach in ways that bypass community
+              rules or platform policies.
+            </li>
+
+          </ul>
+
+
+          <div class="callout">
+            A relevant one-to-one introduction can be valuable.
+            Unrequested mass prospecting can quickly make a community unusable.
+          </div>
+
+        </section>
+
+
+        <!-- 04 -->
+
+        <section
+          class="section"
+          id="privacy"
+        >
+
+          <div class="section-number">
+            04
+          </div>
+
+          <h2>
+            Protect member privacy and community data
+          </h2>
+
+          <p>
+            Information visible inside KenFolios should be used only for
+            legitimate participation and in accordance with applicable privacy
+            requirements.
+          </p>
+
+          <ul>
+
+            <li>
+              Do not redistribute private conversations or member information
+              without permission.
+            </li>
+
+            <li>
+              Do not publish screenshots of private groups or communications in
+              a way that exposes members unnecessarily.
+            </li>
+
+            <li>
+              Do not sell, license, export or commercially exploit member data.
+            </li>
+
+            <li>
+              Respect requests from other members to stop contacting them.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 05 -->
+
+        <section
+          class="section"
+          id="truth"
+        >
+
+          <div class="section-number">
+            05
+          </div>
+
+          <h2>
+            Represent yourself and your work truthfully
+          </h2>
+
+          <p>
+            Trust is essential in a business network.
+            Your identity, organisation, professional experience, opportunities
+            and commercial claims should not intentionally mislead other
+            members.
+          </p>
+
+          <ul>
+
+            <li>
+              No impersonation or intentionally false identities.
+            </li>
+
+            <li>
+              No fabricated credentials, testimonials or business claims.
+            </li>
+
+            <li>
+              No deceptive investment, employment, fundraising or commercial
+              offers.
+            </li>
+
+            <li>
+              No fraudulent links, payment requests, schemes or
+              misrepresentation.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 06 -->
+
+        <section
+          class="section"
+          id="transactions"
+        >
+
+          <div class="section-number">
+            06
+          </div>
+
+          <h2>
+            Conduct business independently and do your own due diligence
+          </h2>
+
+          <p>
+            KenFolios helps people discover and connect with one another.
+            A member's presence in the community does not by itself mean
+            KenFolios guarantees, endorses or verifies every statement, product,
+            service, investment or transaction.
+          </p>
+
+          <ul>
+
+            <li>
+              Verify counterparties before making payments or commitments.
+            </li>
+
+            <li>
+              Use written agreements where appropriate.
+            </li>
+
+            <li>
+              Evaluate investment and fundraising opportunities independently.
+            </li>
+
+            <li>
+              Do not imply KenFolios endorsement unless you have written
+              authorisation.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 07 -->
+
+        <section
+          class="section"
+          id="groups"
+        >
+
+          <div class="section-number">
+            07
+          </div>
+
+          <h2>
+            Keep groups useful and relevant
+          </h2>
+
+          <p>
+            KenFolios operates city, industry, interest, local business and other
+            focused communities.
+            Members should respect the purpose of each space.
+          </p>
+
+          <ul>
+
+            <li>
+              Post information relevant to the group wherever possible.
+            </li>
+
+            <li>
+              Avoid excessive forwards, repetitive greetings and unrelated
+              promotional material.
+            </li>
+
+            <li>
+              Follow group-specific instructions issued by authorised admins or
+              moderators.
+            </li>
+
+            <li>
+              Use the most appropriate group rather than posting the same
+              message everywhere.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 08 -->
+
+        <section
+          class="section"
+          id="events"
+        >
+
+          <div class="section-number">
+            08
+          </div>
+
+          <h2>
+            Events are professional community spaces too
+          </h2>
+
+          <p>
+            These standards also apply at KenFolios online meetings, offline
+            networking events, founder sessions, workshops, meetups and other
+            community activities.
+          </p>
+
+          <ul>
+
+            <li>
+              Respect organisers, speakers, attendees and venue rules.
+            </li>
+
+            <li>
+              Do not harass attendees or misuse attendee lists after an event.
+            </li>
+
+            <li>
+              Do not misrepresent an unofficial gathering as an official
+              KenFolios event.
+            </li>
+
+            <li>
+              Follow event-specific safety, registration and participation
+              requirements.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 09 -->
+
+        <section
+          class="section"
+          id="organisers"
+        >
+
+          <div class="section-number">
+            09
+          </div>
+
+          <h2>
+            Member-led groups and events carry responsibility
+          </h2>
+
+          <p>
+            KenFolios may allow members to create groups, organise activities or
+            participate in community-led initiatives.
+            That freedom should be used responsibly.
+          </p>
+
+          <ul>
+
+            <li>
+              Use the KenFolios name, logo and brand only in the manner
+              authorised for the activity.
+            </li>
+
+            <li>
+              Clearly distinguish member-led activities from activities directly
+              organised by KenFolios where relevant.
+            </li>
+
+            <li>
+              Do not collect money, commitments or personal data in KenFolios'
+              name without appropriate authorisation.
+            </li>
+
+            <li>
+              Organisers are responsible for maintaining professional conduct in
+              the spaces they manage.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 10 -->
+
+        <section
+          class="section"
+          id="content"
+        >
+
+          <div class="section-number">
+            10
+          </div>
+
+          <h2>
+            Share lawful, responsible and useful content
+          </h2>
+
+          <p>
+            Members are responsible for what they publish or distribute through
+            the community.
+          </p>
+
+          <ul>
+
+            <li>
+              No unlawful, fraudulent, malicious or intentionally deceptive
+              content.
+            </li>
+
+            <li>
+              No content that infringes another person's privacy, intellectual
+              property or confidential information.
+            </li>
+
+            <li>
+              No malware, phishing links or intentionally harmful files.
+            </li>
+
+            <li>
+              Do not use community spaces primarily to provoke, inflame or
+              derail professional discussions.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 11 -->
+
+        <section class="section">
+
+          <div class="section-number">
+            11
+          </div>
+
+          <h2>
+            Don't exploit community access
+          </h2>
+
+          <p>
+            Membership is intended for participation in the ecosystem, not for
+            extracting the ecosystem itself.
+          </p>
+
+          <ul>
+
+            <li>
+              Do not build competing databases by copying KenFolios member
+              information.
+            </li>
+
+            <li>
+              Do not resell access to KenFolios groups, resources or member
+              information.
+            </li>
+
+            <li>
+              Do not reproduce internal resources or restricted community
+              material without permission.
+            </li>
+
+            <li>
+              Do not use technical methods intended to bypass membership,
+              moderation or access controls.
+            </li>
+
+          </ul>
+
+        </section>
+
+
+        <!-- 12 -->
+
+        <section
+          class="section"
+          id="reporting"
+        >
+
+          <div class="section-number">
+            12
+          </div>
+
+          <h2>
+            Report serious problems instead of escalating them publicly
+          </h2>
+
+          <p>
+            If you encounter suspected fraud, harassment, threats, data misuse,
+            impersonation or another serious violation, report it to KenFolios
+            through the available support or administrative channels.
+          </p>
+
+          <p>
+            Public accusations, doxxing or prolonged disputes inside community
+            groups can create additional harm.
+            KenFolios may ask members to provide evidence privately so the matter
+            can be reviewed appropriately.
+          </p>
+
+        </section>
+
+
+        <!-- 13 -->
+
+        <section
+          class="section"
+          id="enforcement"
+        >
+
+          <div class="section-number">
+            13
+          </div>
+
+          <h2>
+            How these Guidelines are enforced
+          </h2>
+
+          <p>
+            KenFolios may take action based on the nature, seriousness, context
+            and frequency of a violation.
+            Not every issue requires the same response.
+          </p>
+
+
+          <div class="enforcement-grid">
+
+            <div class="step">
+
+              <b>
+                Reminder or warning
+              </b>
+
+              <span>
+                For minor or first-time issues where corrective action is
+                appropriate.
+              </span>
+
+            </div>
+
+
+            <div class="step">
+
+              <b>
+                Restrictions
+              </b>
+
+              <span>
+                Content removal, posting limits or removal from particular groups
+                or activities.
+              </span>
+
+            </div>
+
+
+            <div class="step">
+
+              <b>
+                Suspension or removal
+              </b>
+
+              <span>
+                For serious, repeated, fraudulent, abusive or harmful conduct.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="callout">
+            Serious issues involving fraud, threats, harassment, unlawful
+            activity, deliberate data misuse or attempts to compromise community
+            systems may result in immediate action without a prior warning.
+          </div>
+
+        </section>
+
+
+        <!-- 14 -->
+
+        <section class="section">
+
+          <div class="section-number">
+            14
+          </div>
+
+          <h2>
+            Context matters
+          </h2>
+
+          <p>
+            These Guidelines cannot predict every situation.
+            KenFolios may consider context, intent, impact, member safety,
+            previous conduct and applicable law when reviewing behaviour.
+            Moderation decisions may therefore differ between situations that
+            appear similar at first glance.
+          </p>
+
+        </section>
+
+
+        <!-- 15 -->
+
+        <section class="section">
+
+          <div class="section-number">
+            15
+          </div>
+
+          <h2>
+            Guidelines may evolve with the community
+          </h2>
+
+          <p>
+            KenFolios continues to add groups, events, tools, memberships,
+            integrations and new ways for members to interact.
+            These Guidelines may be updated as the ecosystem evolves.
+            Material policy changes may also be reflected in the Terms of
+            Service, Privacy Policy or other applicable rules.
+          </p>
+
+        </section>
+
+
+        <!-- LEGAL RELATIONSHIP -->
+
+        <div class="legal-box">
+
+          <h2>
+            These Guidelines work together with our legal policies.
+          </h2>
+
+          <p>
+            The Community Guidelines are intended to explain expected behaviour
+            in practical language.
+            They do not replace the KenFolios Terms of Service or Privacy Policy.
+            If there is a conflict, the applicable legal terms and policies
+            govern.
+          </p>
+
+
+          <div class="legal-links">
+
+            <a href="https://kenfolios.com/terms/">
+              Terms of Service
+            </a>
+
+            <a href="https://kenfolios.com/privacy/">
+              Privacy Policy
+            </a>
+
+            <a href="https://kenfolios.com/community/">
+              Business Community
+            </a>
+
+          </div>
+
+
+          <p class="updated">
+            Last updated: 7 September 2026
+          </p>
+
+        </div>
+
+      </article>
+
+    </div>
+
+  </main>
+
+
+  <!-- =======================================================
+       FOOTER
+  ======================================================== -->
+
+  <footer>
+
+    <div class="footer-inner">
+
+      <div class="copyright">
+        © 2026 KenFolios Media Private Limited. All rights reserved.
+      </div>
+
+      <div>
+
+        <a href="https://kenfolios.com/community/">
+          Community
+        </a>
+
+        <a href="https://kenfolios.com/terms/">
+          Terms
+        </a>
+
+        <a href="https://kenfolios.com/privacy/">
+          Privacy
+        </a>
+
+        <a href="https://kenfolios.com/support/">
+          Support
+        </a>
+
+      </div>
+
+    </div>
+
+  </footer>
+
+</body>
+</html>
