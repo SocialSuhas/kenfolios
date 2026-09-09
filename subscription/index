@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>KenFolios Subscription — Coming Soon</title>
+
+  <meta
+    name="description"
+    content="KenFolios Subscription is being built as an additional layer of benefits and services for activated members of KenFolios Business Community."
+  />
+
+  <meta name="author" content="KenFolios Media Private Limited" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0a0a0a" />
+
+  <link rel="canonical" href="https://kenfolios.com/subscription" />
+
+  <link
+    rel="icon"
+    type="image/png"
+    sizes="64x64"
+    href="https://kenfolios.com/assets/favicon-kenfolios-64x64.png"
+  />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="KenFolios" />
+  <meta property="og:title" content="KenFolios Subscription — Coming Soon" />
+  <meta
+    property="og:description"
+    content="A new layer of the KenFolios Business Community experience is being built."
+  />
+  <meta
+    property="og:url"
+    content="https://kenfolios.com/subscription"
+  />
+
+  <style>
+    :root {
+      --black: #090909;
+      --black-2: #111111;
+      --black-3: #1b1b1b;
+
+      --white: #ffffff;
+      --off: #f7f7f5;
+      --off-2: #efefec;
+
+      --grey: #777777;
+      --grey-2: #a5a5a5;
+      --grey-3: #d7d7d7;
+
+      --silver: #c7c7c7;
+      --silver-light: #ececec;
+
+      --gold: #b99a58;
+      --gold-light: #d8c48d;
+
+      --red: #d71920;
+      --red-dark: #b51219;
+
+      --line: rgba(0, 0, 0, 0.09);
+      --dark-line: rgba(255, 255, 255, 0.10);
+
+      --max: 1240px;
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+
+      background: var(--white);
+      color: var(--black);
+
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Helvetica,
+        Arial,
+        sans-serif;
+
+      line-height: 1.5;
+
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::selection {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .container {
+      width: min(calc(100% - 42px), var(--max));
+      margin: auto;
+    }
+
+    /* ==========================================================
+       NAVIGATION
+    ========================================================== */
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      height: 82px;
+
+      display: flex;
+      align-items: center;
+
+      border-bottom: 1px solid var(--line);
+
+      background: rgba(255, 255, 255, 0.94);
+
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .nav-wrap {
+      width: min(calc(100% - 42px), var(--max));
+      margin: auto;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+
+      gap: 14px;
+
+      font-size: 18px;
+      font-weight: 800;
+
+      letter-spacing: -0.035em;
+    }
+
+    .logo {
+      width: 46px;
+      height: 46px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--red);
+      color: var(--white);
+
+      font-size: 14px;
+      font-weight: 900;
+
+      letter-spacing: -0.04em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+
+      gap: 28px;
+
+      color: #555;
+
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .nav-links a {
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--black);
+    }
+
+    .nav-links .account {
+      min-height: 42px;
+
+      padding: 0 19px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 999px;
+
+      background: var(--black);
+      color: var(--white);
+
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+    }
+
+    .nav-links .account:hover {
+      background: #272727;
+      color: var(--white);
+
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================
+       HERO
+    ========================================================== */
+
+    .hero {
+      position: relative;
+
+      min-height: calc(100vh - 82px);
+
+      overflow: hidden;
+
+      display: flex;
+      align-items: center;
+
+      background:
+        radial-gradient(
+          circle at 83% 18%,
+          rgba(185, 154, 88, 0.10),
+          transparent 28%
+        ),
+        var(--black);
+
+      color: var(--white);
+    }
+
+    .hero::before {
+      content: "";
+
+      position: absolute;
+
+      width: 720px;
+      height: 720px;
+
+      right: -330px;
+      top: -330px;
+
+      border: 1px solid rgba(185, 154, 88, 0.25);
+      border-radius: 50%;
+
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "70";
+
+      position: absolute;
+
+      right: -2%;
+      bottom: -135px;
+
+      color: rgba(255, 255, 255, 0.035);
+
+      font-size: clamp(280px, 39vw, 590px);
+      font-weight: 900;
+
+      line-height: 0.8;
+      letter-spacing: -0.10em;
+
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+
+      width: 100%;
+
+      padding: 105px 0 100px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+
+      gap: 10px;
+
+      padding: 8px 13px;
+
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+
+      color: #aaa;
+
+      font-size: 10px;
+      font-weight: 750;
+
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: var(--gold);
+
+      box-shadow: 0 0 14px rgba(185, 154, 88, 0.55);
+    }
+
+    .hero h1 {
+      max-width: 990px;
+
+      margin: 32px 0 26px;
+
+      font-size: clamp(60px, 8vw, 112px);
+      font-weight: 850;
+
+      line-height: 0.91;
+      letter-spacing: -0.065em;
+    }
+
+    .hero h1 span {
+      color: #727272;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+
+      margin: 0;
+
+      color: #aaa;
+
+      font-size: clamp(17px, 1.8vw, 20px);
+      line-height: 1.7;
+    }
+
+    .hero-copy strong {
+      color: #e6e6e6;
+      font-weight: 650;
+    }
+
+    /* ==========================================================
+       HERO STATUS
+    ========================================================== */
+
+    .status-panel {
+      max-width: 900px;
+
+      margin-top: 65px;
+
+      padding-top: 34px;
+
+      border-top: 1px solid rgba(255, 255, 255, 0.11);
+    }
+
+    .status-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+
+      gap: 30px;
+    }
+
+    .status-label {
+      color: #858585;
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .status-coming {
+      margin-top: 8px;
+
+      color: #ddd;
+
+      font-size: 17px;
+      font-weight: 650;
+    }
+
+    .percentage {
+      display: flex;
+      align-items: flex-start;
+
+      color: var(--white);
+
+      font-size: clamp(76px, 11vw, 145px);
+      font-weight: 880;
+
+      line-height: 0.76;
+      letter-spacing: -0.08em;
+    }
+
+    .percentage-sign {
+      margin: 5px 0 0 5px;
+
+      color: var(--gold);
+
+      font-size: 0.30em;
+      font-weight: 700;
+
+      letter-spacing: -0.03em;
+    }
+
+    .progress {
+      position: relative;
+
+      height: 8px;
+
+      margin-top: 35px;
+
+      overflow: hidden;
+
+      border-radius: 999px;
+
+      background: rgba(255, 255, 255, 0.10);
+    }
+
+    .progress-fill {
+      position: relative;
+
+      width: 0;
+      height: 100%;
+
+      overflow: hidden;
+
+      border-radius: inherit;
+
+      background:
+        linear-gradient(
+          90deg,
+          #7c7c7c 0%,
+          var(--silver) 50%,
+          var(--gold) 100%
+        );
+
+      transition: width 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .progress-fill::after {
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+      bottom: 0;
+
+      width: 90px;
+
+      transform: translateX(-130px);
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.8),
+          transparent
+        );
+    }
+
+    .progress-fill.active::after {
+      animation: progressSweep 1.5s ease 1.25s forwards;
+    }
+
+    @keyframes progressSweep {
+      to {
+        transform: translateX(900px);
+      }
+    }
+
+    .progress-scale {
+      margin-top: 12px;
+
+      display: flex;
+      justify-content: space-between;
+
+      color: #555;
+
+      font-size: 9px;
+      font-weight: 700;
+
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       GLOBAL SECTION SYSTEM
+    ========================================================== */
+
+    section {
+      padding: 115px 0;
+    }
+
+    .soft {
+      background: var(--off);
+    }
+
+    .dark {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .label {
+      margin-bottom: 22px;
+
+      color: #888;
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .label::before {
+      content: "";
+
+      display: inline-block;
+
+      width: 18px;
+      height: 2px;
+
+      margin-right: 10px;
+
+      vertical-align: middle;
+
+      background: var(--gold);
+    }
+
+    .heading {
+      max-width: 940px;
+
+      margin: 0;
+
+      font-size: clamp(44px, 6vw, 82px);
+      font-weight: 830;
+
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      max-width: 740px;
+
+      margin: 28px 0 0;
+
+      color: #666;
+
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    .dark .lead {
+      color: #aaa;
+    }
+
+    /* ==========================================================
+       MEMBERSHIP + SUBSCRIPTION
+    ========================================================== */
+
+    .relationship {
+      position: relative;
+
+      overflow: hidden;
+    }
+
+    .relationship::after {
+      content: "+";
+
+      position: absolute;
+
+      right: 2%;
+      bottom: -160px;
+
+      color: rgba(0, 0, 0, 0.025);
+
+      font-size: 500px;
+      font-weight: 900;
+
+      line-height: 1;
+
+      pointer-events: none;
+    }
+
+    .relationship-grid {
+      position: relative;
+      z-index: 2;
+
+      margin-top: 70px;
+
+      display: grid;
+      grid-template-columns: 1fr 90px 1fr;
+
+      align-items: stretch;
+    }
+
+    .relationship-card {
+      min-height: 350px;
+
+      padding: 42px;
+
+      display: flex;
+      flex-direction: column;
+
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+
+      background: var(--white);
+
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+    }
+
+    .relationship-card:hover {
+      transform: translateY(-5px);
+
+      border-color: rgba(185, 154, 88, 0.32);
+
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.06);
+    }
+
+    .relationship-card.subscription {
+      background: var(--black);
+      color: var(--white);
+
+      border-color: var(--black);
+    }
+
+    .card-index {
+      margin-bottom: 55px;
+
+      color: #999;
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .subscription .card-index {
+      color: var(--gold-light);
+    }
+
+    .relationship-card h3 {
+      margin: 0 0 18px;
+
+      font-size: clamp(31px, 3.2vw, 45px);
+      font-weight: 820;
+
+      line-height: 1;
+      letter-spacing: -0.045em;
+    }
+
+    .relationship-card p {
+      max-width: 480px;
+
+      margin: 0;
+
+      color: #747474;
+
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .relationship-card.subscription p {
+      color: #aaa;
+    }
+
+    .card-bottom {
+      margin-top: auto;
+      padding-top: 38px;
+
+      color: #999;
+
+      font-size: 10px;
+      font-weight: 750;
+
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .subscription .card-bottom {
+      color: var(--gold);
+    }
+
+    .plus {
+      display: grid;
+      place-items: center;
+
+      color: var(--gold);
+
+      font-size: 45px;
+      font-weight: 300;
+    }
+
+    /* ==========================================================
+       BUILDING
+    ========================================================== */
+
+    .building-grid {
+      margin-top: 70px;
+
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+
+      gap: 14px;
+    }
+
+    .build-card {
+      position: relative;
+
+      min-height: 290px;
+
+      overflow: hidden;
+
+      padding: 32px;
+
+      border: 1px solid var(--line);
+      border-radius: 24px;
+
+      background: var(--white);
+
+      transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .build-card:hover {
+      transform: translateY(-5px);
+
+      border-color: rgba(185, 154, 88, 0.35);
+
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.055);
+    }
+
+    .build-card:nth-child(1) {
+      grid-column: span 7;
+    }
+
+    .build-card:nth-child(2) {
+      grid-column: span 5;
+    }
+
+    .build-card:nth-child(3) {
+      grid-column: span 4;
+    }
+
+    .build-card:nth-child(4) {
+      grid-column: span 4;
+    }
+
+    .build-card:nth-child(5) {
+      grid-column: span 4;
+
+      background: var(--black);
+      color: var(--white);
+
+      border-color: var(--black);
+    }
+
+    .build-number {
+      position: absolute;
+
+      right: -7px;
+      bottom: -30px;
+
+      color: rgba(0, 0, 0, 0.035);
+
+      font-size: 145px;
+      font-weight: 900;
+
+      line-height: 1;
+      letter-spacing: -0.08em;
+
+      pointer-events: none;
+    }
+
+    .build-card:nth-child(5) .build-number {
+      color: rgba(255, 255, 255, 0.06);
+    }
+
+    .build-type {
+      margin-bottom: 50px;
+
+      color: var(--gold);
+
+      font-size: 9px;
+      font-weight: 800;
+
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .build-card h3 {
+      position: relative;
+      z-index: 2;
+
+      margin: 0 0 15px;
+
+      font-size: 26px;
+      font-weight: 790;
+
+      letter-spacing: -0.035em;
+    }
+
+    .build-card p {
+      position: relative;
+      z-index: 2;
+
+      max-width: 520px;
+
+      margin: 0;
+
+      color: #747474;
+
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .build-card:nth-child(5) p {
+      color: #999;
+    }
+
+    /* ==========================================================
+       DEVELOPMENT STATUS
+    ========================================================== */
+
+    .development {
+      position: relative;
+
+      overflow: hidden;
+    }
+
+    .development::after {
+      content: "100";
+
+      position: absolute;
+
+      right: -25px;
+      bottom: -120px;
+
+      color: rgba(255, 255, 255, 0.025);
+
+      font-size: clamp(230px, 32vw, 480px);
+      font-weight: 900;
+
+      line-height: 0.8;
+      letter-spacing: -0.08em;
+
+      pointer-events: none;
+    }
+
+    .development-layout {
+      position: relative;
+      z-index: 2;
+
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+
+      gap: 90px;
+
+      align-items: center;
+    }
+
+    .development-number {
+      color: var(--white);
+
+      font-size: clamp(110px, 18vw, 230px);
+      font-weight: 880;
+
+      line-height: 0.72;
+      letter-spacing: -0.085em;
+    }
+
+    .development-number span {
+      color: var(--gold);
+
+      font-size: 0.28em;
+      font-weight: 700;
+
+      letter-spacing: -0.02em;
+    }
+
+    .development-caption {
+      margin-top: 32px;
+
+      color: #777;
+
+      font-size: 10px;
+      font-weight: 750;
+
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
+    }
+
+    .development-copy h2 {
+      max-width: 680px;
+
+      margin: 0;
+
+      font-size: clamp(43px, 5vw, 70px);
+      font-weight: 830;
+
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .development-copy p {
+      max-width: 620px;
+
+      margin: 27px 0 0;
+
+      color: #999;
+
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .development-track {
+      margin-top: 40px;
+
+      display: grid;
+      grid-template-columns: 7fr 3fr;
+
+      gap: 4px;
+    }
+
+    .development-track span {
+      height: 5px;
+
+      border-radius: 999px;
+    }
+
+    .development-track .done {
+      background:
+        linear-gradient(
+          90deg,
+          var(--silver),
+          var(--gold)
+        );
+    }
+
+    .development-track .ahead {
+      background: #252525;
+    }
+
+    .track-labels {
+      margin-top: 12px;
+
+      display: flex;
+      justify-content: space-between;
+
+      color: #555;
+
+      font-size: 9px;
+      font-weight: 700;
+
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================
+       MEMBER ROUTES
+    ========================================================== */
+
+    .routes-grid {
+      margin-top: 70px;
+
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+
+      gap: 14px;
+    }
+
+    .route-card {
+      min-height: 330px;
+
+      padding: 34px;
+
+      display: flex;
+      flex-direction: column;
+
+      border: 1px solid var(--line);
+      border-radius: 24px;
+
+      background: var(--white);
+
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+    }
+
+    .route-card:hover {
+      transform: translateY(-5px);
+
+      border-color: rgba(0, 0, 0, 0.17);
+
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.055);
+    }
+
+    .route-label {
+      color: #999;
+
+      font-size: 9px;
+      font-weight: 800;
+
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .route-card h3 {
+      margin: 48px 0 15px;
+
+      font-size: 29px;
+      font-weight: 790;
+
+      letter-spacing: -0.04em;
+    }
+
+    .route-card p {
+      margin: 0;
+
+      color: #747474;
+
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .route-link {
+      margin-top: auto;
+      padding-top: 38px;
+
+      display: inline-flex;
+      align-items: center;
+
+      gap: 8px;
+
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .route-link span {
+      transition: transform 0.2s ease;
+    }
+
+    .route-card:hover .route-link span {
+      transform: translateX(4px);
+    }
+
+    /* ==========================================================
+       FINAL
+    ========================================================== */
+
+    .final {
+      position: relative;
+
+      overflow: hidden;
+
+      text-align: center;
+
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .final::before {
+      content: "70";
+
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      transform: translate(-50%, -46%);
+
+      color: rgba(255, 255, 255, 0.022);
+
+      font-size: clamp(300px, 46vw, 650px);
+      font-weight: 900;
+
+      line-height: 0.8;
+      letter-spacing: -0.10em;
+
+      pointer-events: none;
+    }
+
+    .final-inner {
+      position: relative;
+      z-index: 2;
+
+      padding: 35px 0;
+    }
+
+    .final-status {
+      margin-bottom: 26px;
+
+      color: var(--gold);
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+    }
+
+    .final h2 {
+      max-width: 950px;
+
+      margin: auto;
+
+      font-size: clamp(52px, 7vw, 96px);
+      font-weight: 850;
+
+      line-height: 0.93;
+      letter-spacing: -0.065em;
+    }
+
+    .final h2 span {
+      color: #666;
+    }
+
+    .final p {
+      max-width: 650px;
+
+      margin: 30px auto 0;
+
+      color: #999;
+
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    /* ==========================================================
+       FOOTER
+    ========================================================== */
+
+    footer {
+      padding: 36px 0;
+
+      border-top: 1px solid var(--dark-line);
+
+      background: var(--black);
+      color: #777;
+
+      font-size: 12px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      flex-wrap: wrap;
+
+      gap: 20px;
+    }
+
+    .footer-brand {
+      color: var(--white);
+      font-weight: 750;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+
+      gap: 20px;
+    }
+
+    .footer-links a {
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--gold-light);
+    }
+
+    /* ==========================================================
+       REVEAL ANIMATION
+    ========================================================== */
+
+    .reveal {
+      opacity: 0;
+
+      transform: translateY(24px);
+
+      transition:
+        opacity 0.75s ease,
+        transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+
+      transform: translateY(0);
+    }
+
+    /* ==========================================================
+       RESPONSIVE
+    ========================================================== */
+
+    @media (max-width: 1000px) {
+
+      .relationship-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .plus {
+        height: 60px;
+      }
+
+      .building-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .build-card,
+      .build-card:nth-child(1),
+      .build-card:nth-child(2),
+      .build-card:nth-child(3),
+      .build-card:nth-child(4),
+      .build-card:nth-child(5) {
+        grid-column: auto;
+      }
+
+      .build-card:last-child {
+        grid-column: span 2;
+      }
+
+      .development-layout {
+        grid-template-columns: 1fr;
+
+        gap: 70px;
+      }
+
+    }
+
+    @media (max-width: 900px) {
+
+      .nav-links {
+        gap: 18px;
+      }
+
+      .nav-links a:not(.account) {
+        display: none;
+      }
+
+      .routes-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .route-card {
+        min-height: 280px;
+      }
+
+    }
+
+    @media (max-width: 620px) {
+
+      .container,
+      .nav-wrap {
+        width: min(calc(100% - 28px), var(--max));
+      }
+
+      nav {
+        height: 74px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .logo {
+        width: 42px;
+        height: 42px;
+
+        font-size: 13px;
+      }
+
+      .nav-links .account {
+        min-height: 40px;
+
+        padding: 0 14px;
+
+        font-size: 13px;
+      }
+
+      section {
+        padding: 80px 0;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .hero-inner {
+        padding: 85px 0 80px;
+      }
+
+      .hero h1 {
+        font-size: clamp(51px, 15vw, 68px);
+      }
+
+      .hero-copy {
+        font-size: 16px;
+      }
+
+      .status-panel {
+        margin-top: 55px;
+      }
+
+      .status-head {
+        align-items: flex-start;
+        flex-direction: column-reverse;
+
+        gap: 35px;
+      }
+
+      .percentage {
+        font-size: 95px;
+      }
+
+      .relationship-card {
+        min-height: 320px;
+
+        padding: 29px;
+      }
+
+      .building-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .build-card,
+      .build-card:last-child {
+        grid-column: auto;
+
+        min-height: 280px;
+      }
+
+      .development-number {
+        font-size: 120px;
+      }
+
+      .route-card {
+        padding: 29px;
+      }
+
+      .footer {
+        flex-direction: column;
+
+        align-items: flex-start;
+      }
+
+    }
+
+    /* ==========================================================
+       REDUCED MOTION
+    ========================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+      }
+
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+
+      .progress-fill {
+        width: 70%;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- ========================================================
+       NAVIGATION
+  ========================================================= -->
+
+  <nav>
+
+    <div class="nav-wrap">
+
+      <a
+        href="https://kenfolios.com/"
+        class="brand"
+      >
+        <div class="logo">
+          KF
+        </div>
+
+        <span>
+          KenFolios
+        </span>
+      </a>
+
+      <div class="nav-links">
+
+        <a href="#subscription">
+          Subscription
+        </a>
+
+        <a href="#building">
+          What's Coming
+        </a>
+
+        <a href="https://kenfolios.com/membership">
+          Membership
+        </a>
+
+        <a href="https://kenfolios.com/support">
+          Support
+        </a>
+
+        <a
+          href="https://account.kenfolios.com"
+          class="account"
+        >
+          Access Account
+        </a>
+
+      </div>
+
+    </div>
+
+  </nav>
+
+
+  <!-- ========================================================
+       HERO
+  ========================================================= -->
+
+  <header
+    class="hero"
+    id="subscription"
+  >
+
+    <div class="container hero-inner">
+
+      <div class="eyebrow">
+
+        <span class="status-dot"></span>
+
+        KenFolios Business Community
+
+      </div>
+
+      <h1>
+        Subscription.<br>
+        <span>
+          The next layer is taking shape.
+        </span>
+      </h1>
+
+      <p class="hero-copy">
+        We're building KenFolios Subscription as an
+        <strong>additional layer for activated members</strong> —
+        designed to expand the ways you can participate,
+        connect and access services across the KenFolios ecosystem.
+      </p>
+
+      <div class="status-panel">
+
+        <div class="status-head">
+
+          <div>
+
+            <div class="status-label">
+              Subscription Module
+            </div>
+
+            <div class="status-coming">
+              Subscriptions are coming soon.
+            </div>
+
+          </div>
+
+          <div class="percentage">
+
+            <span id="percentageNumber">
+              0
+            </span>
+
+            <span class="percentage-sign">
+              %
+            </span>
+
+          </div>
+
+        </div>
+
+        <div class="progress">
+
+          <div
+            class="progress-fill"
+            id="progressFill"
+          ></div>
+
+        </div>
+
+        <div class="progress-scale">
+
+          <span>
+            Building
+          </span>
+
+          <span>
+            70% Complete
+          </span>
+
+          <span>
+            Launch
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- ========================================================
+       MEMBERSHIP + SUBSCRIPTION
+  ========================================================= -->
+
+  <section class="relationship">
+
+    <div class="container">
+
+      <div class="reveal">
+
+        <div class="label">
+          How It Fits
+        </div>
+
+        <h2 class="heading">
+          Membership continues.<br>
+          Subscription expands it.
+        </h2>
+
+        <p class="lead">
+          KenFolios Subscription is not a replacement for your
+          membership. Membership remains the foundation of your
+          relationship with the community. Subscription is being
+          created as an additional layer of expanded services and
+          benefits.
+        </p>
+
+      </div>
+
+
+      <div class="relationship-grid">
+
+        <article class="relationship-card reveal">
+
+          <div class="card-index">
+            The Foundation
+          </div>
+
+          <h3>
+            KenFolios<br>
+            Membership
+          </h3>
+
+          <p>
+            Your existing relationship with KenFolios Business
+            Community, including the community experience and
+            member services available through your membership.
+          </p>
+
+          <div class="card-bottom">
+            Membership remains active
+          </div>
+
+        </article>
+
+
+        <div class="plus reveal">
+          +
+        </div>
+
+
+        <article class="relationship-card subscription reveal">
+
+          <div class="card-index">
+            The Additional Layer
+          </div>
+
+          <h3>
+            KenFolios<br>
+            Subscription
+          </h3>
+
+          <p>
+            An expanding layer of additional benefits, services
+            and opportunities designed for eligible activated
+            members who choose to subscribe.
+          </p>
+
+          <div class="card-bottom">
+            Coming Soon
+          </div>
+
+        </article>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       WHAT WE ARE BUILDING
+  ========================================================= -->
+
+  <section
+    class="soft"
+    id="building"
+  >
+
+    <div class="container">
+
+      <div class="reveal">
+
+        <div class="label">
+          What We're Building
+        </div>
+
+        <h2 class="heading">
+          More ways to get more from the community.
+        </h2>
+
+        <p class="lead">
+          The subscription layer is being designed around
+          additional participation, networking and member
+          services. Planned areas currently include:
+        </p>
+
+      </div>
+
+
+      <div class="building-grid">
+
+        <article class="build-card reveal">
+
+          <div class="build-type">
+            Planned Area
+          </div>
+
+          <h3>
+            Eligible Meetups
+          </h3>
+
+          <p>
+            Complimentary access to eligible KenFolios meetups
+            may form part of the subscription experience.
+          </p>
+
+          <div class="build-number">
+            01
+          </div>
+
+        </article>
+
+
+        <article class="build-card reveal">
+
+          <div class="build-type">
+            Planned Area
+          </div>
+
+          <h3>
+            Local Groups
+          </h3>
+
+          <p>
+            Access to eligible subscription-based local groups
+            designed around stronger regional connections.
+          </p>
+
+          <div class="build-number">
+            02
+          </div>
+
+        </article>
+
+
+        <article class="build-card reveal">
+
+          <div class="build-type">
+            Planned Area
+          </div>
+
+          <h3>
+            Networking
+          </h3>
+
+          <p>
+            Additional ways to discover and connect with people
+            across the KenFolios Business Community.
+          </p>
+
+          <div class="build-number">
+            03
+          </div>
+
+        </article>
+
+
+        <article class="build-card reveal">
+
+          <div class="build-type">
+            Planned Area
+          </div>
+
+          <h3>
+            Expanded Services
+          </h3>
+
+          <p>
+            A growing layer of services intended to help
+            subscribed members make more effective use of the
+            ecosystem.
+          </p>
+
+          <div class="build-number">
+            04
+          </div>
+
+        </article>
+
+
+        <article class="build-card reveal">
+
+          <div class="build-type">
+            The Road Ahead
+          </div>
+
+          <h3>
+            Future Features
+          </h3>
+
+          <p>
+            Subscription is being designed as an evolving layer.
+            Additional subscription-only features and services
+            may be introduced as the platform continues to grow.
+          </p>
+
+          <div class="build-number">
+            05
+          </div>
+
+        </article>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       DEVELOPMENT STATUS
+  ========================================================= -->
+
+  <section class="dark development">
+
+    <div class="container">
+
+      <div class="development-layout">
+
+        <div class="reveal">
+
+          <div class="development-number">
+            70<span>/100</span>
+          </div>
+
+          <div class="development-caption">
+            Current Module Status
+          </div>
+
+        </div>
+
+
+        <div class="development-copy reveal">
+
+          <div class="label">
+            Development
+          </div>
+
+          <h2>
+            We're building the infrastructure before opening
+            the doors.
+          </h2>
+
+          <p>
+            The subscription system is currently under active
+            development. We're working on the experience,
+            infrastructure and member-facing systems needed
+            before subscriptions become available.
+          </p>
+
+          <div class="development-track">
+
+            <span class="done"></span>
+            <span class="ahead"></span>
+
+          </div>
+
+          <div class="track-labels">
+
+            <span>
+              70% Complete
+            </span>
+
+            <span>
+              What's Ahead
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       MEMBER ROUTES
+  ========================================================= -->
+
+  <section>
+
+    <div class="container">
+
+      <div class="reveal">
+
+        <div class="label">
+          While We Build
+        </div>
+
+        <h2 class="heading">
+          You're already part of the journey.
+        </h2>
+
+        <p class="lead">
+          You don't need to wait for subscriptions to continue
+          using KenFolios. Explore your membership, access your
+          account or reach our member support team.
+        </p>
+
+      </div>
+
+
+      <div class="routes-grid">
+
+        <a
+          href="https://kenfolios.com/membership"
+          class="route-card reveal"
+        >
+
+          <div class="route-label">
+            01 · Membership
+          </div>
+
+          <h3>
+            KenFolios Membership
+          </h3>
+
+          <p>
+            Understand the KenFolios membership journey and
+            explore the broader community ecosystem.
+          </p>
+
+          <div class="route-link">
+            Explore Membership
+            <span>→</span>
+          </div>
+
+        </a>
+
+
+        <a
+          href="https://account.kenfolios.com"
+          class="route-card reveal"
+        >
+
+          <div class="route-label">
+            02 · Member Account
+          </div>
+
+          <h3>
+            Access Your Account
+          </h3>
+
+          <p>
+            Sign in to your KenFolios member account and access
+            the services currently available to you.
+          </p>
+
+          <div class="route-link">
+            Access Account
+            <span>→</span>
+          </div>
+
+        </a>
+
+
+        <a
+          href="https://kenfolios.com/support"
+          class="route-card reveal"
+        >
+
+          <div class="route-label">
+            03 · Support
+          </div>
+
+          <h3>
+            Member Support
+          </h3>
+
+          <p>
+            Need help with your membership, account or access?
+            Visit KenFolios Member Support.
+          </p>
+
+          <div class="route-link">
+            Get Support
+            <span>→</span>
+          </div>
+
+        </a>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       FINAL
+  ========================================================= -->
+
+  <section class="final">
+
+    <div class="container final-inner reveal">
+
+      <div class="final-status">
+        Subscription Module · 70% Complete
+      </div>
+
+      <h2>
+        The next chapter<br>
+        <span>is being built.</span>
+      </h2>
+
+      <p>
+        KenFolios Subscription is coming soon. Until then,
+        your existing KenFolios membership and available
+        member services continue as usual.
+      </p>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================================
+       FOOTER
+  ========================================================= -->
+
+  <footer>
+
+    <div class="container footer">
+
+      <div>
+
+        <span class="footer-brand">
+          KenFolios
+        </span>
+
+        &nbsp;·&nbsp;
+
+        © 2026 KenFolios Media Private Limited
+
+      </div>
+
+
+      <div class="footer-links">
+
+        <a href="https://kenfolios.com/community/">
+          Community
+        </a>
+
+        <a href="https://kenfolios.com/membership">
+          Membership
+        </a>
+
+        <a href="https://account.kenfolios.com">
+          Account
+        </a>
+
+        <a href="https://kenfolios.com/privacy/">
+          Privacy
+        </a>
+
+        <a href="https://kenfolios.com/terms/">
+          Terms
+        </a>
+
+        <a href="https://kenfolios.com/support">
+          Support
+        </a>
+
+      </div>
+
+    </div>
+
+  </footer>
+
+
+  <!-- ========================================================
+       JAVASCRIPT
+  ========================================================= -->
+
+  <script>
+
+    /* ========================================================
+       70% HERO ANIMATION
+    ======================================================== */
+
+    const percentageNumber =
+      document.getElementById("percentageNumber");
+
+    const progressFill =
+      document.getElementById("progressFill");
+
+    const reduceMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+
+    function animatePercentage() {
+
+      if (reduceMotion) {
+
+        percentageNumber.textContent = "70";
+
+        progressFill.style.width = "70%";
+
+        return;
+
+      }
+
+
+      const target = 70;
+
+      const duration = 1500;
+
+      const startTime = performance.now();
+
+
+      function update(currentTime) {
+
+        const elapsed =
+          currentTime - startTime;
+
+        const progress =
+          Math.min(elapsed / duration, 1);
+
+
+        const eased =
+          1 - Math.pow(1 - progress, 3);
+
+
+        const value =
+          Math.round(target * eased);
+
+
+        percentageNumber.textContent =
+          value;
+
+
+        if (progress < 1) {
+
+          requestAnimationFrame(update);
+
+        } else {
+
+          percentageNumber.textContent =
+            "70";
+
+        }
+
+      }
+
+
+      requestAnimationFrame(update);
+
+
+      requestAnimationFrame(() => {
+
+        progressFill.style.width =
+          "70%";
+
+        progressFill.classList.add(
+          "active"
+        );
+
+      });
+
+    }
+
+
+    /* ========================================================
+       SCROLL REVEALS
+    ======================================================== */
+
+    function initialiseReveals() {
+
+      const elements =
+        document.querySelectorAll(
+          ".reveal"
+        );
+
+
+      if (reduceMotion) {
+
+        elements.forEach(element => {
+
+          element.classList.add(
+            "visible"
+          );
+
+        });
+
+        return;
+
+      }
+
+
+      const observer =
+        new IntersectionObserver(
+
+          entries => {
+
+            entries.forEach(entry => {
+
+              if (
+                entry.isIntersecting
+              ) {
+
+                entry.target.classList.add(
+                  "visible"
+                );
+
+                observer.unobserve(
+                  entry.target
+                );
+
+              }
+
+            });
+
+          },
+
+          {
+            threshold: 0.12,
+            rootMargin:
+              "0px 0px -30px 0px"
+          }
+
+        );
+
+
+      elements.forEach(element => {
+
+        observer.observe(element);
+
+      });
+
+    }
+
+
+    /* ========================================================
+       INITIALISE
+    ======================================================== */
+
+    window.addEventListener(
+      "DOMContentLoaded",
+      () => {
+
+        setTimeout(
+          animatePercentage,
+          reduceMotion ? 0 : 250
+        );
+
+        initialiseReveals();
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>
