@@ -3437,72 +3437,106 @@ const ANIMATION_START = 99999;  // visual animation starting point
     return null;
   }
 
-  /* ---- NEW: helper to create paid notice + Activate Membership button ---- */
-  function createPaidNotice(orderRef, activationUrl) {
-    const paidNoticeBox = document.createElement('div');
-    paidNoticeBox.style.marginTop = '18px';
-    paidNoticeBox.style.padding = '12px';
-    paidNoticeBox.style.borderRadius = '10px';
-    paidNoticeBox.style.background = 'rgba(220,252,231,0.9)';
-    paidNoticeBox.style.border = '1px solid rgba(22,163,74,0.35)';
-    paidNoticeBox.style.color = '#166534';
-    paidNoticeBox.style.fontSize = '.95rem';
-    paidNoticeBox.style.fontWeight = '600';
+ /* ---- Implemented 10 Sep 2026: Added Member Account activation option while retaining Telegram activation ---- */
+function createPaidNotice(orderRef, activationUrl) {
+  const paidNoticeBox = document.createElement('div');
+  paidNoticeBox.style.marginTop = '18px';
+  paidNoticeBox.style.padding = '12px';
+  paidNoticeBox.style.borderRadius = '10px';
+  paidNoticeBox.style.background = 'rgba(220,252,231,0.9)';
+  paidNoticeBox.style.border = '1px solid rgba(22,163,74,0.35)';
+  paidNoticeBox.style.color = '#166534';
+  paidNoticeBox.style.fontSize = '.95rem';
+  paidNoticeBox.style.fontWeight = '600';
 
-    const m1 = document.createElement('div');
-    m1.innerHTML =
-      `✅ This order <strong>${orderRef || ''}</strong> is fully paid.`;
-    paidNoticeBox.appendChild(m1);
+  /* Payment confirmation */
+  const m1 = document.createElement('div');
+  m1.innerHTML =
+    `✅ This order <strong>${orderRef || ''}</strong> is fully paid.`;
+  paidNoticeBox.appendChild(m1);
 
-    const m2 = document.createElement('div');
-    m2.style.marginTop = '4px';
-    m2.style.fontWeight = '500';
-    m2.textContent =
-      'You can now activate your membership and secure access to our community groups. If the link isn’t clickable, refresh the page. It’s also been emailed to you.';
-    paidNoticeBox.appendChild(m2);
+  /* Member Account activation — primary option */
+  const m2 = document.createElement('div');
+  m2.style.marginTop = '8px';
+  m2.style.fontWeight = '500';
+  m2.innerHTML =
+    'Activate your membership through your <strong>secure KenFolios Member Account</strong>. All community information can be accessed after login.';
+  paidNoticeBox.appendChild(m2);
 
-    const m3 = document.createElement('div');
-    m3.style.marginTop = '6px';
-    m3.style.fontSize = '.9rem';
-    m3.style.fontWeight = '500';
-    m3.textContent =
-      'The central community group is currently hosted on Telegram. Our city, industry, and interest-based groups will continue on WhatsApp, as before.';
-    paidNoticeBox.appendChild(m3);
+  const accountBtn = document.createElement('button');
+  accountBtn.type = 'button';
+  accountBtn.textContent = 'Activate';
+  accountBtn.style.marginTop = '10px';
+  accountBtn.style.padding = '10px 18px';
+  accountBtn.style.borderRadius = '999px';
+  accountBtn.style.border = 'none';
+  accountBtn.style.fontSize = '.95rem';
+  accountBtn.style.fontWeight = '600';
+  accountBtn.style.cursor = 'pointer';
+  accountBtn.style.background = '#16a34a';
+  accountBtn.style.color = '#fff';
+  accountBtn.style.display = 'inline-flex';
+  accountBtn.style.alignItems = 'center';
+  accountBtn.style.gap = '6px';
 
-    const activateBtn = document.createElement('button');
-    activateBtn.type = 'button';
-    activateBtn.textContent = 'Activate Membership';
-    activateBtn.style.marginTop = '10px';
-    activateBtn.style.padding = '10px 18px';
-    activateBtn.style.borderRadius = '999px';
-    activateBtn.style.border = 'none';
-    activateBtn.style.fontSize = '.95rem';
-    activateBtn.style.fontWeight = '600';
-    activateBtn.style.cursor = activationUrl ? 'pointer' : 'default';
-    activateBtn.style.background = '#16a34a';
-    activateBtn.style.color = '#fff';
-    activateBtn.style.display = 'inline-flex';
-    activateBtn.style.alignItems = 'center';
-    activateBtn.style.gap = '6px';
+  const accountArrow = document.createElement('span');
+  accountArrow.textContent = '→';
+  accountBtn.appendChild(accountArrow);
 
-    const arrow = document.createElement('span');
-    arrow.textContent = '↗';
-    activateBtn.appendChild(arrow);
+  accountBtn.addEventListener('click', function () {
+    window.location.href = 'https://account.kenfolios.com/';
+  });
 
-    activateBtn.addEventListener('click', function () {
-      const url = activationUrl;
-      if (!url) {
-        alert('Activation link is not ready yet. Please try refreshing the page. The link is also emailed to you.');
-        return;
-      }
-      window.location.href = url;
-    });
+  paidNoticeBox.appendChild(accountBtn);
 
-    paidNoticeBox.appendChild(activateBtn);
+  /* Telegram — alternative activation option */
+  const m3 = document.createElement('div');
+  m3.style.marginTop = '14px';
+  m3.style.fontSize = '.9rem';
+  m3.style.fontWeight = '500';
+  m3.innerHTML =
+    '<strong>Alternative activation option</strong><br>' +
+    'You can also activate through the <strong>Telegram Landing Group</strong>, used for activation, announcements and updates. Community groups are hosted on <strong>WhatsApp</strong>. If the activation link isn’t clickable, refresh the page.';
+  paidNoticeBox.appendChild(m3);
 
-    return { notice: paidNoticeBox, activateBtn };
-  }
+  /* Existing Telegram activation button */
+  const activateBtn = document.createElement('button');
+  activateBtn.type = 'button';
+  activateBtn.textContent = 'Activate via Telegram';
+  activateBtn.style.marginTop = '10px';
+  activateBtn.style.padding = '10px 18px';
+  activateBtn.style.borderRadius = '999px';
+  activateBtn.style.border = 'none';
+  activateBtn.style.fontSize = '.95rem';
+  activateBtn.style.fontWeight = '600';
+  activateBtn.style.cursor = activationUrl ? 'pointer' : 'default';
+  activateBtn.style.background = '#16a34a';
+  activateBtn.style.color = '#fff';
+  activateBtn.style.display = 'inline-flex';
+  activateBtn.style.alignItems = 'center';
+  activateBtn.style.gap = '6px';
 
+  const telegramArrow = document.createElement('span');
+  telegramArrow.textContent = '↗';
+  activateBtn.appendChild(telegramArrow);
+
+  activateBtn.addEventListener('click', function () {
+    const url = activationUrl;
+
+    if (!url) {
+      alert(
+        'Activation link is not ready yet. Please try refreshing the page. The link is also emailed to you.'
+      );
+      return;
+    }
+
+    window.location.href = url;
+  });
+
+  paidNoticeBox.appendChild(activateBtn);
+
+  return { notice: paidNoticeBox, activateBtn };
+}
   /* -------- NEW: Lazy-load Razorpay checkout script only when needed -------- */
   let razorpayScriptPromise = null;
   function loadRazorpayScript() {
