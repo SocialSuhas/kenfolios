@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Legacy Member CSV Upload</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:system-ui, -apple-system, Arial; max-width:880px; margin:18px auto; padding:12px}
+    input[type=file], input[type=text], input[type=password], textarea { width:100%; padding:8px; box-sizing:border-box; margin:6px 0 }
+    button{padding:8px 12px; margin-right:8px}
+    pre{background:#f6f7fb;padding:10px;border-radius:6px;overflow:auto}
+    table{border-collapse:collapse;width:100%;margin-top:8px}
+    td,th{border:1px solid #ddd;padding:6px;font-size:13px}
+    .muted{color:#666;font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>Legacy Member — CSV Upload</h1>
+  <p class="muted">Header row must include <b>name,email</b> or <b>A,B</b> (A=name, B=email). Case-insensitive.</p>
+
+  <label>Worker base URL</label>
+  <input id="url" type="text" value="https://legacy-member-import.ksn-nvl.workers.dev/" />
+
+  <label>Optional: Admin token (for X-Admin-Token header)</label>
+  <input id="token" type="password" placeholder="Optional - paste token to send" />
+
+  <label>CSV file (with header row)</label>
+  <input id="file" type="file" accept=".csv,text/csv" />
+
+  <div style="margin-top:8px">
+    <button id="previewBtn">Preview</button>
+    <button id="uploadBtn" disabled>Upload CSV</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+
+  <h3 style="margin-top:14px">Preview (first 10 rows)</h3>
+  <div id="previewArea"><div class="muted">No file loaded.</div></div>
+
+  <h3 style="margin-top:14px">Server response / logs</h3>
+  <pre id="out">No upload yet.</pre>
+
+<script>
+(function(){
+  const fileEl = document.getElementById('file');
+  const previewBtn = document.getElementById('previewBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const previewArea = document.getElementById('previewArea');
+  const out = document.getElementById('out');
+  const urlEl = document.getElementById('url');
+  const tokenEl = document.getElementById('token');
+  let lastCsv = '';
+
+  function parseCSVPreview(text, maxRows = 10) {
+    const rows = [];
+    let cur = '', inQuotes = false, row = [];
+    for (let i=0;i<text.length;i++){
+      const ch = text[i];
+      const nch = text[i+1];
+      if (ch === '"') {
+        if (inQuotes && nch === '"') { cur += '"'; i++; continue; }
+        inQuotes = !inQuotes; continue;
+      }
+      if (ch === ',' && !inQuotes) { row.push(cur); cur=''; continue; }
+      if ((ch === '\n' || ch === '\r') && !inQuotes) {
+        row.push(cur); cur=''; rows.push(row); row = [];
+        if (ch === '\r' && nch === '\n') i++;
+        if (rows.length >= maxRows) break;
+        continue;
+      }
+      cur += ch;
+    }
+    if (cur !== '' || row.length > 0) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  previewBtn.addEventListener('click', async () => {
+    const f = fileEl.files[0];
+    if (!f) { alert('Select a CSV file first'); return; }
+    const txt = await f.text();
+    lastCsv = txt;
+    const rows = parseCSVPreview(txt, 10);
+    if (rows.length === 0) {
+      previewArea.innerHTML = '<div class="muted">No rows found in the file.</div>';
+      uploadBtn.disabled = true;
+      return;
+    }
+    let html = '<table><thead><tr>';
+    const header = rows[0] || [];
+    for (let i=0;i<header.length;i++) html += `<th>${escapeHtml(header[i])}</th>`;
+    html += '</tr></thead><tbody>';
+    for (let r=1; r<rows.length; r++) {
+      html += '<tr>';
+      for (let c=0;c<header.length;c++) html += `<td>${escapeHtml(rows[r][c]||'')}</td>`;
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    previewArea.innerHTML = html;
+    out.textContent = 'Preview OK. Ready to upload.';
+    uploadBtn.disabled = false;
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!lastCsv) { alert('Preview first to load CSV into the uploader'); return; }
+    let base = urlEl.value.trim();
+    if (!base) { alert('Set Worker base URL'); return; }
+    // ensure trailing slash for concatenation
+    if (!base.endsWith('/')) base += '/';
+    const endpoint = base; // post to root '/'
+    uploadBtn.disabled = true;
+    out.textContent = 'Uploading...';
+
+    try {
+      const headers = { 'Content-Type': 'text/csv' };
+      const token = tokenEl.value.trim();
+      if (token) headers['X-Admin-Token'] = token;
+
+      const resp = await fetch(endpoint, { method: 'POST', headers, body: lastCsv });
+      const text = await resp.text();
+      try { out.textContent = JSON.stringify(JSON.parse(text), null, 2); }
+      catch (e) { out.textContent = text; }
+    } catch (err) {
+      out.textContent = 'Upload error: ' + err.message;
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    fileEl.value = '';
+    lastCsv = '';
+    previewArea.innerHTML = '<div class="muted">No file loaded.</div>';
+    out.textContent = 'Cleared.';
+    uploadBtn.disabled = true;
+  });
+
+})();
+</script>
+</body>
+</html>

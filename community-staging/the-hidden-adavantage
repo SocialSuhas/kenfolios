@@ -1,0 +1,247 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hidden Advantage | KenFolios</title>
+
+<style>
+:root{
+    --kf-red:#E11D2E;
+    --text:#0f172a;
+    --muted:#64748b;
+    --border:#e5e7eb;
+    --bg:#0f172a;
+    --white:#ffffff;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--white);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.container{
+    width:min(1100px,92%);
+    margin:auto;
+}
+
+/* Hero */
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:4rem 0;
+}
+
+.logo-stack{
+    display:flex;
+    flex-direction:column;
+    gap:2rem;
+}
+
+.logo-line{
+    color:#fff;
+    font-weight:800;
+    line-height:1.05;
+    letter-spacing:-1px;
+}
+
+.logo-line.small{
+    font-size:clamp(1.2rem,2vw,1.8rem);
+    opacity:.85;
+}
+
+.logo-line.medium{
+    font-size:clamp(2rem,4vw,3.5rem);
+}
+
+.logo-line.large{
+    font-size:clamp(3rem,8vw,6rem);
+}
+
+.logo-line.xlarge{
+    font-size:clamp(4rem,10vw,8rem);
+}
+
+.divider{
+    width:120px;
+    height:2px;
+    background:#fff;
+    margin:0 auto;
+    opacity:.25;
+}
+
+/* Content */
+
+.section{
+    padding:7rem 0;
+    border-top:1px solid rgba(255,255,255,.08);
+}
+
+.section h2{
+    font-size:clamp(2rem,5vw,4rem);
+    margin-bottom:1.5rem;
+    font-weight:800;
+}
+
+.section p{
+    font-size:1.2rem;
+    line-height:1.9;
+    color:rgba(255,255,255,.8);
+    max-width:850px;
+}
+
+/* Footer */
+
+.footer{
+    position:sticky;
+    bottom:0;
+    margin-top:auto;
+    background:#111827;
+    border-top:1px solid rgba(255,255,255,.08);
+    padding:1rem 0;
+    z-index:100;
+}
+
+.footer-inner{
+    width:min(1200px,95%);
+    margin:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:1rem;
+    flex-wrap:wrap;
+}
+
+.footer-left{
+    font-size:.9rem;
+    color:rgba(255,255,255,.75);
+}
+
+.footer-links{
+    display:flex;
+    gap:1.5rem;
+    flex-wrap:wrap;
+}
+
+.footer-links a{
+    color:#fff;
+    text-decoration:none;
+    font-size:.9rem;
+}
+
+.footer-links a:hover{
+    text-decoration:underline;
+}
+
+@media(max-width:768px){
+
+    .hero{
+        min-height:85vh;
+    }
+
+    .footer-inner{
+        flex-direction:column;
+        text-align:center;
+    }
+
+    .footer-links{
+        justify-content:center;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<section class="hero">
+    <div class="container">
+
+        <div class="logo-stack">
+
+            <div class="logo-line medium">
+                KenFolios
+            </div>
+
+            <div class="logo-line small">
+                Tales Extraordinaire (Webzine)
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="logo-line large">
+                KenFolios Business Community
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="logo-line medium">
+                VStreet
+            </div>
+
+            <div class="logo-line small">
+                India's Own Influence Promenade
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="logo-line xlarge">
+                The Hidden Advantage
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <h2>The Hidden Advantage</h2>
+
+        <p>
+            Placeholder content. This section will eventually contain
+            the founder's narrative, the story behind the ecosystem,
+            the philosophy of association, reputation, trust, influence,
+            visibility, opportunity and the unique advantages that emerge
+            from being part of a high-quality community.
+        </p>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-inner">
+
+        <div class="footer-left">
+            © 2026 KenFolios Media Private Limited. All Rights Reserved.
+        </div>
+
+        <div class="footer-links">
+            <a href="https://kenfolios.com/privacy/">Privacy Policy</a>
+            <a href="https://kenfolios.com/terms/">Terms of Use</a>
+            <a href="https://kenfolios.com/community/">Community</a>
+        </div>
+
+    </div>
+</footer>
+
+</body>
+</html>
+```
