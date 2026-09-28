@@ -4031,6 +4031,92 @@ wrap.appendChild(gstWrap);
     }
     updateTotals(order);
 
+    // ---------------- PAYMENT CONFIRMATION SUPPORT NOTICE ----------------
+    function createPaymentSupportNotice() {
+      const notice = document.createElement('div');
+      notice.style.marginTop = '18px';
+      notice.style.padding = '16px';
+      notice.style.border = '1px solid #dbe3f3';
+      notice.style.borderLeft = '4px solid #3b5f9f';
+      notice.style.borderRadius = '8px';
+      notice.style.background = '#f7f9fd';
+
+      const title = document.createElement('div');
+      title.textContent = 'Payment completed but not confirmed?';
+      title.style.fontSize = '1.12rem';
+      title.style.fontWeight = '700';
+      title.style.color = '#294b83';
+      title.style.marginBottom = '9px';
+      notice.appendChild(title);
+
+      const text1 = document.createElement('div');
+      text1.style.fontSize = '1rem';
+      text1.style.lineHeight = '1.6';
+      text1.style.color = '#444';
+      text1.innerHTML =
+        'In very rare cases, external technical or payment-network issues may cause a successful payment to take longer to reflect on your KenFolios account. If you have already completed the payment but your order still appears unpaid, <strong>please do not pay again.</strong>';
+      notice.appendChild(text1);
+
+      const text2 = document.createElement('div');
+      text2.style.fontSize = '1rem';
+      text2.style.lineHeight = '1.6';
+      text2.style.color = '#444';
+      text2.style.marginTop = '7px';
+      text2.innerHTML =
+        'Contact us with your <strong>Order Number</strong> and payment details, and we\'ll help verify your payment and activation.';
+      notice.appendChild(text2);
+
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.flexWrap = 'wrap';
+      actions.style.gap = '10px';
+      actions.style.marginTop = '14px';
+
+      function addSupportLink(label, href, arrow) {
+        const link = document.createElement('a');
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = label + ' ' + arrow;
+        link.style.display = 'inline-flex';
+        link.style.alignItems = 'center';
+        link.style.padding = '10px 18px';
+        link.style.border = '1px solid #9aadd0';
+        link.style.borderRadius = '999px';
+        link.style.background = '#fff';
+        link.style.color = '#294b83';
+        link.style.textDecoration = 'none';
+        link.style.fontSize = '1rem';
+        link.style.fontWeight = '600';
+        return link;
+      }
+
+      actions.appendChild(
+        addSupportLink('Message Us on Instagram', 'https://instagram.com/kenfolioshq', '↗')
+      );
+      actions.appendChild(
+        addSupportLink(
+          'Join the 2 PM Founder-Led Meet',
+          'https://kenfolios.com/meets/online/founder-meet/',
+          '→'
+        )
+      );
+      notice.appendChild(actions);
+
+      const footer = document.createElement('div');
+      footer.textContent =
+        'Founder-Led Online Meets are held at 2 PM IST on weekdays, Monday through Friday only.';
+      footer.style.marginTop = '14px';
+      footer.style.paddingTop = '10px';
+      footer.style.borderTop = '1px solid #e3e8f2';
+      footer.style.fontSize = '.9rem';
+      footer.style.lineHeight = '1.5';
+      footer.style.color = '#777';
+      notice.appendChild(footer);
+
+      return notice;
+    }
+
     // ---------------- PAID / UNPAID STATE HANDLING ----------------
     const isPaid =
       order.payment_status === 'paid' ||
@@ -4075,6 +4161,9 @@ wrap.appendChild(gstWrap);
       wrap.appendChild(payBox);
       wrap.appendChild(payMsg);
     }
+
+    // Shared support notice for both paid and unpaid order states.
+    wrap.appendChild(createPaymentSupportNotice());
 
     // Return references needed by event wiring
     return {
