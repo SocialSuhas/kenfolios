@@ -4054,7 +4054,7 @@ wrap.appendChild(gstWrap);
       text1.style.lineHeight = '1.6';
       text1.style.color = '#444';
       text1.innerHTML =
-        'At KenFolios, members who have paid their activation fee receive ultra-fast support for any activation-related queries. Simply message us on our official Instagram page, and our team will be happy to assist you.';
+        'Members who have paid their activation fee receive ultra-fast support for any activation-related queries. Simply message us on our official Instagram page, and our team will be happy to assist you.';
       notice.appendChild(text1);
 
       const text2 = document.createElement('div');
@@ -4064,8 +4064,6 @@ wrap.appendChild(gstWrap);
       text2.style.marginTop = '7px';
       text2.innerHTML =
         '<strong>Join Our 2 PM Founder-Led Online Meets</strong><br>Activated members can also participate in our Founder-Led Online Meets to connect and network with fellow entrepreneurs and professionals and get their queries addressed directly.';
-      notice.appendChild(text2);
-
       const actions = document.createElement('div');
       actions.style.display = 'flex';
       actions.style.flexWrap = 'wrap';
@@ -4094,14 +4092,23 @@ wrap.appendChild(gstWrap);
       actions.appendChild(
         addSupportLink('Message Us on Instagram', 'https://instagram.com/kenfolioshq', '↗')
       );
-      actions.appendChild(
+      notice.appendChild(actions);
+
+      notice.appendChild(text2);
+
+      const meetActions = document.createElement('div');
+      meetActions.style.display = 'flex';
+      meetActions.style.flexWrap = 'wrap';
+      meetActions.style.gap = '10px';
+      meetActions.style.marginTop = '14px';
+      meetActions.appendChild(
         addSupportLink(
           'Join the 2 PM Founder-Led Meet',
           'https://kenfolios.com/meets/online/founder-meet/',
           '→'
         )
       );
-      notice.appendChild(actions);
+      notice.appendChild(meetActions);
 
       const footer = document.createElement('div');
       footer.textContent =
