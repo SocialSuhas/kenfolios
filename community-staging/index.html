@@ -3396,7 +3396,7 @@ const ANIMATION_START = 99999;  // visual animation starting point
     }
   })();
 
-  const WRITE_ENDPOINT = "/provisioning/activation/join";
+  const WRITE_ENDPOINT = "/onboarding/api/registration";
   const PATCH_MEMBER_BASE = "/provisioning/activation/member/";
   const CREATE_ORDER_ENDPOINT = "/provisioning/activation/payment/create-order";
   const PAYMENT_CONFIRM_ENDPOINT = "/provisioning/activation/payment/confirm";
@@ -4532,6 +4532,16 @@ const j = await resp.json();
 
         // Replace the form in-place so UI appears exactly where the form was
         form.replaceWith(wrap);
+
+        // V2 registration only: payment/order lookup endpoints are not yet integrated.
+        // Do not invoke legacy payment endpoints for a newly registered V2 member.
+        box.applyBtn.disabled = true;
+        box.applyBtn.title = 'Payment integration coming soon';
+        if (box.payBtn) {
+          box.payBtn.disabled = true;
+          box.payBtn.title = 'Payment integration coming soon';
+        }
+        return;
 
         // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
