@@ -4477,14 +4477,14 @@ const j = await resp.json();
       replaceSubmitWithPill(submitBtn,pill);
 
       const payload={
-        name:val('fi_name'),
+        full_name:val('fi_name'),
         dob:val('fi_dob'),
         gender:val('fi_gender'),
         email:val('fi_email'),
         phone:val('fi_phone'),
         city:val('fi_city'),
-        expectations:checkedValues('expectations'),
-        accept:true,
+        expectations:checkedValues('expectations').join(', '),
+        accepted_terms:true,
         source:'kenfolios-join-v2'
       };
 
