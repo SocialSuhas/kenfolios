@@ -4647,22 +4647,9 @@ const j = await resp.json();
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
-          const memberId = (order.member && order.member.id) ? order.member.id : null;
-          if (box.applyBtn && memberId) {
-            box.applyBtn.addEventListener('click', function(){
-              try { applyCoupon(memberId, box.couponInput.value.trim(), box); } catch(e){ console.error(e); }
-            });
-          }
-          if (box.payBtn && memberId) {
-            box.payBtn.addEventListener('click', function(){
-              try { confirmPay(memberId, box); } catch(e){ console.error(e); }
-            });
-          }
-
-          // Preload Razorpay script when showing existing order as well
-          if (typeof loadRazorpayScript === 'function') {
-            loadRazorpayScript().catch(console.error);
-          }
+          // V2 staging: display order only until payment integration is ready.
+          if (box.applyBtn) { box.applyBtn.disabled = true; box.applyBtn.title = 'Payment integration pending'; }
+          if (box.payBtn) { box.payBtn.disabled = true; box.payBtn.title = 'Payment integration pending'; }
 
         } else {
           const el = document.createElement('div');
