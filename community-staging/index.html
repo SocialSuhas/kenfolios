@@ -4503,6 +4503,21 @@ const j = await resp.json();
           return;
         }
 
+        // Registration response is intentionally lightweight. Load the complete
+        // persisted order before rendering fields that require order.member.
+        if (j.order?.order_ref && !j.order?.member) {
+          const lookup = await fetch(FETCH_ORDER_BY_REF, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ref_id:j.order.order_ref})
+          });
+          const details = await lookup.json();
+          if (!lookup.ok || !details.ok || !details.order?.member) {
+            throw new Error(details.message || 'Order lookup failed after registration');
+          }
+          j.order = details.order;
+        }
+
         // Remove any intro/whitespace, then show order UI
         removeFormIntroMessage();
         removeExtraWhitespaceAroundForm();
@@ -4554,9 +4569,10 @@ const j = await resp.json();
           loadRazorpayScript().catch(console.error);
         }
 
-      }catch{
+      }catch(err){
+        console.error('Registration/order display error:',err);
         restoreSubmitFromPill(submitBtn,pill);
-        alert('Save failed');
+        alert('Unable to display order. Your registration may already be saved; please refresh the order URL before submitting again.');
       }
     });
   }
