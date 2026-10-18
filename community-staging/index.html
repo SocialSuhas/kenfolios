@@ -4503,19 +4503,12 @@ const j = await resp.json();
           return;
         }
 
-        // Registration response is intentionally lightweight. Load the complete
-        // persisted order before rendering fields that require order.member.
-        if (j.order?.order_ref && !j.order?.member) {
-          const lookup = await fetch(FETCH_ORDER_BY_REF, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ref_id:j.order.order_ref})
-          });
-          const details = await lookup.json();
-          if (!lookup.ok || !details.ok || !details.order?.member) {
-            throw new Error(details.message || 'Order lookup failed after registration');
-          }
-          j.order = details.order;
+        // Navigate directly to the canonical order URL. The destination page
+        // loads the full order once, avoiding a redundant lookup and DOM rebuild.
+        const orderDestination = j.order_url || j.order?.order_url;
+        if (orderDestination) {
+          window.location.replace(orderDestination);
+          return;
         }
 
         // Remove any intro/whitespace, then show order UI
@@ -5033,7 +5026,7 @@ if (!eventId) {
     const notice = wrapper.previousElementSibling || wrapper;
 
     notice.scrollIntoView({
-      behavior: 'smooth',
+      behavior: 'instant',
       block: 'start'
     });
 
