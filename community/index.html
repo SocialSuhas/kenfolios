@@ -3460,12 +3460,12 @@ function createPaidNotice(orderRef, activationUrl) {
   m2.style.marginTop = '8px';
   m2.style.fontWeight = '500';
   m2.innerHTML =
-    'Activate your membership through your <strong>secure KenFolios Member Account</strong>. All community information can be accessed after login.';
+    'Activate / Reactivate your membership through your <strong>secure KenFolios Member Account</strong>. All community services can be accessed after login.';
   paidNoticeBox.appendChild(m2);
 
   const accountBtn = document.createElement('button');
   accountBtn.type = 'button';
-  accountBtn.textContent = 'Activate';
+  accountBtn.textContent = 'Activate / Reactivate';
   accountBtn.style.marginTop = '10px';
   accountBtn.style.padding = '10px 18px';
   accountBtn.style.borderRadius = '999px';
@@ -3489,20 +3489,36 @@ function createPaidNotice(orderRef, activationUrl) {
 
   paidNoticeBox.appendChild(accountBtn);
 
+  /* Reactivation information — presentation only; no activation flow changes */
+  const reactivationInfo = document.createElement('div');
+  reactivationInfo.style.marginTop = '14px';
+  reactivationInfo.style.padding = '12px 14px';
+  reactivationInfo.style.borderRadius = '10px';
+  reactivationInfo.style.background = '#fff7e6';
+  reactivationInfo.style.border = '1px solid #e9c46a';
+  reactivationInfo.style.color = '#704b16';
+  reactivationInfo.style.fontSize = '.9rem';
+  reactivationInfo.style.fontWeight = '500';
+  reactivationInfo.innerHTML =
+    '<strong>Use the Same Links to Reactivate</strong><br>' +
+    'Log in to your KenFolios account at least once every 7 days to stay active, visible to other members, and benefit from our upcoming next-generation networking system.<br>' +
+    '<strong style="display:block;margin-top:8px;color:#8a4b08">Already paid members need not pay the activation fee again.</strong>';
+  paidNoticeBox.appendChild(reactivationInfo);
+
   /* Telegram — alternative activation option */
   const m3 = document.createElement('div');
   m3.style.marginTop = '14px';
   m3.style.fontSize = '.9rem';
   m3.style.fontWeight = '500';
   m3.innerHTML =
-    '<strong>Alternative activation option</strong><br>' +
-    'You can also activate through the <strong>Telegram Landing Group</strong>, used for activation, announcements and updates. Community groups are hosted primarily on <strong>WhatsApp and Mobile Apps</strong>. If the activation link isn’t clickable, refresh the page.';
+    '<strong>Alternative activation / reactivation option</strong><br>' +
+    'You can also activate / reactivate through the <strong>Telegram Landing Group</strong>, used for activation, announcements and updates. Community groups are hosted primarily on <strong>WhatsApp and Mobile Apps</strong>. If the activation link isn’t clickable, refresh the page.';
   paidNoticeBox.appendChild(m3);
 
   /* Existing Telegram activation button */
   const activateBtn = document.createElement('button');
   activateBtn.type = 'button';
-  activateBtn.textContent = 'Activate via Telegram';
+  activateBtn.textContent = 'Activate / Reactivate via Telegram';
   activateBtn.style.marginTop = '10px';
   activateBtn.style.padding = '10px 18px';
   activateBtn.style.borderRadius = '999px';
