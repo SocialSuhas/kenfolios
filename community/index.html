@@ -3809,6 +3809,23 @@ function createPaidNotice(orderRef, activationUrl) {
 
     wrap.appendChild(headerWrap);
 
+    // Display-only guidance at the top of the order summary; existing actions remain unchanged.
+    const orderGuidance = document.createElement('div');
+    const guidancePaid = order.payment_status === 'paid' || order.status === 'paid' || order.is_paid === true;
+    orderGuidance.textContent = guidancePaid
+      ? 'Access your activation options below.'
+      : 'Access your payment options below.';
+    orderGuidance.style.marginTop = '12px';
+    orderGuidance.style.padding = '11px 13px';
+    orderGuidance.style.borderRadius = '9px';
+    orderGuidance.style.background = guidancePaid ? '#ecfdf3' : '#eff6ff';
+    orderGuidance.style.border = guidancePaid ? '1px solid #86d7a7' : '1px solid #93c5fd';
+    orderGuidance.style.color = guidancePaid ? '#166534' : '#1e40af';
+    orderGuidance.style.fontWeight = '700';
+    orderGuidance.style.fontSize = '.95rem';
+    orderGuidance.style.lineHeight = '1.45';
+    wrap.appendChild(orderGuidance);
+
     const c = document.createElement('div');
     c.style.marginTop = '14px';
     c.innerHTML =
