@@ -34,6 +34,7 @@
     }
 
     .card {
+      text-align: center;
       max-width: 560px;
       margin: 0 auto;
       background: #ffffff;
@@ -58,6 +59,8 @@
       line-height: 1.5;
     }
 
+    form { text-align: left; }
+    form > button { display:block; margin-left:auto; margin-right:auto; }
     label {
       display: block;
       font-size: 13px;
@@ -222,10 +225,9 @@
         </span>
       </div>
 
+      <div id="result" class="result" role="status" aria-live="polite" aria-atomic="true"></div>
       <button type="submit">Submit support request</button>
     </form>
-
-    <div id="result" class="result"></div>
 
     <footer>
       © <span id="year"></span> KenFolios Media Private Limited
@@ -251,6 +253,7 @@
       result.className = "result error";
       result.textContent = "You must accept the Terms & Conditions to proceed.";
       result.style.display = "block";
+      result.scrollIntoView({behavior:"smooth",block:"nearest"});
       button.disabled = false;
       return;
     }
@@ -284,6 +287,7 @@
       result.textContent = "Request received. Your support ID: " + String(data.support_id || "Pending confirmation");
       pendingKey = null;
       result.style.display = "block";
+      result.scrollIntoView({behavior:"smooth",block:"nearest"});
 
       form.reset();
       terms.checked = true;
@@ -292,6 +296,7 @@
       result.className = "result error";
       result.textContent = err.name === "AbortError" ? "Request timed out. Please retry; your request will not be duplicated." : (err.message || "Submission failed. Please retry.");
       result.style.display = "block";
+      result.scrollIntoView({behavior:"smooth",block:"nearest"});
     } finally {
       clearTimeout(timeout);
       button.disabled = false;
