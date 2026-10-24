@@ -237,6 +237,7 @@
   const button = form.querySelector("button");
   const terms = document.getElementById("terms");
 
+  let pendingKey = null;
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -252,30 +253,33 @@
     }
 
     const payload = {
-      name: form.name.value.trim(),
-      email: form.email.value.trim(),
-      phone: form.phone.value.trim(),
-      category: form.category.value,
-      message: form.message.value.trim(),
+      name: form.elements.namedItem("name").value.trim(),
+      email: form.elements.namedItem("email").value.trim(),
+      phone: form.elements.namedItem("phone").value.trim(),
+      category: form.elements.namedItem("category").value,
+      message: form.elements.namedItem("message").value.trim(),
       termsAccepted: true
     };
 
+    if (!pendingKey) pendingKey = crypto.randomUUID().replaceAll("-", "");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
       const res = await fetch("/api/support/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": pendingKey },
+        signal: controller.signal,
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const raw = await res.text();
+      let data;
+      try { data = JSON.parse(raw); } catch { throw new Error("Support service temporarily unavailable. Please retry."); }
       if (!res.ok) throw new Error(data.error || "Submission failed");
 
       result.className = "result success";
-      result.innerHTML = `
-        <strong>Request received</strong><br>
-        Please keep your support ID for reference:
-        <div class="support-id">${data.support_id}</div>
-      `;
+      result.textContent = "Request received. Your support ID: " + String(data.support_id || "Pending confirmation");
+      pendingKey = null;
       result.style.display = "block";
 
       form.reset();
@@ -283,9 +287,10 @@
 
     } catch (err) {
       result.className = "result error";
-      result.textContent = err.message;
+      result.textContent = err.name === "AbortError" ? "Request timed out. Please retry; your request will not be duplicated." : (err.message || "Submission failed. Please retry.");
       result.style.display = "block";
     } finally {
+      clearTimeout(timeout);
       button.disabled = false;
     }
   });
