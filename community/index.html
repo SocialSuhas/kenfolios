@@ -1882,8 +1882,35 @@
     <div class="bubble">
       <div class="name">Community Admin</div>
       <div class="text">
-        Use business development services and lead-generation tools inside the community. Join city, interest and industry groups to directly connect with relevant members.
+        Grow your business through meaningful connections and practical tools. Join city, industry and interest groups to connect with relevant members, and participate in online and offline Meetups to introduce your work, exchange ideas and explore collaborations.<br/><br/>Use the available KenFolios business development services, lead-generation tools and other business tools to support your next steps.
       </div>
+    </div>
+  </div>
+
+  <!-- Member support -->
+  <div class="chat-msg member">
+    <div class="bubble">
+      <div class="name">New Member</div>
+      <div class="text">How do I get support?</div>
+    </div>
+    <div class="avatar" style="background:hsl(210 70% 92%)">NM</div>
+  </div>
+  <div class="chat-msg admin">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text">Registered members can get support through our support section, social media handles and daily online Meetups (weekdays).</div>
+    </div>
+  </div>
+  <div class="chat-msg admin single-cta" data-stage="support">
+    <div class="avatar">KF</div>
+    <div class="bubble">
+      <div class="name">Community Admin</div>
+      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <span class="cta-text">Registered members get support. Join now.</span>
+        <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
+      </div>
+      <div class="time">Just now</div>
     </div>
   </div>
 
@@ -2069,6 +2096,7 @@
     */
     document.addEventListener('DOMContentLoaded', function(){
       const ctaMap = {
+        'support': ['Registered members get support. Join now.'],
         '3': [
           'Become part of VStreet — amplify your brand across India.',
           'Join now to claim your VStreet member status and early visibility.',
