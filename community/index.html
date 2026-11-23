@@ -1906,8 +1906,8 @@
     <div class="avatar">KF</div>
     <div class="bubble">
       <div class="name">Community Admin</div>
-      <div class="text" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <span class="cta-text">Registered members get support. Join now.</span>
+      <div class="text" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+        <span class="cta-text" style="font-size:18px;line-height:1.5;font-weight:600">Registered members get support.</span>
         <button class="cta-btn primary" onclick="document.getElementById('joinBtn')?.click()">Join Now</button>
       </div>
       <div class="time">Just now</div>
@@ -2096,7 +2096,7 @@
     */
     document.addEventListener('DOMContentLoaded', function(){
       const ctaMap = {
-        'support': ['Registered members get support. Join now.'],
+        'support': ['Registered members get support.'],
         '3': [
           'Become part of VStreet — amplify your brand across India.',
           'Join now to claim your VStreet member status and early visibility.',
