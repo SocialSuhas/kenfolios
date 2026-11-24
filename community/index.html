@@ -4638,6 +4638,13 @@ const j = await resp.json();
         amount: rp.amount,
         currency: rp.currency,
         order_id: rp.id,
+        modal: {
+          ondismiss: function() {
+            // Refresh whenever checkout is closed, including deliberate
+            // cancellation or closing after a failed payment attempt.
+            window.location.replace(window.location.href);
+          }
+        },
         handler: async function(res){
           let orderRefreshTimer = null;
           const scheduleOrderRefresh = function(delay) {
