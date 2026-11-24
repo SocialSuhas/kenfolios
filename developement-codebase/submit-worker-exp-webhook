@@ -186,7 +186,7 @@ async function verifyRazorpaySignature(secret, orderId, paymentId, signature) {
 function buildCompanyBlock() {
   return {
     name: "KenFolios Media Private Limited",
-    address: "Second floor, F-328, Lado Sarai, New Delhi, Delhi, 110030",
+    address: "Seventh Floor, B-704, Siddhi Vinayak Towers, Devka Beach Road, Nani Daman, Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu – 396210, India",
     gstin: "07AAGCK7129K1Z7",
     cin: "U72900DL2017PTC321788"
   };
@@ -1879,8 +1879,10 @@ function buildOrderCreatedHtml({
 
               <p style="margin:0 0 6px 0;font-size:12px;color:#6B7280;">
                 <strong>KenFolios Media Private Limited</strong><br/>
-                Second Floor, F-328, Lado Sarai,<br/>
-                New Delhi – 110030, India
+                <strong>Correspondence Address:</strong><br/>
+                Seventh Floor, B-704, Siddhi Vinayak Towers,<br/>
+                Devka Beach Road, Nani Daman,<br/>
+                Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu – 396210, India
               </p>
 
               <p style="margin:0 0 14px 0;font-size:12px;color:#6B7280;">
