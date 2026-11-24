@@ -300,6 +300,8 @@
     font-size:17px;padding:0;cursor:pointer;display:block;text-align:left
   }
   .meta{font-size:13px;color:var(--muted);cursor:pointer}
+  #openProfile3, #profileMembers, #welcomeMembers .member-count{font-variant-numeric:tabular-nums}
+  #welcomeMembers .member-count{display:inline-block;min-width:6ch;text-align:right}
 
   /* ===== Header CTA buttons ===== */
   .header-actions{
@@ -2985,7 +2987,10 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
     chat.classList.remove('loading');
     chat.classList.add('chats-ready');
     var sk = document.getElementById('chatSkeleton');
-    if (sk) setTimeout(function(){ sk.remove(); }, 350);
+    setTimeout(function(){
+      if (sk) sk.remove();
+      document.dispatchEvent(new CustomEvent('kf:chat-visible'));
+    }, 350);
   }
 
   function startRevealTimer(){
@@ -3325,9 +3330,17 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   // Original visual starting point for every visitor.
   renderTotal(ANIMATION_START, false);
 
-  // Fetch fresh immediately, then poll.
-  fetchDbCount();
-  setInterval(fetchDbCount, POLL_MS);
+  // Begin the number animation only after all chat messages are fully visible.
+  // A fallback guarantees the counter still starts if the reveal event is missed.
+  var initialCountStarted = false;
+  function startInitialCount(){
+    if (initialCountStarted) return;
+    initialCountStarted = true;
+    fetchDbCount();
+    setInterval(fetchDbCount, POLL_MS);
+  }
+  document.addEventListener('kf:chat-visible', startInitialCount, { once:true });
+  setTimeout(startInitialCount, 1800);
 
   // Expose manual trigger
   window.KF_refreshMemberCount = fetchDbCount;
