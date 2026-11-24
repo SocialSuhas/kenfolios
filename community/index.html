@@ -2967,33 +2967,14 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   }
 })();
 
-/* Chat-only loader: delays chat render without touching other UI */
+/* Chat content is rendered immediately to avoid a skeleton-to-content flash. */
 (function(){
   var chat = document.getElementById('chatArea');
   if(!chat) return;
-
-  // Mark chat as loading immediately → skeleton shows via CSS
-  chat.classList.add('loading');
-
-  function revealChats(){
-    chat.classList.remove('loading');
-    chat.classList.add('chats-ready');
-    var sk = document.getElementById('chatSkeleton');
-    if (sk) sk.remove();
-  }
-
-  // Reveal after DOM is ready + short random delay (180–400ms)
-  document.addEventListener('DOMContentLoaded', function(){
-    // Still gives a noticeable skeleton, but feels snappy
-    var delay = 180 + Math.floor(Math.random() * 220); // 180–400ms
-
-    // two RAFs ensure initial paint before hiding skeleton
-    requestAnimationFrame(function(){ 
-      requestAnimationFrame(function(){
-        setTimeout(revealChats, delay);
-      });
-    });
-  });
+  chat.classList.remove('loading');
+  chat.classList.add('chats-ready');
+  var sk = document.getElementById('chatSkeleton');
+  if (sk) sk.remove();
 })();
 
 
