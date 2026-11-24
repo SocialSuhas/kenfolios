@@ -4773,8 +4773,7 @@ const j = await resp.json();
               showPaymentStatus(box, 'Checking payment confirmation…', true);
               showInlineError(
                 box.payMsg,
-                (confirmJson && confirmJson.message) ||
-                  'Payment was received, but confirmation is still processing. Please refresh this order in a moment.'
+                'Payment received. Confirmation is processing; this page will refresh automatically.'
               );
               // Razorpay has returned a successful payment. Give the webhook or
               // reconciliation path a moment to finish, then fetch the order again.
