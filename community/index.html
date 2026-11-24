@@ -1463,6 +1463,8 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
 #kfJoinInfoForm .kf-legal.kf-validation-error{padding:10px;border:1px solid #dc2626;border-radius:8px;color:#991b1b}
 @media(max-width:600px){
 #kfJoinInfoForm .grid2{grid-template-columns:minmax(0,1fr);gap:16px}
+#kfJoinInfoForm .kf-date-field{min-width:0;max-width:100%;overflow:hidden}
+#kfJoinInfoForm #fi_dob{display:block;inline-size:100%;min-inline-size:0;max-inline-size:100%;overflow:hidden}
 #kfJoinInfoForm .kf-checklist{grid-template-columns:minmax(0,1fr);padding:10px}
 #kfJoinInfoForm .kf-label{font-size:16px}
 #kfJoinInfoForm .kf-input,#kfJoinInfoForm .kf-select,#kfJoinInfoForm .kf-date{font-size:18px!important}
@@ -2084,7 +2086,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
               <label class="kf-label" for="fi_name">Full Name*</label>
               <input class="kf-input" id="fi_name" name="name" type="text" required />
             </div>
-            <div class="kf-field">
+            <div class="kf-field kf-date-field">
               <label class="kf-label" for="fi_dob">Date of Birth*</label>
               <input class="kf-date" id="fi_dob" name="dob" type="date" required />
             </div>
