@@ -300,7 +300,6 @@
     font-size:17px;padding:0;cursor:pointer;display:block;text-align:left
   }
   .meta{font-size:13px;color:var(--muted);cursor:pointer}
-  #openProfile3, #profileMembers, #welcomeMembers .member-count{font-variant-numeric:tabular-nums}
 
   /* ===== Header CTA buttons ===== */
   .header-actions{
@@ -1551,7 +1550,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
     KenFolios Business Community
     <span class="verified-badge" title="Verified"></span>
   </button>
-  <div class="meta" id="openProfile3">58,904 members</div>
+  <div class="meta" id="openProfile3">99,999 members</div>
 </div>
 
 
@@ -1601,7 +1600,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
       <div class="name">Community Admin</div>
       <div class="text">
       👋 Welcome to <strong>KenFolios Business Community</strong> — India’s leading business network with 
-      <span id="welcomeMembers"><span class="member-count">58,904</span> members</span>.<br/><br/>
+      <span id="welcomeMembers"><span class="member-count">99,999</span> members</span>.<br/><br/>
       This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
     </div>
 
@@ -2262,7 +2261,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
               <div class="subline">
                 <span class="profile-username">@kenfolios</span>
                 <span class="dot" aria-hidden="true">•</span>
-                <span id="profileMembers">58,904 members</span>
+                <span id="profileMembers">99,999 members</span>
               </div>
             </div>
 
@@ -3217,12 +3216,13 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 (function(){
   // ===== MANUAL BASE NUMBER (update this anytime) =====
   const BASE_OFFSET = 58904;   // <--- RUNNING UPDATE DATE: 9TH SEP 26 - LAST UPDATE AS ON 4TH DEC 25 AFTER MOVING FROM WIX 24836 - UPDATE THIS NUMBER WHEN HISTORICAL COUNT CHANGES
+  const ANIMATION_START = 99999;  // visual animation starting point
   // ===== CONFIG =====
   const ENDPOINT = 'https://kf-members-count-x9r4z-worker.ksn-nvl.workers.dev/api/members';
   const POLL_MS = 60 * 1000;   // match worker edge cache
   const ELEMENT_IDS = ['openProfile3','profileMembers','welcomeMembers'];
   const ENABLE_ANIMATE = true;
-  const ANIMATE_MS = 600;
+  const ANIMATE_MS = 1500;
 
   // ===== HELPERS =====
   function fmt(n){
@@ -3263,7 +3263,6 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
           return;
         }
         const prev = extractNumber(span.textContent);
-        if (prev === total) return;
         if (animate){
           animateNumber(span, prev, total, ANIMATE_MS, v => span.textContent = fmt(v));
         } else {
@@ -3271,7 +3270,6 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
         }
       } else {
         const prev = extractNumber(el.textContent);
-        if (prev === total) return;
         if (animate){
           animateNumber(el, prev, total, ANIMATE_MS, v => el.textContent = `${fmt(v)} members`);
         } else {
@@ -3300,7 +3298,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
   }
 
   // Fetch DB-only count from Worker
-  async function fetchDbCount(animateChange){
+  async function fetchDbCount(){
     try {
       const resp = await fetch(ENDPOINT, { cache:'no-store', credentials:'omit' });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -3311,11 +3309,12 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
         localStorage.setItem('kf_last_count_total', String(total));
       } catch(e) {}
 
-      renderTotal(total, animateChange === true);
+      renderTotal(total, true);
       return total;
     } catch(err){
   console.warn('[MemberCounter] failed:', err);
 
+  renderTotal(BASE_OFFSET, true);
   return BASE_OFFSET;
 }
   }
@@ -3323,17 +3322,15 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 // Init
 (function init(){
 
-  // Start from the last real value when available; otherwise use the base.
-  var cachedTotal = 0;
-  try { cachedTotal = Number(localStorage.getItem('kf_last_count_total')) || 0; } catch(e) {}
-  renderTotal(cachedTotal > 0 ? cachedTotal : BASE_OFFSET, false);
+  // Original visual starting point for every visitor.
+  renderTotal(ANIMATION_START, false);
 
-  // First network result settles immediately; only later genuine changes animate.
-  fetchDbCount(false);
-  setInterval(function(){ fetchDbCount(true); }, POLL_MS);
+  // Fetch fresh immediately, then poll.
+  fetchDbCount();
+  setInterval(fetchDbCount, POLL_MS);
 
   // Expose manual trigger
-  window.KF_refreshMemberCount = function(){ return fetchDbCount(true); };
+  window.KF_refreshMemberCount = fetchDbCount;
 
 })();
 
