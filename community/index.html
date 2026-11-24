@@ -747,7 +747,11 @@
 /* === Chat-only loading skeleton === */
 #chatArea.loading{ position:relative; }
 #chatArea .chat-msg,
-#chatArea .chat-notes{ transition:opacity .3s ease; }
+#chatArea .chat-notes{
+  transition:opacity .28s ease;
+  will-change:opacity;
+  backface-visibility:hidden;
+}
 #chatArea.loading .chat-msg,
 #chatArea.loading .chat-notes{ opacity:0; pointer-events:none; }
 #chatArea.chats-ready .chat-msg,
@@ -764,10 +768,17 @@
   position: absolute;
   inset: 0 0 auto 0;
   padding: 1rem .75rem 1.25rem .75rem;
-  background: linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
-  border-bottom: 1px solid var(--border);
+  background-color:hsl(356, 70%, 96%);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;
+  background-size:70px 70px;
+  border-bottom:0;
   z-index: 1; opacity:0; visibility:hidden; pointer-events:none;
-  transition:opacity .3s ease, visibility 0s linear .3s;
+  transition:opacity .28s ease, visibility 0s linear .28s;
+  will-change:opacity;
+  backface-visibility:hidden;
+  transform:translateZ(0);
+  contain:paint;
 }
 
 /* Show skeleton only during loading */
