@@ -1478,6 +1478,7 @@ display:block;width:100%!important;inline-size:100%!important;min-width:0!import
 }
 @media(prefers-reduced-motion:reduce){#kfJoinInfoForm input,#kfJoinInfoForm select{transition:none}}
 @media(forced-colors:active){#kfJoinInfoForm .kf-select{appearance:auto;background-image:none}}
+@keyframes kfPaymentSpin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -4544,13 +4545,94 @@ function getCookie(name) {
 
   return null;
 }
+
+function showPaymentStatus(box, message, bringIntoView) {
+  if (!box || !box.wrap) return null;
+  let status = box.paymentStatusBox || box.wrap.querySelector('.kf-payment-status');
+  if (!status) {
+    status = document.createElement('div');
+    status.className = 'kf-payment-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    status.style.width = '100%';
+    status.style.margin = '12px 0';
+    status.style.padding = '16px';
+    status.style.border = '1px solid #f0b4bd';
+    status.style.borderRadius = '12px';
+    status.style.background = '#fff7f8';
+    status.style.boxShadow = '0 4px 14px rgba(15,23,42,.08)';
+    status.style.display = 'flex';
+    status.style.alignItems = 'center';
+    status.style.justifyContent = 'center';
+    status.style.gap = '12px';
+    status.style.textAlign = 'left';
+    status.style.scrollMargin = '20px';
+
+    const spinner = document.createElement('span');
+    spinner.setAttribute('aria-hidden', 'true');
+    spinner.style.flex = '0 0 26px';
+    spinner.style.width = '26px';
+    spinner.style.height = '26px';
+    spinner.style.border = '3px solid #e5e7eb';
+    spinner.style.borderTopColor = 'var(--kf-red)';
+    spinner.style.borderRadius = '50%';
+    spinner.style.animation = 'kfPaymentSpin .8s linear infinite';
+    status.appendChild(spinner);
+
+    const copy = document.createElement('div');
+    copy.className = 'kf-payment-status-copy';
+    copy.style.color = '#1f2937';
+    copy.style.fontSize = '16px';
+    copy.style.fontWeight = '700';
+    copy.style.lineHeight = '1.45';
+    status.appendChild(copy);
+
+    const payArea = box.payBtn && box.payBtn.parentNode;
+    if (payArea && payArea.parentNode) {
+      payArea.parentNode.insertBefore(status, payArea.nextSibling);
+    } else {
+      box.wrap.appendChild(status);
+    }
+    box.paymentStatusBox = status;
+  }
+
+  const copy = status.querySelector('.kf-payment-status-copy');
+  if (copy) copy.textContent = message || 'Confirming payment…';
+  status.style.display = 'flex';
+  if (bringIntoView) {
+    window.requestAnimationFrame(function() {
+      status.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    });
+  }
+  return status;
+}
+
+function hidePaymentStatus(box) {
+  const status = box && (box.paymentStatusBox || box.wrap?.querySelector('.kf-payment-status'));
+  if (status) status.remove();
+  if (box) box.paymentStatusBox = null;
+}
+
   /* -------- UPDATED: confirmPay now lazy-loads Razorpay script AND turns UI into "Activate Membership" -------- */
   async function confirmPay(id, box){
     // If there is no pay button (paid order), or it’s disabled, do nothing
     if (!box || !box.payBtn || box.payBtn.disabled) return;
 
-    const saved = await patchMember(id, box);
-    if (!saved) return;
+    showPaymentStatus(box, 'Preparing secure payment…', false);
+
+    let saved = false;
+    try {
+      saved = await patchMember(id, box);
+    } catch (saveErr) {
+      console.error('payment details save error:', saveErr);
+      hidePaymentStatus(box);
+      showInlineError(box.payMsg, 'Could not prepare payment. Please try again.');
+      return;
+    }
+    if (!saved) {
+      hidePaymentStatus(box);
+      return;
+    }
 
     const code = box.couponApplied || box.couponInput.value.trim() || null;
 
@@ -4607,11 +4689,13 @@ const j = await resp.json();
       btn.disabled = false;
 
       if (!resp.ok || !j.ok) {
+        hidePaymentStatus(box);
         showInlineError(msg, j.message || 'Could not initiate payment.');
         return;
       }
 
       if (!j.razorpay_configured) {
+        hidePaymentStatus(box);
         msg.style.display = 'block';
         msg.textContent = 'Payment options will appear here soon.';
         return;
@@ -4622,11 +4706,13 @@ const j = await resp.json();
         await loadRazorpayScript();
       } catch (loadErr) {
         console.error('Razorpay script load error:', loadErr);
+        hidePaymentStatus(box);
         showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
         return;
       }
 
       if (typeof Razorpay === 'undefined') {
+        hidePaymentStatus(box);
         showInlineError(msg, 'Payment gateway is temporarily unavailable. Please try again in a moment.');
         return;
       }
@@ -4642,7 +4728,10 @@ const j = await resp.json();
           ondismiss: function() {
             // Refresh whenever checkout is closed, including deliberate
             // cancellation or closing after a failed payment attempt.
-            window.location.replace(window.location.href);
+            showPaymentStatus(box, 'Checking payment status…', true);
+            window.setTimeout(function() {
+              window.location.replace(window.location.href);
+            }, 50);
           }
         },
         handler: async function(res){
@@ -4659,6 +4748,7 @@ const j = await resp.json();
           };
 
           try {
+            showPaymentStatus(box, 'Payment received. Confirming payment…', true);
             // 🔴 Set global Meta event ID based on Razorpay payment id
             if (res && res.razorpay_payment_id) {
               window.__KF_META_EVENT_ID = 'rzp_' + res.razorpay_payment_id;
@@ -4680,6 +4770,7 @@ const j = await resp.json();
             try { confirmJson = await confirmResp.json(); } catch(e){}
 
             if (!confirmResp.ok || !confirmJson || confirmJson.ok !== true) {
+              showPaymentStatus(box, 'Checking payment confirmation…', true);
               showInlineError(
                 box.payMsg,
                 (confirmJson && confirmJson.message) ||
@@ -4695,6 +4786,7 @@ const j = await resp.json();
             // This guarantees activation links are loaded from fresh backend data
             // even if a later presentation-only operation fails on the device.
             scheduleOrderRefresh(0);
+            showPaymentStatus(box, 'Payment confirmed. Loading activation options…', true);
 
             // Determine activation URL from confirm response (if worker provides it) or existing box
             let activationUrl = null;
@@ -4737,6 +4829,7 @@ const j = await resp.json();
 
           } catch (err) {
             console.error('payment confirm handler error:', err);
+            showPaymentStatus(box, 'Checking payment confirmation…', true);
             // Preserve recovery even if the confirmation response or interim UI
             // cannot be rendered. The refreshed order remains the source of truth.
             scheduleOrderRefresh(4000);
@@ -4756,6 +4849,7 @@ const j = await resp.json();
         btn.style.display = btn.dataset._oldDisplay || '';
         btn.disabled = false;
       }
+      hidePaymentStatus(box);
       showInlineError(msg, 'Cannot initiate payment. Please try again.');
     }
   }
@@ -5364,7 +5458,7 @@ if (!eventId) {
     const notice = wrapper.previousElementSibling || wrapper;
 
     notice.scrollIntoView({
-      behavior: 'smooth',
+      behavior: 'auto',
       block: 'start'
     });
 
