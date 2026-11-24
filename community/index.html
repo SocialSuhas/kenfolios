@@ -300,6 +300,7 @@
     font-size:17px;padding:0;cursor:pointer;display:block;text-align:left
   }
   .meta{font-size:13px;color:var(--muted);cursor:pointer}
+  #openProfile3, #profileMembers, #welcomeMembers .member-count{font-variant-numeric:tabular-nums}
 
   /* ===== Header CTA buttons ===== */
   .header-actions{
@@ -748,9 +749,7 @@
 #chatArea.loading{ position:relative; }
 #chatArea .chat-msg,
 #chatArea .chat-notes{
-  transition:opacity .28s ease;
-  will-change:opacity;
-  backface-visibility:hidden;
+  transition:opacity .3s ease;
 }
 #chatArea.loading .chat-msg,
 #chatArea.loading .chat-notes{ opacity:0; pointer-events:none; }
@@ -762,23 +761,16 @@
   position: relative;
 }
 
-/* Skeleton block: fade it rather than abruptly swapping display states. */
+/* Skeleton block: retain the original pale chat-loading visual. */
 .chat-skeleton{
   display: block;
   position: absolute;
   inset: 0 0 auto 0;
   padding: 1rem .75rem 1.25rem .75rem;
-  background-color:hsl(356, 70%, 96%);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%2394a3b8' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round' opacity='0.18'%3E%3Crect x='2' y='2' width='22' height='14' rx='3'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat:repeat;
-  background-size:70px 70px;
-  border-bottom:0;
+  background:linear-gradient(180deg, rgba(248,250,252,.95), rgba(255,255,255,.9));
+  border-bottom:1px solid var(--border);
   z-index: 1; opacity:0; visibility:hidden; pointer-events:none;
-  transition:opacity .28s ease, visibility 0s linear .28s;
-  will-change:opacity;
-  backface-visibility:hidden;
-  transform:translateZ(0);
-  contain:paint;
+  transition:opacity .3s ease, visibility 0s linear .3s;
 }
 
 /* Show skeleton only during loading */
@@ -1559,7 +1551,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
     KenFolios Business Community
     <span class="verified-badge" title="Verified"></span>
   </button>
-  <div class="meta" id="openProfile3">99,999 members</div>
+  <div class="meta" id="openProfile3">58,904 members</div>
 </div>
 
 
@@ -1609,7 +1601,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
       <div class="name">Community Admin</div>
       <div class="text">
       👋 Welcome to <strong>KenFolios Business Community</strong> — India’s leading business network with 
-      <span id="welcomeMembers"><span class="member-count">99,999</span> members</span>.<br/><br/>
+      <span id="welcomeMembers"><span class="member-count">58,904</span> members</span>.<br/><br/>
       This is a <em>demo</em> of how interactions take place in our community groups. Scroll below to explore the most-asked questions and their answers before joining.
     </div>
 
@@ -2270,7 +2262,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
               <div class="subline">
                 <span class="profile-username">@kenfolios</span>
                 <span class="dot" aria-hidden="true">•</span>
-                <span id="profileMembers">99,999 members</span>
+                <span id="profileMembers">58,904 members</span>
               </div>
             </div>
 
@@ -3225,13 +3217,12 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 (function(){
   // ===== MANUAL BASE NUMBER (update this anytime) =====
   const BASE_OFFSET = 58904;   // <--- RUNNING UPDATE DATE: 9TH SEP 26 - LAST UPDATE AS ON 4TH DEC 25 AFTER MOVING FROM WIX 24836 - UPDATE THIS NUMBER WHEN HISTORICAL COUNT CHANGES
-const ANIMATION_START = 99999;  // visual animation starting point
   // ===== CONFIG =====
   const ENDPOINT = 'https://kf-members-count-x9r4z-worker.ksn-nvl.workers.dev/api/members';
   const POLL_MS = 60 * 1000;   // match worker edge cache
   const ELEMENT_IDS = ['openProfile3','profileMembers','welcomeMembers'];
   const ENABLE_ANIMATE = true;
-  const ANIMATE_MS = 1500;
+  const ANIMATE_MS = 600;
 
   // ===== HELPERS =====
   function fmt(n){
@@ -3272,6 +3263,7 @@ const ANIMATION_START = 99999;  // visual animation starting point
           return;
         }
         const prev = extractNumber(span.textContent);
+        if (prev === total) return;
         if (animate){
           animateNumber(span, prev, total, ANIMATE_MS, v => span.textContent = fmt(v));
         } else {
@@ -3279,6 +3271,7 @@ const ANIMATION_START = 99999;  // visual animation starting point
         }
       } else {
         const prev = extractNumber(el.textContent);
+        if (prev === total) return;
         if (animate){
           animateNumber(el, prev, total, ANIMATE_MS, v => el.textContent = `${fmt(v)} members`);
         } else {
@@ -3307,22 +3300,22 @@ const ANIMATION_START = 99999;  // visual animation starting point
   }
 
   // Fetch DB-only count from Worker
-  async function fetchDbCount(){
+  async function fetchDbCount(animateChange){
     try {
       const resp = await fetch(ENDPOINT, { cache:'no-store', credentials:'omit' });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const dbCount = await parseResponse(resp);
-      localStorage.setItem('kf_last_count_db', String(dbCount));
-
       const total = dbCount;
-      localStorage.setItem('kf_last_count_total', String(total));
+      try {
+        localStorage.setItem('kf_last_count_db', String(dbCount));
+        localStorage.setItem('kf_last_count_total', String(total));
+      } catch(e) {}
 
-      renderTotal(total, true);
+      renderTotal(total, animateChange === true);
       return total;
     } catch(err){
   console.warn('[MemberCounter] failed:', err);
 
-  renderTotal(BASE_OFFSET, true);
   return BASE_OFFSET;
 }
   }
@@ -3330,15 +3323,17 @@ const ANIMATION_START = 99999;  // visual animation starting point
 // Init
 (function init(){
 
-  // Visual starting point for every visitor
-  renderTotal(ANIMATION_START, false);
+  // Start from the last real value when available; otherwise use the base.
+  var cachedTotal = 0;
+  try { cachedTotal = Number(localStorage.getItem('kf_last_count_total')) || 0; } catch(e) {}
+  renderTotal(cachedTotal > 0 ? cachedTotal : BASE_OFFSET, false);
 
-  // Fetch fresh immediately, then poll
-  fetchDbCount();
-  setInterval(fetchDbCount, POLL_MS);
+  // First network result settles immediately; only later genuine changes animate.
+  fetchDbCount(false);
+  setInterval(function(){ fetchDbCount(true); }, POLL_MS);
 
   // Expose manual trigger
-  window.KF_refreshMemberCount = fetchDbCount;
+  window.KF_refreshMemberCount = function(){ return fetchDbCount(true); };
 
 })();
 
