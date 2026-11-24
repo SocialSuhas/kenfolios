@@ -349,7 +349,10 @@
   }
   .chat-msg .bubble .name, .chat-msg .bubble .text{ grid-column: 1 / -1; }
   .chat-msg .name{ font-size:16px; font-weight:700; color:var(--muted); }
-  .chat-msg .text{ font-size:18px; line-height:1.55; color:var(--text); }
+  .chat-msg .text{ font-size:17px; line-height:1.55; color:var(--text); }
+  @media (max-width:639.98px){
+    .chat-msg .text{ font-size:18.5px; }
+  }
 
   .bubble .reactions{
     grid-column: 1 / 2; justify-self: start; align-self: end;
@@ -935,6 +938,29 @@
   transition:opacity .2s ease; margin-bottom:22px;
 }
 #finalJoinInfo .kf-submit:hover{ opacity:.92; }
+
+/* Responsive reading sizes: compact on desktop, slightly larger on phones */
+@media (min-width:1024px){
+  #finalJoinInfo .kf-label{ font-size:15px; }
+  #finalJoinInfo .kf-input,
+  #finalJoinInfo .kf-select,
+  #finalJoinInfo .kf-date{ font-size:16.5px; }
+  #finalJoinInfo .kf-check{ font-size:13.5px; }
+  #finalJoinInfo .kf-legal{ font-size:12.5px; }
+  #finalJoinInfo .kf-note{ font-size:12px; }
+  #finalJoinInfo .kf-submit{ font-size:14.5px; }
+}
+
+@media (max-width:639.98px){
+  #finalJoinInfo .kf-label{ font-size:16px; }
+  #finalJoinInfo .kf-input,
+  #finalJoinInfo .kf-select,
+  #finalJoinInfo .kf-date{ font-size:18px; }
+  #finalJoinInfo .kf-check{ font-size:15px; }
+  #finalJoinInfo .kf-legal{ font-size:14px; }
+  #finalJoinInfo .kf-note{ font-size:14px; line-height:1.45; }
+  #finalJoinInfo .kf-submit{ font-size:16px; }
+}
 
 /* Extra breathing space below form in the bubble */
 #finalJoinInfo .bubble form{ margin-bottom:1.5rem; }
@@ -2118,7 +2144,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
           </div>
 
           <div class="kf-note">
-            The information shared here is <strong>strictly confidential</strong> and used only for community onboarding and verification.<br/><span class="kf-submit-note">Submitting this form registers you as a member and <strong>does not open checkout or initiate a payment</strong>.</span>
+            Your information remains <strong>confidential</strong> and is used only for onboarding and verification.<br/><span class="kf-submit-note">Submitting registers you as a member; it <strong>does not open checkout or initiate payment</strong>. Payment options will be available on the next page.</span>
           </div>
 
           <div class="kf-rowgap">
