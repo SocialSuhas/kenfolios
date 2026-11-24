@@ -186,7 +186,7 @@ async function verifyRazorpaySignature(secret, orderId, paymentId, signature) {
 function buildCompanyBlock() {
   return {
     name: "KenFolios Media Private Limited",
-    address: "Seventh Floor, B-704, Siddhi Vinayak Towers, Devka Beach Road, Nani Daman, Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu, India – 396210",
+    address: "Seventh Floor, B-704, Siddhi Vinayak Towers, Devka Beach Road, Nani Daman, Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu, India 396210",
     email: "hello@kenfolios.com",
     gstin: "07AAGCK7129K1Z7",
     cin: "U72900DL2017PTC321788"
@@ -1883,7 +1883,7 @@ function buildOrderCreatedHtml({
                 <strong>Correspondence Address:</strong><br/>
                 Seventh Floor, B-704, Siddhi Vinayak Towers,<br/>
                 Devka Beach Road, Nani Daman,<br/>
-                Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu, India – 396210<br/>
+                Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu, India 396210<br/>
                 <strong>Correspondence Email:</strong> <a href="mailto:hello@kenfolios.com" style="color:#6B7280;">hello@kenfolios.com</a>
               </p>
 
