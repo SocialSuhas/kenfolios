@@ -4641,7 +4641,9 @@ const j = await resp.json();
         handler: async function(res){
           let orderRefreshTimer = null;
           const scheduleOrderRefresh = function(delay) {
-            if (orderRefreshTimer) window.clearTimeout(orderRefreshTimer);
+            // Keep the first scheduled refresh. In particular, a presentation
+            // error must not replace an already scheduled immediate refresh.
+            if (orderRefreshTimer) return;
             orderRefreshTimer = window.setTimeout(function() {
               // Assigning the current canonical order URL forces Safari to request
               // the latest paid order state instead of retaining the pre-payment UI.
@@ -4685,7 +4687,7 @@ const j = await resp.json();
             // Schedule the canonical refresh before optional paid-state DOM work.
             // This guarantees activation links are loaded from fresh backend data
             // even if a later presentation-only operation fails on the device.
-            scheduleOrderRefresh(1500);
+            scheduleOrderRefresh(0);
 
             // Determine activation URL from confirm response (if worker provides it) or existing box
             let activationUrl = null;
