@@ -4819,19 +4819,30 @@ const j = await resp.json();
           j.order.payment_status === 'paid' ||
           j.order.status === 'paid' ||
           j.order.is_paid === true;
-        wrap.appendChild(createSavedNotice(
+        const savedNotice = createSavedNotice(
           j.order.order_ref,
           j.order.order_created_at,
           j.order.order_url,
           emailed,
           submittedOrderIsPaid
-        ));
+        );
+        savedNotice.style.scrollMarginTop = '16px';
+        wrap.appendChild(savedNotice);
 
         const box=buildOrderBox(j.order);
         wrap.appendChild(box.wrap);
 
         // Replace the form in-place so UI appears exactly where the form was
         form.replaceWith(wrap);
+
+        // The form can be taller than the initial order summary. After replacement,
+        // reset the nearest scrollable viewport to the first order-status notice.
+        // Two animation frames let Safari finish laying out the replacement first.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            savedNotice.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'nearest' });
+          });
+        });
 
         // Wire up coupon apply and pay buttons (use j.member_id returned by backend)
         box.applyBtn.addEventListener('click',()=>applyCoupon(j.member_id,box.couponInput.value.trim(),box));
