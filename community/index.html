@@ -2393,7 +2393,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
               <div class="r">KenFolios Media Private Limited</div>
             </div>
             <div class="row">
-              <div class="l">Email</div>
+              <div class="l">Correspondence Email</div>
               <div class="r"><a href="mailto:hello@kenfolios.com">hello@kenfolios.com</a></div>
             </div>
             <div class="row">
@@ -3506,6 +3506,7 @@ document.getElementById('learnBtn')?.addEventListener('click', function(){
 
   const COMPANY_NAME = "KenFolios Media Private Limited";
   const COMPANY_ADDRESS = "Seventh Floor, B-704, Siddhi Vinayak Towers, Devka Beach Road, Nani Daman, Daman, Union Territory of Dadra and Nagar Haveli and Daman and Diu – 396210, India";
+  const COMPANY_EMAIL = "hello@kenfolios.com";
   const COMPANY_CIN = "U72900DL2017PTC321788";
   const COMPANY_GSTIN = "07AAGCK7129K1Z7";
 
@@ -4032,7 +4033,8 @@ function createPaidNotice(orderRef, activationUrl) {
     c.style.marginTop = '14px';
     c.innerHTML =
       `<div style="font-weight:700">${COMPANY_NAME}</div>
-       <div style="color:#666"><strong>Correspondence Address:</strong> ${COMPANY_ADDRESS}</div>
+       <div style="font-size:.85rem;color:#666"><strong>Correspondence Address:</strong> ${COMPANY_ADDRESS}</div>
+       <div style="font-size:.85rem;color:#666"><strong>Correspondence Email:</strong> <a href="mailto:${COMPANY_EMAIL}" style="color:inherit">${COMPANY_EMAIL}</a></div>
        <div style="font-size:.85rem;color:#666;margin-top:4px">
          GSTIN: ${COMPANY_GSTIN} | CIN: ${COMPANY_CIN}
        </div>`;
