@@ -1464,7 +1464,10 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
 @media(max-width:600px){
 #kfJoinInfoForm .grid2{grid-template-columns:minmax(0,1fr);gap:16px}
 #kfJoinInfoForm .kf-date-field{min-width:0;max-width:100%;overflow:hidden}
-#kfJoinInfoForm #fi_dob{display:block;inline-size:100%;min-inline-size:0;max-inline-size:100%;overflow:hidden}
+#kfJoinInfoForm #fi_dob{
+display:block;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;
+-webkit-appearance:none;appearance:none;overflow:hidden
+}
 #kfJoinInfoForm .kf-checklist{grid-template-columns:minmax(0,1fr);padding:10px}
 #kfJoinInfoForm .kf-label{font-size:16px}
 #kfJoinInfoForm .kf-input,#kfJoinInfoForm .kf-select,#kfJoinInfoForm .kf-date{font-size:18px!important}
