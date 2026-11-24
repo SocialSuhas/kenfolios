@@ -1450,6 +1450,17 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
 #kfJoinInfoForm .kf-submit:not(.success):not(:disabled){background:#c92239;color:#fff;border:1px solid #c92239;box-shadow:0 3px 9px #c922391a}
 #kfJoinInfoForm .kf-submit:focus-visible{outline:3px solid #c9223944;outline-offset:3px}
 #kfJoinInfoForm .kf-submit:disabled{cursor:wait}
+#kfJoinInfoForm .kf-validation-error .kf-label{color:#b91c1c}
+#kfJoinInfoForm .kf-validation-error .kf-input,
+#kfJoinInfoForm .kf-validation-error .kf-select,
+#kfJoinInfoForm .kf-validation-error .kf-date,
+#kfJoinInfoForm .kf-checklist.kf-validation-error,
+#kfJoinInfoForm .kf-legal.kf-validation-error{
+  border-color:#dc2626!important;
+  background-color:#fff7f7;
+  box-shadow:0 0 0 3px rgba(220,38,38,.10);
+}
+#kfJoinInfoForm .kf-legal.kf-validation-error{padding:10px;border:1px solid #dc2626;border-radius:8px;color:#991b1b}
 @media(max-width:600px){
 #kfJoinInfoForm .grid2{grid-template-columns:minmax(0,1fr);gap:16px}
 #kfJoinInfoForm .kf-checklist{grid-template-columns:minmax(0,1fr);padding:10px}
@@ -2110,7 +2121,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
 
           <div class="kf-field">
             <label class="kf-label">What are your expectations from the community?*</label>
-            <div class="kf-checklist" role="group" aria-label="Expectations">
+            <div class="kf-checklist" id="fi_expectations" role="group" aria-label="Expectations">
               <label class="kf-check"><input type="checkbox" name="expectations" value="WhatsApp Groups"> WhatsApp/Telegram Groups</label>
               <label class="kf-check"><input type="checkbox" name="expectations" value="Business Leads"> Business Leads</label>
               <label class="kf-check"><input type="checkbox" name="expectations" value="Brand Building"> Brand Building</label>
@@ -2129,7 +2140,7 @@ width:100%;min-width:0;max-width:100%;min-height:48px;padding:12px 14px!importan
             </div>
           </div>
 
-          <div class="kf-legal">
+          <div class="kf-legal" id="fi_accept_group">
             <label style="display:flex; gap:.5rem; align-items:flex-start;">
               <input id="fi_accept" type="checkbox" required checked />
               <span> I accept the <a href="#" data-legal="terms">Terms of Service</a> and <a href="#" data-legal="privacy">Privacy Policy</a> of KenFolios Business Community. </span>
@@ -3543,7 +3554,7 @@ function createPaidNotice(orderRef, activationUrl) {
   /* Payment confirmation */
   const m1 = document.createElement('div');
   m1.innerHTML =
-    `✅ This order <strong>${orderRef || ''}</strong> is fully paid.`;
+    `✅ This order <strong>${displayOrderRef(orderRef)}</strong> is fully paid.`;
   paidNoticeBox.appendChild(m1);
 
   /* Member Account activation — primary option */
@@ -3713,6 +3724,61 @@ function createPaidNotice(orderRef, activationUrl) {
 
   function $id(id){ return document.getElementById(id); }
   function val(id){ const el = $id(id); return el ? el.value.trim() : ''; }
+  function displayOrderRef(ref){ return String(ref || '').toUpperCase(); }
+
+  function clearJoinValidationError(el) {
+    if (!el) return;
+    el.removeAttribute('aria-invalid');
+    const container = el.closest('.kf-field, .kf-legal') || el;
+    container.classList.remove('kf-validation-error');
+  }
+
+  function markJoinValidationError(el) {
+    if (!el) return;
+    el.setAttribute('aria-invalid', 'true');
+    const container = el.closest('.kf-field, .kf-legal') || el;
+    container.classList.add('kf-validation-error');
+  }
+
+  function validateJoinForm() {
+    const requiredIds = ['fi_name', 'fi_dob', 'fi_gender', 'fi_email', 'fi_phone', 'fi_city'];
+    const invalid = [];
+
+    requiredIds.forEach(function(id) {
+      const el = $id(id);
+      clearJoinValidationError(el);
+      if (!el || !el.value.trim() || !el.checkValidity()) {
+        markJoinValidationError(el);
+        if (el) invalid.push(el);
+      }
+    });
+
+    const expectations = $id('fi_expectations');
+    if (expectations) {
+      expectations.classList.remove('kf-validation-error');
+      expectations.removeAttribute('aria-invalid');
+      if (checkedValues('expectations').length === 0) {
+        expectations.classList.add('kf-validation-error');
+        expectations.setAttribute('aria-invalid', 'true');
+        invalid.push(expectations);
+      }
+    }
+
+    const accept = $id('fi_accept');
+    clearJoinValidationError(accept);
+    if (!accept || !accept.checked) {
+      markJoinValidationError(accept);
+      if (accept) invalid.push(accept);
+    }
+
+    if (invalid.length) {
+      const first = invalid[0];
+      first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof first.focus === 'function') first.focus({ preventScroll: true });
+      return false;
+    }
+    return true;
+  }
   function checkedValues(name){
     if (!form) return [];
     const list = form.querySelectorAll('input[name="'+name+'"]:checked');
@@ -3776,7 +3842,7 @@ function createPaidNotice(orderRef, activationUrl) {
   }
 
   /* -------- Saved notice above order box (now short — no visible URL) -------- */
-  function createSavedNotice(ref, createdIso, orderUrl, emailed) {
+  function createSavedNotice(ref, createdIso, orderUrl, emailed, isPaid) {
     const n = document.createElement('div');
     n.style.padding = '12px';
     n.style.borderRadius = '8px';
@@ -3788,7 +3854,9 @@ function createPaidNotice(orderRef, activationUrl) {
     n.style.gap = '6px';
 
     const line1 = document.createElement('div');
-    line1.textContent = `✅ Details saved. Order ID: ${ref}`;
+    line1.textContent = isPaid
+      ? `✅ Payment processed. Order ID: ${displayOrderRef(ref)}`
+      : `✅ Details saved. Order ID: ${displayOrderRef(ref)}`;
     n.appendChild(line1);
 
     if (createdIso) {
@@ -3806,7 +3874,9 @@ function createPaidNotice(orderRef, activationUrl) {
     sub.style.fontSize = '.95rem';
     sub.style.color = '#111';
     sub.style.marginTop = '6px';
-    sub.textContent = 'We have saved your details. Please review and complete payment to activate your membership.';
+    sub.textContent = isPaid
+      ? 'Your payment has been confirmed. Please use the activation options below to activate or reactivate your membership.'
+      : 'We have saved your details. Please review and complete payment to activate your membership.';
     n.appendChild(sub);
 
     // If backend explicitly reports an email was sent we can optionally show that
@@ -3815,7 +3885,9 @@ function createPaidNotice(orderRef, activationUrl) {
       em.style.fontSize = '.9rem';
       em.style.color = '#444';
       em.style.fontWeight = '500';
-      em.textContent = 'We have emailed this order link to you — use it to edit or complete payment.';
+      em.textContent = isPaid
+        ? 'We have emailed your membership and activation details to you.'
+        : 'We have emailed this order link to you — use it to edit or complete payment.';
       n.appendChild(em);
     }
 
@@ -3882,7 +3954,7 @@ function createPaidNotice(orderRef, activationUrl) {
     const right = document.createElement('div');
     right.style.color = '#444';
     right.style.fontWeight = '600';
-    right.textContent = `Order ID: ${order.order_ref}`;
+    right.textContent = `Order ID: ${displayOrderRef(order.order_ref)}`;
 
     topRow.appendChild(left);
     topRow.appendChild(right);
@@ -3902,14 +3974,14 @@ function createPaidNotice(orderRef, activationUrl) {
 
     // Display-only order guidance; existing payment and activation actions remain unchanged.
     const orderGuidance = document.createElement('div');
-    const guidancePaid = order.payment_status === 'paid' || order.status === 'paid' || order.is_paid === true;
-    const guidanceColor = guidancePaid ? '#166534' : '#92400e';
+    const isPaid = order.payment_status === 'paid' || order.status === 'paid' || order.is_paid === true;
+    const guidanceColor = isPaid ? '#166534' : '#92400e';
     orderGuidance.style.marginTop = '12px';
     orderGuidance.style.padding = '15px 16px';
     orderGuidance.style.borderRadius = '11px';
-    orderGuidance.style.background = guidancePaid ? '#ecfdf3' : '#fffbeb';
-    orderGuidance.style.border = guidancePaid ? '1px solid #a7e3bf' : '1px solid #f3d38a';
-    orderGuidance.style.borderLeft = guidancePaid ? '4px solid #16a34a' : '4px solid #d97706';
+    orderGuidance.style.background = isPaid ? '#ecfdf3' : '#fffbeb';
+    orderGuidance.style.border = isPaid ? '1px solid #a7e3bf' : '1px solid #f3d38a';
+    orderGuidance.style.borderLeft = isPaid ? '4px solid #16a34a' : '4px solid #d97706';
     orderGuidance.style.boxShadow = '0 2px 8px rgba(15,23,42,0.06)';
     orderGuidance.style.display = 'flex';
     orderGuidance.style.alignItems = 'flex-start';
@@ -3936,7 +4008,7 @@ function createPaidNotice(orderRef, activationUrl) {
     const guidanceCopy = document.createElement('div');
     guidanceCopy.style.minWidth = '0';
     const guidanceHeading = document.createElement('div');
-    guidanceHeading.textContent = guidancePaid ? 'Activation / Reactivation Available' : 'Payment Pending';
+    guidanceHeading.textContent = isPaid ? 'Activation / Reactivation Available' : 'Payment Pending';
     guidanceHeading.style.color = guidanceColor;
     guidanceHeading.style.fontWeight = '800';
     guidanceHeading.style.fontSize = '17px';
@@ -3944,7 +4016,7 @@ function createPaidNotice(orderRef, activationUrl) {
     guidanceCopy.appendChild(guidanceHeading);
 
     const guidanceDetail = document.createElement('div');
-    guidanceDetail.textContent = guidancePaid
+    guidanceDetail.textContent = isPaid
       ? 'Access your membership activation options below.'
       : 'Complete your payment using the options below.';
     guidanceDetail.style.marginTop = '4px';
@@ -3980,7 +4052,9 @@ function createPaidNotice(orderRef, activationUrl) {
     notice.style.color = '#334155';
     notice.style.fontWeight = '600';
     notice.style.fontSize = '.95rem';
-    notice.textContent = "We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.";
+    notice.textContent = isPaid
+      ? 'This order is fully paid. The submitted details are now locked and can no longer be edited.'
+      : 'We’ve saved your details. Please confirm they’re correct — you can edit them before completing payment.';
     wrap.appendChild(notice);
 
     // MEMBER BOX (responsive grid)
@@ -3991,7 +4065,7 @@ function createPaidNotice(orderRef, activationUrl) {
     box.style.gap = '10px';
     box.style.marginTop = '12px';
 
-    const editable = order.editable;
+    const editable = order.editable && !isPaid;
 
     function mk(label, id, val) {
       const f = document.createElement('div');
@@ -4064,9 +4138,9 @@ wrap.appendChild(box);
     feeNote.style.fontSize = '.85rem';
     feeNote.style.color = '#555';
     feeNote.style.marginTop = '6px';
-    feeNote.textContent =
-      `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. ` +
-      `This fee is the current prevailing rate and may change if you opt to pay later.`;
+    feeNote.textContent = isPaid
+      ? `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. Payment completed.`
+      : `${basePrice ? 'Activation fee ' + formatINR(basePrice) + ' — ' : 'Activation fee — '}inclusive of 18% GST. This fee is the current prevailing rate and may change if you opt to pay later.`;
     wrap.appendChild(feeNote);
 
     // Coupon area — stacked layout: input above Apply button
@@ -4132,11 +4206,16 @@ businessNameLabel.style.fontSize = '.85rem';
 businessNameLabel.style.color = '#555';
 businessNameLabel.style.marginBottom = '6px';
 
-const businessNameInput = document.createElement('input');
-businessNameInput.id = 'ord_business_name';
-businessNameInput.className = 'kf-input';
-businessNameInput.placeholder = 'Your business name, website, or social handle.';
-businessNameInput.value = order.member.business_name || '';
+const businessNameInput = document.createElement(editable ? 'input' : 'div');
+if (editable) {
+  businessNameInput.id = 'ord_business_name';
+  businessNameInput.className = 'kf-input';
+  businessNameInput.placeholder = 'Your business name, website, or social handle.';
+  businessNameInput.value = order.member.business_name || '';
+} else {
+  businessNameInput.textContent = order.member.business_name || '—';
+  businessNameInput.style.background = '#fafafa';
+}
 businessNameInput.style.width = '100%';
 businessNameInput.style.boxSizing = 'border-box';
 businessNameInput.style.padding = '10px';
@@ -4157,21 +4236,28 @@ gstLabel.style.fontSize = '.85rem';
 gstLabel.style.color = '#555';
 gstLabel.style.marginBottom = '6px';
 
-const gstInput = document.createElement('input');
-gstInput.id = 'ord_gst_number';
-gstInput.className = 'kf-input';
-gstInput.placeholder = 'Enter GST number to get a GST invoice';
-gstInput.value = order.member.gst_number || '';
-gstInput.maxLength = 15;
+const gstInput = document.createElement(editable ? 'input' : 'div');
+if (editable) {
+  gstInput.id = 'ord_gst_number';
+  gstInput.className = 'kf-input';
+  gstInput.placeholder = 'Enter GST number to get a GST invoice';
+  gstInput.value = order.member.gst_number || '';
+  gstInput.maxLength = 15;
+} else {
+  gstInput.textContent = order.member.gst_number || '—';
+  gstInput.style.background = '#fafafa';
+}
 gstInput.style.width = '100%';
 gstInput.style.boxSizing = 'border-box';
 gstInput.style.padding = '10px';
 gstInput.style.border = '1px solid #e6e6e6';
 gstInput.style.borderRadius = '8px';
 
-gstInput.addEventListener('input', () => {
-  gstInput.value = gstInput.value.toUpperCase();
-});
+if (editable) {
+  gstInput.addEventListener('input', () => {
+    gstInput.value = gstInput.value.toUpperCase();
+  });
+}
 
 gstWrap.appendChild(gstLabel);
 gstWrap.appendChild(gstInput);
@@ -4288,11 +4374,6 @@ wrap.appendChild(gstWrap);
     }
 
     // ---------------- PAID / UNPAID STATE HANDLING ----------------
-    const isPaid =
-      order.payment_status === 'paid' ||
-      order.status === 'paid' ||
-      order.is_paid === true;
-
     let activateBtn = null;
     let paidNoticeBox = null;
     let payBtn = null;
@@ -4572,6 +4653,15 @@ const j = await resp.json();
             let confirmJson = null;
             try { confirmJson = await confirmResp.json(); } catch(e){}
 
+            if (!confirmResp.ok || !confirmJson || confirmJson.ok !== true) {
+              showInlineError(
+                box.payMsg,
+                (confirmJson && confirmJson.message) ||
+                  'Payment was received, but confirmation is still processing. Please refresh this order in a moment.'
+              );
+              return;
+            }
+
             // Determine activation URL from confirm response (if worker provides it) or existing box
             let activationUrl = null;
             if (confirmJson) {
@@ -4610,6 +4700,14 @@ const j = await resp.json();
             }
             box.paidNoticeBox = paid.notice;
             box.activateBtn = paid.activateBtn;
+
+            // Reload the canonical order URL after the browser Purchase event has
+            // had time to fire. The fresh order response supplies the final paid
+            // status and generated Telegram activation URL, replacing any stale
+            // payment-pending content left from the pre-payment render.
+            window.setTimeout(function() {
+              window.location.reload();
+            }, 1200);
           } catch (err) {
             console.error('payment confirm handler error:', err);
           }
@@ -4634,10 +4732,25 @@ const j = await resp.json();
 
   /* ---------------- Form Submit (updated to change URL) ---------------- */
   if (form) {
+    form.addEventListener('input', function(e) {
+      if (e.target && e.target.matches('input, select')) clearJoinValidationError(e.target);
+    });
+    form.addEventListener('change', function(e) {
+      if (!e.target) return;
+      if (e.target.name === 'expectations' && checkedValues('expectations').length > 0) {
+        const expectations = $id('fi_expectations');
+        if (expectations) {
+          expectations.classList.remove('kf-validation-error');
+          expectations.removeAttribute('aria-invalid');
+        }
+      }
+      clearJoinValidationError(e.target);
+    });
+
     form.addEventListener('submit',async function(e){
       e.preventDefault();
 
-      if(!val('fi_name')||!val('fi_dob')||!val('fi_gender')||!val('fi_email')||!val('fi_phone')||!val('fi_city')||!$id('fi_accept').checked||checkedValues('expectations').length===0){
+      if(!validateJoinForm()){
         alert('Complete all fields');
         return;
       }
@@ -4695,7 +4808,17 @@ const j = await resp.json();
 
         const wrap=document.createElement('div');
         const emailed = (j.email_sent === true) || false;
-        wrap.appendChild(createSavedNotice(j.order.order_ref, j.order.order_created_at, j.order.order_url, emailed));
+        const submittedOrderIsPaid =
+          j.order.payment_status === 'paid' ||
+          j.order.status === 'paid' ||
+          j.order.is_paid === true;
+        wrap.appendChild(createSavedNotice(
+          j.order.order_ref,
+          j.order.order_created_at,
+          j.order.order_url,
+          emailed,
+          submittedOrderIsPaid
+        ));
 
         const box=buildOrderBox(j.order);
         wrap.appendChild(box.wrap);
@@ -4803,7 +4926,17 @@ const j = await resp.json();
         const frag = document.createDocumentFragment();
 
         if (typeof createSavedNotice === 'function' && typeof buildOrderBox === 'function') {
-          frag.appendChild(createSavedNotice(order.order_ref, order.order_created_at, null, false));
+          const loadedOrderIsPaid =
+            order.payment_status === 'paid' ||
+            order.status === 'paid' ||
+            order.is_paid === true;
+          frag.appendChild(createSavedNotice(
+            order.order_ref,
+            order.order_created_at,
+            null,
+            false,
+            loadedOrderIsPaid
+          ));
           const box = buildOrderBox(order);
           frag.appendChild(box.wrap);
 
